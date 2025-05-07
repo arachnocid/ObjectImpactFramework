@@ -19,7 +19,7 @@ This guide explains how to set up those JSON files so you can customize the mod 
 
 Every rule in your JSON file tells the mod what to do. Here’s what each rule needs:
 
-- **event**: What triggers the rule. Use an array with `"Activate"` (ONLY for activators and talking activators) or `"Hit"` (for all objects).
+- **event**: What triggers the rule. Use an array with `"Activate"` (ONLY for activators and talking activators) and/or `"Hit"` (for all objects).
 - **filter**: Conditions to decide if the rule should run, based on the object.
 - **effect**: What happens when the rule triggers. This can be one effect or a list of effects.
 - **chance** (optional): A number from 0 to 100 for the percentage chance the effects happen. If you skip this, it’s 100% (always happens).
