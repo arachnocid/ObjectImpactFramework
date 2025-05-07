@@ -11,7 +11,6 @@ This guide explains how to set up those JSON files so you can customize the mod 
 
 - Place your JSON files in: `Data/SKSE/Plugins/ObjectImpactFramework/`.
 - Each file should contain a list (array) of rules. You can have as many JSON files as you want—the mod will load them all.
-- Events ARE case sensitive, make sure to re-check the documentation if you have doubts.
 
 ---
 
@@ -89,6 +88,7 @@ For `"Hit"` events, you can add these extra filters:
   - `"regular"`
   - `"power"`
   - `"bash"`
+  - `"projectile"`
  
 - **Projectiles**: Specific projectile IDs, in `"modName:formID"` format. Use an array.
 
