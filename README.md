@@ -11,7 +11,7 @@ This guide explains how to set up those JSON files so you can customize the mod 
 
 - Place your JSON files in: `Data/SKSE/Plugins/ObjectImpactFramework/`.
 - You can modify existing JSON files without quitting the game, edit the file and reload the save.
-- **Everything is case sensitive.** Only events and effect types are capitalized, everything else should remain lower case.
+- **Everything is case sensitive.** Only events and effect types are capitalized, everything else should remain in camel case (example -> camelCase).
 
 ---
 
@@ -19,7 +19,7 @@ This guide explains how to set up those JSON files so you can customize the mod 
 
 Every rule in your JSON file tells the mod what to do. Here’s what each rule needs:
 
-- **event**: What triggers the rule. Use an array with `"Activate"` (ONLY for activators and talking activators) OR `"Hit"` (for all objects).
+- **event**: What triggers the rule. Use an array with `"Activate"` (ONLY for activators and talking activators) or `"Hit"` (for all objects).
 - **filter**: Conditions to decide if the rule should run, based on the object.
 - **effect**: What happens when the rule triggers. This can be one effect or a list of effects.
 - **chance** (optional): A number from 0 to 100 for the percentage chance the effects happen. If you skip this, it’s 100% (always happens).
@@ -28,9 +28,9 @@ Example of a simple rule:
 ```json
 [
     {
-        "event": ["Activate"],
+        "event": ["Activate", "Hit"],
         "filter": {
-            "formIDs": ["MyMod.esp:0x123456"]
+            "formTypes": ["activator", "talkingactivator"]
         },
         "effect": {
             "type": "SpawnItem",
@@ -216,9 +216,9 @@ Depending on the `type`, add these:
 ```json
 [
     {
-        "event": ["Activate"],
+        "event": ["Hit", "Activate"],
         "filter": {
-            "formType": ["activator"]
+            "formType": ["activator", "container"]
         },
         "effect": {
             "type": "SwapWithMultipleItems",
@@ -229,25 +229,10 @@ Depending on the `type`, add these:
               {"formID": "Skyrim.esm:000669A3", "count": 1}
             ]    
         },
-    },
-    {
-        "event": ["Hit"],
-        "filter": {
-            "formType": ["activator"]
-        },
-        "effect": {
-            "type": "SwapWithMultipleItems",
-            "chance": 75.0,
-            "items": [
-              {"formID": "Skyrim.esm:00064B31", "count": 1},
-              {"formID": "Skyrim.esm:00064B32", "count": 1},
-              {"formID": "Skyrim.esm:000669A3", "count": 1}
-            ]
-        }
     }
 ]
 ```
-- Hitting or activating any activator spawns different cheeses.
+- Hitting or activating any activator + hitting any container spawns different cheeses.
 
 ---
 
