@@ -1,5 +1,5 @@
 # Object Impact Framework
-ObjectImpactFramework (OIF) is a simple yet powerful SKSE plugin that lets you add custom effects to objects when they are activated or hit. You can make things happen like spawning items, casting spells, creating explosions, swapping objects, and more—all controlled with JSON files.
+ObjectImpactFramework (OIF) is a simple yet powerful SKSE plugin that lets you add custom effects to objects when they are activated or hit. You can make things happen like spawning items, casting spells, creating explosions, swapping objects, and more-all controlled with JSON files.
 
 # Introduction
 
