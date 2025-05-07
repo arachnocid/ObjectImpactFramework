@@ -171,7 +171,7 @@ Depending on the `type`, add these:
     {
         "event": ["Hit"],
         "filter": {
-            "formType": ["Container"]
+            "formType": ["container"]
         },
         "effect": [
             {
@@ -200,7 +200,7 @@ Depending on the `type`, add these:
     {
         "event": ["Hit"],
         "filter": {
-            "formType": ["Static"]
+            "formType": ["static"]
         },
         "effect": {
             "type": "SpawnExplosion",
@@ -210,6 +210,42 @@ Depending on the `type`, add these:
 ]
 ```
 - Hitting any static object (like a rock) causes an explosion.
+
+### 5. Activate AND Hit event for any Activator
+```json
+[
+    {
+        "event": ["Activate"],
+        "filter": {
+            "formType": ["activator"]
+        },
+        "effect": {
+            "type": "SwapWithMultipleItems",
+            "chance": 75.0,
+            "items": [
+              {"formID": "Skyrim.esm:00064B31", "count": 1},
+              {"formID": "Skyrim.esm:00064B32", "count": 1},
+              {"formID": "Skyrim.esm:000669A3", "count": 1}
+      ]
+    },
+    {
+        "event": ["Hit"],
+        "filter": {
+            "formType": ["activator"]
+        },
+        "effect": {
+            "type": "SwapWithMultipleItems",
+            "chance": 75.0,
+            "items": [
+              {"formID": "Skyrim.esm:00064B31", "count": 1},
+              {"formID": "Skyrim.esm:00064B32", "count": 1},
+              {"formID": "Skyrim.esm:000669A3", "count": 1}
+      ]
+    }
+  }
+]
+```
+- Hitting or activating any activator spawns different cheeses.
 
 ---
 
