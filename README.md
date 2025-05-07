@@ -11,6 +11,7 @@ This guide explains how to set up those JSON files so you can customize the mod 
 
 - Place your JSON files in: `Data/SKSE/Plugins/ObjectImpactFramework/`.
 - Each file should contain a list (array) of rules. You can have as many JSON files as you want—the mod will load them all.
+- Events ARE case sensitive, make sure to re-check the documentation if you have doubts.
 
 ---
 
@@ -216,5 +217,5 @@ Depending on the `type`, add these:
 
 - **Where Stuff Appears**: Spawned items, actors, and effects happen at the object’s location. Spells cast from the object toward the player or attacker.
 - **Form IDs Must Match**: Make sure the `formID` fits the effect (e.g., a spell ID for `"SpawnSpell"`, an item ID for `"SpawnItem"`).
-- **Check the Log**: If something doesn’t work, look at the mod’s log file for error messages. The log can be found inside `Documents\My Games\Skyrim Special Edition\SKSE`
+- **Check the Log**: If something doesn’t work, look at the mod’s log file for error messages. The log can be found inside `Documents\My Games\Skyrim Special Edition\SKSE`.
 - **Keywords Note**: For containers, statics, movable statics, and trees, the `keywords` filter is ignored since they don’t use keywords.
