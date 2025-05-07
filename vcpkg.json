@@ -1,0 +1,18 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "commonlibsse-plugin",
+  "version-string": "1.0.0",
+  "port-version": 0,
+  "description": "SKSE plugin based on CommonLibSSE, for unified AE/SE/VR deployment.",
+  "features": {
+    "plugin": {
+      "description": "Build the SKSE plugin.",
+      "dependencies": [
+        "commonlibsse-ng",
+        "nlohmann-json",
+        "directxtk"
+      ]
+    }
+  },
+  "default-features": [ "plugin" ]
+}
