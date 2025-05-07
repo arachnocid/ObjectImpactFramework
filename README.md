@@ -72,23 +72,23 @@ The `filter` part decides which objects the rule applies to. Here are the option
 For `"Hit"` events, you can add these extra filters:
 
 - **WeaponsType**: Types of weapons that must hit the object. Use an array:
-  - `"OneHandSword"`
-  - `"TwoHandSword"`
-  - `"OneHandAxe"`
-  - `"TwoHandAxe"`
-  - `"OneHandMace"`
-  - `"TwoHandMace"`
-  - `"Dagger"`
-  - `"Ranged"`
-  - `"Staff"`
-  - `"HandToHand"`
+  - `"onehandsword"`
+  - `"twohandsword"`
+  - `"onehandaxe"`
+  - `"twohandaxe"`
+  - `"onehandmace"`
+  - `"twohandmace"`
+  - `"dagger"`
+  - `"ranged"`
+  - `"staff"`
+  - `"handtohand"`
 
 - **Weapons**: Specific weapon IDs that must be used, in `"modName:formID"` format. Use an array.
 
 - **Attacks**: Type of attack. Use an array:
-  - `"Regular"`
-  - `"Power"`
-  - `"Bash"`
+  - `"regular"`
+  - `"power"`
+  - `"bash"`
  
 - **Projectiles**: Specific projectile IDs, in `"modName:formID"` format. Use an array.
 
@@ -226,7 +226,8 @@ Depending on the `type`, add these:
               {"formID": "Skyrim.esm:00064B31", "count": 1},
               {"formID": "Skyrim.esm:00064B32", "count": 1},
               {"formID": "Skyrim.esm:000669A3", "count": 1}
-      ]
+            ]    
+        },
     },
     {
         "event": ["Hit"],
@@ -240,9 +241,9 @@ Depending on the `type`, add these:
               {"formID": "Skyrim.esm:00064B31", "count": 1},
               {"formID": "Skyrim.esm:00064B32", "count": 1},
               {"formID": "Skyrim.esm:000669A3", "count": 1}
-      ]
+            ]
+        }
     }
-  }
 ]
 ```
 - Hitting or activating any activator spawns different cheeses.
