@@ -1,5 +1,5 @@
 # Object Impact Framework
-ObjectImpactFramework (OIF) is a SKSE plugin that lets you add custom effects to objects when they are activated or hit. You can make things happen like spawning items, casting spells, creating explosions, swapping objects, and more-all controlled with JSON files.
+ObjectImpactFramework (OIF) is a SKSE plugin that lets you add custom effects to objects when they are activated or hit. You can make things happen like spawning items, impact data sets, actors, casting spells, creating explosions, playing sounds, swapping objects - all controlled with JSON files.
 
 # Introduction
 
@@ -109,6 +109,7 @@ The `effect` part says what to do. You can use one effect or a list of effects. 
   - `"SpawnExplosion"`: Spawns an explosion.
   - `"SwapItem"`: Replaces the object with another.
   - `"SwapWithMultipleItems"`: Replaces the object with several items.
+  - `"PlaySound"`: Plays a provided sound descriptor.
 
 - **chance** (optional): A number from 0 to 100 for the chance this effect happens. If not set, it uses the rule’s `chance` or defaults to 100.
 
@@ -120,6 +121,9 @@ Depending on the `type`, add these:
 
 - For `"SpawnSpell"`:
   - **formID**: The spell’s ID, in `"modName:formID"` format.
+ 
+- For `"PlaySound"`:
+  - **formID**: The sound descriptor’s ID, in `"modName:formID"` format.
 
 - For `"SpawnMultipleItems"` and `"SwapWithMultipleItems"`:
   - **items**: A list of objects to spawn, each with:
