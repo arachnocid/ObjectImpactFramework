@@ -11,7 +11,7 @@ This guide explains how to set up those JSON files so you can customize the mod 
 
 - Place your JSON files in: `Data/SKSE/Plugins/ObjectImpactFramework/`.
 - You can modify existing JSON files without quitting the game, edit the file and reload the save.
-- **Everything is case sensitive.** Only events and effect types are capitalized, everything else should remain in camel case (example -> camelCase).
+- **Everything is case sensitive.** Make sure to check the documentation.
 
 ---
 
