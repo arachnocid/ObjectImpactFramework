@@ -3,7 +3,7 @@ ObjectImpactFramework (OIF) is a simple yet powerful SKSE plugin that lets you a
 
 # Introduction
 
-This guide explains how to set up those JSON files so you can customize the mod however you like. It’s designed to be straightforward, even if you’re new to modding.
+This guide explains how to set up those JSON files so you can customize the mod however you like.
 
 ---
 
