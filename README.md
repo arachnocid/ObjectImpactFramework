@@ -11,6 +11,7 @@ This guide explains how to set up those JSON files so you can customize the mod 
 
 - Place your JSON files in: `Data/SKSE/Plugins/ObjectImpactFramework/`.
 - Each file should contain a list (array) of rules. You can have as many JSON files as you want—the mod will load them all.
+- **Everything is case sensitive.** Only events and effect types are capitalized, everything else should remain lower case.
 
 ---
 
