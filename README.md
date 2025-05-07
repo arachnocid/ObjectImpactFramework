@@ -46,7 +46,7 @@ Example of a simple rule:
 
 The `filter` part decides which objects the rule applies to. Here are the options:
 
-- **formType**: Types of objects to match (e.g., `"Weapon"`, `"Container"`). Use an array of these:
+- **formTypes**: Types of objects to match (e.g., `"Weapon"`, `"Container"`). Use an array of these:
   - `"activator"`
   - `"talkingactivator"`
   - `"weapon"`
@@ -71,7 +71,7 @@ The `filter` part decides which objects the rule applies to. Here are the option
 
 For `"Hit"` events, you can add these extra filters:
 
-- **WeaponsType**: Types of weapons that must hit the object. Use an array:
+- **weaponsTypes**: Types of weapons that must hit the object. Use an array:
   - `"onehandsword"`
   - `"twohandsword"`
   - `"onehandaxe"`
@@ -83,15 +83,15 @@ For `"Hit"` events, you can add these extra filters:
   - `"staff"`
   - `"handtohand"`
 
-- **Weapons**: Specific weapon IDs that must be used, in `"modName:formID"` format. Use an array.
+- **weapons**: Specific weapon IDs that must be used, in `"modName:formID"` format. Use an array.
 
-- **Attacks**: Type of attack. Use an array:
+- **attacks**: Type of attack. Use an array:
   - `"regular"`
   - `"power"`
   - `"bash"`
   - `"projectile"`
  
-- **Projectiles**: Specific projectile IDs, in `"modName:formID"` format. Use an array.
+- **projectiles**: Specific projectile IDs, in `"modName:formID"` format. Use an array.
 
 ---
 
