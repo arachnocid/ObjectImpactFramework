@@ -5,6 +5,8 @@
 #include <functional>
 #include <random>
 #include <filesystem>
+#include <shared_mutex>
+#include <mutex>
 #include "RE/Skyrim.h"
 #include "SKSE/SKSE.h"
 
@@ -78,6 +80,9 @@ namespace OIF   // ObjectImpactFramework
 		void Trigger(const RuleContext& ctx);
 
 	private:
+RuleManager(const RuleManager&) = delete;
+RuleManager& operator=(const RuleManager&) = delete;
+
 		RuleManager() = default;
 
 		void ParseJSON(const std::filesystem::path& path);
@@ -88,6 +93,6 @@ namespace OIF   // ObjectImpactFramework
 		static T* GetFormFromIdentifier(const std::string& identifier);
 
 		std::vector<Rule> _rules;
-		mutable std::mutex _ruleMutex;
+		mutable std::shared_mutex _ruleMutex;
 	};
 }

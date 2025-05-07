@@ -58,10 +58,12 @@ namespace OIF::Effects
         caster = ctx.target;
         target = ctx.source; // The spell targets the source (attacker)
 
-        caster->GetMagicCaster(RE::MagicSystem::CastingSource::kInstant)
-                  ->CastSpellImmediate(spell, false,
-                                        target ? target : caster,
-                                       1.0f, false, 0.0f, ctx.source);
+        auto* mc = caster->GetMagicCaster(RE::MagicSystem::CastingSource::kInstant);
+        if (!mc) {
+            logger::error("SpawnSpell: caster has no MagicCaster");
+            return;
+        }
+        mc->CastSpellImmediate(spell, false, target ? target : caster, 1.0f, false, 0.0f, ctx.source);
     }
 
     void SpawnActor(const RuleContext& ctx, RE::TESNPC* npc, std::uint32_t count)

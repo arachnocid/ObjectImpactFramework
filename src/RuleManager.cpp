@@ -4,6 +4,8 @@
 #include <string>
 #include <fstream>
 #include <algorithm>
+#include <ranges>
+#include <shared_mutex>
 #include <cctype>
 
 namespace fs = std::filesystem;
@@ -127,7 +129,7 @@ namespace OIF {
     // ------------------ Load ------------------
     void RuleManager::LoadRules() {
 
-        std::lock_guard lock(_ruleMutex);
+        std::unique_lock lock(_ruleMutex);
         _rules.clear();
         
         const fs::path dir{ "Data/SKSE/Plugins/ObjectImpactFramework" };
@@ -169,16 +171,25 @@ namespace OIF {
             Rule r;
 
             // -------- events ----------
-            if (!jr.contains("event") || !jr["event"].is_array()) {
-                logger::warn("Skipping rule in {}: missing or invalid 'event' field", path.string());
+            if (!jr.contains("event")) {
+                logger::warn("Skipping rule in {}: missing 'event' field", path.string());
                 continue;
             }
-            for (auto const& evVal : jr["event"]) {
-                if (!evVal.is_string())
-                    continue;
-                std::string ev = evVal.get<std::string>();
-                if (ev == "Hit")            r.events.push_back(EventType::kHit);
-                else if (ev == "Activate")  r.events.push_back(EventType::kActivate);
+            std::vector<std::string> evStrings;
+            if (jr["event"].is_string()) {
+                evStrings.push_back(jr["event"].get<std::string>());
+            } else if (jr["event"].is_array()) {
+                for (const auto& evVal : jr["event"]) {
+                    if (evVal.is_string())
+                        evStrings.push_back(evVal.get<std::string>());
+                }
+            } else {
+                logger::warn("Skipping rule in {}: invalid 'event' field", path.string());
+                continue;
+            }
+            for (const auto& ev : evStrings) {
+                if (ev == "Hit")           r.events.push_back(EventType::kHit);
+                else if (ev == "Activate") r.events.push_back(EventType::kActivate);
             }
             if (r.events.empty()) {
                 logger::warn("Skipping rule in {}: no valid events", path.string());
@@ -190,8 +201,8 @@ namespace OIF {
                 const auto& jf = jr["filter"];
 
                 // formTypes
-                if (jf.contains("formType") && jf["formType"].is_array()) {
-                    for (auto const& ft : jf["formType"]) {
+                if (jf.contains("formTypes") && jf["formTypes"].is_array()) {
+                    for (auto const& ft : jf["formTypes"]) {
                         if (ft.is_string())
                             r.filter.formTypes.insert(MapStringToFormType(ft.get<std::string>()));
                     }
@@ -225,8 +236,8 @@ namespace OIF {
                 }
 
                  // WeaponsType filter
-                if (jf.contains("WeaponsType") && jf["WeaponsType"].is_array()) {
-                    for (auto const& wt : jf["WeaponsType"]) {
+                if (jf.contains("weaponsTypes") && jf["weaponsTypes"].is_array()) {
+                    for (auto const& wt : jf["weaponsTypes"]) {
                         if (wt.is_string()) {
                             r.filter.weaponTypes.insert(MapWeaponTypeToString(wt.get<std::string>()));
                         }
@@ -234,8 +245,8 @@ namespace OIF {
                 }
                 
                 // Weapons filter (specific weapons)
-                if (jf.contains("Weapons") && jf["Weapons"].is_array()) {
-                    for (auto const& wf : jf["Weapons"]) {
+                if (jf.contains("weapons") && jf["weapons"].is_array()) {
+                    for (auto const& wf : jf["weapons"]) {
                         if (!wf.is_string())
                             continue;
                         if (auto* weapon = GetFormFromIdentifier<RE::TESObjectWEAP>(wf.get<std::string>())) {
@@ -247,8 +258,8 @@ namespace OIF {
                 }
                 
                 // Projectiles filter
-                if (jf.contains("Projectiles") && jf["Projectiles"].is_array()) {
-                    for (auto const& pf : jf["Projectiles"]) {
+                if (jf.contains("projectiles") && jf["projectiles"].is_array()) {
+                    for (auto const& pf : jf["projectiles"]) {
                         if (!pf.is_string())
                             continue;
                         if (auto* proj = GetFormFromIdentifier<RE::BGSProjectile>(pf.get<std::string>())) {
@@ -260,8 +271,8 @@ namespace OIF {
                 }
                 
                 // Attacks filter
-                if (jf.contains("Attacks") && jf["Attacks"].is_array()) {
-                    for (auto const& at : jf["Attacks"]) {
+                if (jf.contains("attacks") && jf["attacks"].is_array()) {
+                    for (auto const& at : jf["attacks"]) {
                         if (at.is_string()) {
                             r.filter.attackTypes.insert(MapAttackTypeToString(at.get<std::string>()));
                         }
@@ -636,7 +647,7 @@ namespace OIF {
 
     // ------------------ Trigger ------------------
 	void RuleManager::Trigger(const RuleContext& ctx) {
-        std::lock_guard lock(_ruleMutex);
+        std::unique_lock lock(_ruleMutex);
     
         if (!ctx.baseObj) {
             logger::warn("Trigger called with null base object");
