@@ -316,6 +316,7 @@ namespace OIF {
                 else if (typeStr == "SpawnExplosion")       eff.type = EffectType::kSpawnExplosion;
                 else if (typeStr == "SwapItem")             eff.type = EffectType::kSwapItem;
                 else if (typeStr == "SwapWithMultipleItems") eff.type = EffectType::kSwapWithMultipleItems;
+                else if (typeStr == "PlaySound")            eff.type = EffectType::kPlaySound;
                 else {
                     logger::warn("Skipping effect with unknown type '{}' in {}", typeStr, path.string());
                     continue;
@@ -631,6 +632,18 @@ namespace OIF {
                         } else {
                             logger::warn("No valid items to swap in SwapWithMultipleItems effect");
                         }
+                    }
+                    break;
+
+                case EffectType::kPlaySound:
+                    if (!effCopy.form) {
+                        logger::error("No form provided for PlaySound effect");
+                        return;
+                    }
+                    if (auto* sound = effCopy.form->As<RE::BGSSoundDescriptorForm>()) {
+                        Effects::PlaySound(newCtx, sound);
+                    } else {
+                        logger::error("FormID {:08X} is not BGSSoundDescriptorForm", effCopy.form->GetFormID());
                     }
                     break;
 

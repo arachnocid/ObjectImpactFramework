@@ -161,4 +161,20 @@ namespace OIF::Effects
             ctx.target->SetDelete(true);
         }
     }
+
+    void PlaySound(const RuleContext& ctx, RE::BGSSoundDescriptorForm* sound)
+    {
+        if (!ctx.target || !sound)
+            return;
+
+        RE::NiPoint3 pos = ctx.target->GetPosition();
+        RE::BSSoundHandle handle;
+        auto audioManager = RE::BSAudioManager::GetSingleton();
+        if (audioManager && audioManager->BuildSoundDataFromDescriptor(handle, sound, static_cast<std::uint32_t>(1.0f))) {
+            handle.SetPosition(pos);
+            handle.Play();
+        } else {
+            logger::error("Failed to play sound in PlaySound");
+        }
+    }
 }

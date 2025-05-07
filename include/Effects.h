@@ -12,4 +12,5 @@ namespace OIF::Effects
     void SpawnExplosion(const RuleContext& ctx, RE::BGSExplosion* explosion);
     void SwapItem(const RuleContext& ctx, RE::TESBoundObject* item);
     void SwapWithMultipleItems(const RuleContext& ctx, const std::vector<ItemSpawnData>& itemsData);
+    void PlaySound(const RuleContext& ctx, RE::BGSSoundDescriptorForm* sound);
 }
