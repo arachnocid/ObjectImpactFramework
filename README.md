@@ -82,6 +82,7 @@ For `"Hit"` events, you can add these extra filters:
   - `"ranged"`
   - `"staff"`
   - `"handtohand"`
+  - `"spell"`
 
 - **weapons**: Specific weapon IDs that must be used, in `"modName:formID"` format. Use an array.
 
