@@ -23,6 +23,7 @@ Every rule in your JSON file tells the mod what to do. Here’s what each rule n
 - **filter**: Conditions to decide if the rule should run, based on the object.
 - **effect**: What happens when the rule triggers. This can be one effect or a list of effects.
 - **chance** (optional): A number from 0 to 100 for the percentage chance the effects happen. If you skip this, it’s 100% (always happens).
+- **interactions** (optional): A number from 0 to 100 which determines how many interactions it will take for the event to fire. If you skip this, it's 1 (every interaction).
 
 Example of a simple rule:
 ```json
@@ -46,7 +47,7 @@ Example of a simple rule:
 
 The `filter` part decides which objects the rule applies to. Here are the options:
 
-- **formTypes**: Types of objects to match (e.g., `"Weapon"`, `"Container"`). Use an array of these:
+- **formTypes** (optional): Types of objects to match (e.g., `"Weapon"`, `"Container"`). Use an array of these:
   - `"activator"`
   - `"talkingactivator"`
   - `"weapon"`
@@ -54,24 +55,31 @@ The `filter` part decides which objects the rule applies to. Here are the option
   - `"ammo"`
   - `"ingredient"`
   - `"misc"`
+  - `"key"`
   - `"book"`
+  - `"note"`
   - `"scroll"`
   - `"soulgem"`
   - `"potion"`
   - `"furniture"`
+  - `"door"`
   - `"flora"`
   - `"container"`
   - `"static"`
   - `"moveablestatic"`
   - `"tree"`
 
-- **formIDs**: Specific object IDs in the format `"modName:formID"` (e.g., `"Skyrim.esm:0x123456"`). Use an array ([""]). The formID itself can be written as: `0x123456` if the plugin an esp/esm, `0x456` if esl/espfe, `00123456`, or `123456`.
+- **formIDs** (optional): Specific object IDs in the format `"modName:formID"` (e.g., `"Skyrim.esm:0x123456"`). Use an array ([""]). The formID itself can be written as: `0x123456` if the plugin an esp/esm, `0x456` if esl/espfe, `00123456`, or `123456`.
 
-- **keywords**: Keywords the object must have, also in `"modName:formID"` format. Use an array. (Note: Ignored for containers, statics, movable statics, and trees.)
+- **keywords** (optional): Keywords the object must have, also in `"modName:formID"` format. Use an array. (Note: Ignored for containers, statics, movable statics, and trees.)
+
+- **chance** (optional): A number from 0 to 100 for the chance this effect happens. If not set, it uses the rule’s `chance` or defaults to 100.
+
+- **interactions** (optional): A number from 0 to 100 which determines how many interactions it will take for the event to fire. If you skip this, it's 1 (every interaction).
 
 For `"Hit"` events, you can add these extra filters:
 
-- **weaponsTypes**: Types of weapons that must hit the object. Use an array:
+- **weaponsTypes** (optional): Types of weapons that must hit the object. Use an array:
   - `"onehandsword"`
   - `"twohandsword"`
   - `"onehandaxe"`
@@ -83,16 +91,21 @@ For `"Hit"` events, you can add these extra filters:
   - `"staff"`
   - `"handtohand"`
   - `"spell"`
+  - `"total"`
+  - `"other"`
 
-- **weapons**: Specific weapon IDs that must be used, in `"modName:formID"` format. Use an array.
+- **weapons** (optional): Specific weapon IDs that must be used, in `"modName:formID"` format. Use an array.
 
-- **attacks**: Type of attack. Use an array:
+- **attacks** (optional): Type of attack. Use an array:
   - `"regular"`
   - `"power"`
   - `"bash"`
   - `"projectile"`
+  - `"charge"`
+  - `"rotating"`
+  - `"continuous"`
  
-- **projectiles**: Specific projectile IDs, in `"modName:formID"` format. Use an array.
+- **projectiles** (optional): Specific projectile IDs, in `"modName:formID"` format. Use an array.
 
 ---
 
@@ -103,33 +116,21 @@ The `effect` part says what to do. You can use one effect or a list of effects. 
 - **type**: The kind of effect. Choose one:
   - `"RemoveItem"`: Deletes the object.
   - `"SpawnItem"`: Spawns one item.
-  - `"SpawnMultipleItems"`: Spawns several items at once.
   - `"SpawnSpell"`: Casts a spell (the one who activated/hit becomes a target).
+  - `"SpawnSpellOnItem"`: Casts a spell on the target.
   - `"SpawnActor"`: Spawns an actor.
   - `"SpawnImpact"`: Plays an Impact Data Set (NOT a simple impact).
   - `"SpawnExplosion"`: Spawns an explosion.
   - `"SwapItem"`: Replaces the object with another.
-  - `"SwapWithMultipleItems"`: Replaces the object with several items.
   - `"PlaySound"`: Plays a provided sound descriptor.
-
-- **chance** (optional): A number from 0 to 100 for the chance this effect happens. If not set, it uses the rule’s `chance` or defaults to 100.
 
 Depending on the `type`, add these:
 
-- For `"SpawnItem"`, `"SpawnActor"`, `"SpawnImpact"`, `"SpawnExplosion"`, `"SwapItem"`:
-  - **formID**: The ID of the thing to spawn or swap with, in `"modName:formID"` format.
-  - **count** (optional): How many to spawn (default is 1). Used for `"SpawnItem"` and `"SpawnActor"`.
-
-- For `"SpawnSpell"`:
-  - **formID**: The spell’s ID, in `"modName:formID"` format.
- 
-- For `"PlaySound"`:
-  - **formID**: The sound descriptor’s ID, in `"modName:formID"` format.
-
-- For `"SpawnMultipleItems"` and `"SwapWithMultipleItems"`:
-  - **items**: A list of objects to spawn, each with:
+- For each of the `type` except for `"RemoveItem"`:
+  - **items**: A list of objects to spawn or swap, each with:
     - **formID**: The ID, in `"modName:formID"` format.
     - **count** (optional): How many of that item (default is 1).
+    - **chance** (optional): A number from 0 to 100 for the chance this effect happens.
 
 - `"RemoveItem"` doesn’t need extra fields.
 
@@ -140,18 +141,17 @@ Depending on the `type`, add these:
 ### 1. Spawn a Gold Coin When Activating Something
 ```json
 [
-    {
-        "event": ["Activate"],
-        "filter": {
-            "formIDs": ["MyMod.esp:0x12345"]
-        },
-        "effect": {
-            "type": "SpawnItem",
-            "formID": "Skyrim.esm:0xF",
-            "count": 1
-        }
+  {
+    "event": ["Activate"],
+    "effect": {
+       "type": "SpawnItem",
+       "items": [
+	      {"formID": "Skyrim.esm:0xF", "count": 1}
+       ]
     }
+  }
 ]
+
 ```
 - When you activate the object `MyMod.esp:0x12345`, it drops a gold coin.
 
@@ -177,20 +177,15 @@ Depending on the `type`, add these:
     {
         "event": ["Hit"],
         "filter": {
-            "formType": ["container"]
+            "formTypes": ["container"]
         },
         "effect": [
             {
                 "type": "SpawnItem",
-                "formID": "Skyrim.esm:0xF",
-                "count": 5,
-                "chance": 50
-            },
-            {
-                "type": "SpawnItem",
-                "formID": "Skyrim.esm:0xA",
-                "count": 2,
-                "chance": 30
+                "items": [
+                    {"formID": "Skyrim.esm:0xF", "count": 5, "chance": 50"},
+                    {"formID": "Skyrim.esm:0xA", "count": 2, "chance": 30"}
+                ]
             }
         ]
     }
@@ -210,7 +205,7 @@ Depending on the `type`, add these:
         },
         "effect": {
             "type": "SpawnExplosion",
-            "formID": "Skyrim.esm:0x12345"
+            "items" : [{"formID": "Skyrim.esm:0x12345"}]
         }
     }
 ]
@@ -223,11 +218,11 @@ Depending on the `type`, add these:
     {
         "event": ["Hit", "Activate"],
         "filter": {
-            "formType": ["activator", "container"]
+            "formTypes": ["activator", "container"],
+            "chance": 75.0
         },
         "effect": {
-            "type": "SwapWithMultipleItems",
-            "chance": 75.0,
+            "type": "SwapItem",
             "items": [
               {"formID": "Skyrim.esm:00064B31", "count": 1},
               {"formID": "Skyrim.esm:00064B32", "count": 1},
@@ -243,7 +238,7 @@ Depending on the `type`, add these:
 
 ## Extra Tips
 
-- **Where Stuff Appears**: Spawned items, actors, and effects happen at the object’s location. Spells cast from the object toward the player or attacker.
+- **Case sensitivity**: Configuration files are case sensitive, so be careful.
 - **Form IDs Must Match**: Make sure the `formID` fits the effect (e.g., a spell ID for `"SpawnSpell"`, an item ID for `"SpawnItem"`).
 - **Check the Log**: If something doesn’t work, look at the mod’s log file for error messages. The log can be found inside `Documents\My Games\Skyrim Special Edition\SKSE`.
-- **Keywords Note**: For containers, statics, movable statics, and trees, the `keywords` filter is ignored since they don’t use keywords.
+- **Keywords Note**: For containers, doors, statics, movable statics, and trees, the `keywords` filter is ignored since they don’t use keywords.
