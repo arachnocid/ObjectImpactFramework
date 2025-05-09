@@ -118,14 +118,14 @@ The `effect` part says what to do. You can use one effect or a list of effects. 
 
 - **type**: The kind of effect. Choose one:
   - `"RemoveItem"`: Deletes the object.
-  - `"SpawnItem"`: Spawns one item.
-  - `"SpawnSpell"`: Casts a spell (the one who activated/hit becomes a target).
-  - `"SpawnSpellOnItem"`: Casts a spell on the target.
-  - `"SpawnActor"`: Spawns an actor.
-  - `"SpawnImpact"`: Plays an Impact Data Set (NOT a simple impact).
-  - `"SpawnExplosion"`: Spawns an explosion.
+  - `"SpawnItem"`: Spawns items.
+  - `"SpawnSpell"`: Casts spells (the one who activated/hit becomes a target).
+  - `"SpawnSpellOnItem"`: Casts spells on the target object.
+  - `"SpawnActor"`: Spawns actors.
+  - `"SpawnImpact"`: Plays Impact Data Sets (NOT a simple impact).
+  - `"SpawnExplosion"`: Spawns explosions.
   - `"SwapItem"`: Replaces the object with another.
-  - `"PlaySound"`: Plays a provided sound descriptor.
+  - `"PlaySound"`: Plays provided sound descriptors.
 
 Depending on the `type`, add these:
 
