@@ -427,7 +427,7 @@ namespace OIF {
     void RuleManager::ApplyEffect(const Effect& eff, const RuleContext& ctx) const {
         
         if (!ctx.target || !ctx.target->GetBaseObject()) return;
-        
+
         if (OIF::Effects::IsItemProcessed(ctx.target)) return;
         OIF::Effects::MarkItemAsProcessed(ctx.target);
 
@@ -457,7 +457,7 @@ namespace OIF {
                         std::vector<ItemSpawnData> itemsData;
                         for (const auto& [form, extData] : effCopy.items) {
                             if (!form) {
-                                logger::error("No form provided for SpawnMultipleItems effect");
+                                logger::error("No form provided for SpawnItem effect");
                                 continue;
                             }
                             if (std::uniform_real_distribution<float>(0.f, 100.f)(rng) > extData.chance) {
@@ -471,8 +471,6 @@ namespace OIF {
                         }
                         if (!itemsData.empty()) {
                             Effects::SpawnItem(newCtx, itemsData);
-                        } else {
-                            logger::warn("No valid items to spawn in SpawnMultipleItems effect");
                         }
                     }
                     break;
@@ -496,8 +494,6 @@ namespace OIF {
                         }
                         if (!spellsData.empty()) {
                             Effects::SpawnSpell(newCtx, spellsData);
-                        } else {
-                            logger::warn("No valid spells to spawn in SpawnSpell effect");
                         }
                     }
                     break;
@@ -521,8 +517,6 @@ namespace OIF {
                         }
                         if (!spellsData.empty()) {
                             Effects::SpawnSpellOnItem(newCtx, spellsData);
-                        } else {
-                            logger::warn("No valid spells to spawn in SpawnSpellOnItem effect");
                         }
                     }
                     break;
@@ -546,8 +540,6 @@ namespace OIF {
                         }
                         if (!actorsData.empty()) {
                             Effects::SpawnActor(newCtx, actorsData);
-                        } else {
-                            logger::warn("No valid actors to spawn in SpawnActor effect");
                         }
                     }
                     break;
@@ -571,8 +563,6 @@ namespace OIF {
                         }
                         if (!impactsData.empty()) {
                             Effects::SpawnImpact(newCtx, impactsData);
-                        } else {
-                            logger::warn("No valid impacts to spawn in SpawnImpact effect");
                         }
                     }
                     break;
@@ -596,8 +586,6 @@ namespace OIF {
                         }
                         if (!explosionsData.empty()) {
                             Effects::SpawnExplosion(newCtx, explosionsData);
-                        } else {
-                            logger::warn("No valid explosions to spawn in SpawnExplosion effect");
                         }
                     }
                     break;
@@ -621,8 +609,6 @@ namespace OIF {
                         }
                         if (!itemsData.empty()) {
                             Effects::SwapItem(newCtx, itemsData);
-                        } else {
-                            logger::warn("No valid items to swap in SwapWithMultipleItems effect");
                         }
                     }
                     break;
@@ -646,8 +632,6 @@ namespace OIF {
                         }
                         if (!soundsData.empty()) {
                             Effects::PlaySound(newCtx, soundsData);
-                        } else {
-                            logger::warn("No valid sounds to play in PlaySound effect");
                         }
                     }
                     break;
@@ -689,7 +673,7 @@ namespace OIF {
             if (!MatchFilter(r.filter, ctx))
                 continue;
 
-            // Interaction quota (e.g. “hit twice before effect”)
+            // Interaction quota ("hit twice before effect")
             if (r.filter.interactions > 1) {
                 std::uint64_t fKey = (eventKey << 16) | ruleIdx;
                 std::uint32_t& fCnt = _filterInteractionCounts[fKey];
