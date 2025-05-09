@@ -7,11 +7,15 @@ This guide explains how to set up those JSON files so you can customize the mod 
 
 ---
 
-## Where to Put Your JSON Files
+## Important Notes
 
 - Place your JSON files in: `Data/SKSE/Plugins/ObjectImpactFramework/`.
 - You can modify existing JSON files without quitting the game, edit the file and reload the save.
 - **Everything is case sensitive.** Make sure to check the documentation.
+- **Check the Log**: If something doesn’t work, look at the mod’s log file for error messages. The log can be found inside `Documents\My Games\Skyrim Special Edition\SKSE`.
+- **Form IDs Must Match**: Make sure the `formID` fits the effect (e.g., a spell ID for `"SpawnSpell"`, an item ID for `"SpawnItem"`).
+- **Check the Log**: If something doesn’t work, look at the mod’s log file for error messages. The log can be found inside `Documents\My Games\Skyrim Special Edition\SKSE`.
+- **Keywords Note**: For containers, doors, statics, movable statics, and trees, the `keywords` filter is ignored since they don’t use keywords.
 
 ---
 
@@ -35,7 +39,7 @@ Example of a simple rule:
         },
         "effect": {
             "type": "SpawnItem",
-            "formID": "Skyrim.esm:0x123456"
+            "items": [{"formID": "Skyrim.esm:0xF"}]
         }
     }
 ]
@@ -141,15 +145,13 @@ Depending on the `type`, add these:
 ### 1. Spawn a Gold Coin When Activating Something
 ```json
 [
-  {
-    "event": ["Activate"],
-    "effect": {
-       "type": "SpawnItem",
-       "items": [
-	      {"formID": "Skyrim.esm:0xF", "count": 1}
-       ]
+    {
+        "event": ["Activate"],
+        "effect": {
+            "type": "SpawnItem",
+            "items": [{"formID": "Skyrim.esm:0xF"}]
+        }
     }
-  }
 ]
 
 ```
@@ -161,7 +163,7 @@ Depending on the `type`, add these:
     {
         "event": ["Hit"],
         "filter": {
-            "formIDs": ["MyMod.esp:0x67890"]
+            "formTypes": ["static"]
         },
         "effect": {
             "type": "RemoveItem"
@@ -183,8 +185,8 @@ Depending on the `type`, add these:
             {
                 "type": "SpawnItem",
                 "items": [
-                    {"formID": "Skyrim.esm:0xF", "count": 5, "chance": 50"},
-                    {"formID": "Skyrim.esm:0xA", "count": 2, "chance": 30"}
+                    {"formID": "Skyrim.esm:0xF", "count": 5, "chance": 50},
+                    {"formID": "Skyrim.esm:0xA", "count": 2, "chance": 30}
                 ]
             }
         ]
@@ -195,22 +197,22 @@ Depending on the `type`, add these:
   - 50% chance to get 5 gold coins.
   - 30% chance to get 2 lockpicks.
 
-### 4. Explode When Hitting all Staticks
+### 4. Explode When Hitting all Trees
 ```json
 [
     {
         "event": ["Hit"],
         "filter": {
-            "formType": ["static"]
+            "formTypes": ["tree"]
         },
         "effect": {
             "type": "SpawnExplosion",
-            "items" : [{"formID": "Skyrim.esm:0x12345"}]
+            "items": [{"formID": "Skyrim.esm:0x123456"}]
         }
     }
 ]
 ```
-- Hitting any static object (like a rock) causes an explosion.
+- Hitting any tree causes an explosion.
 
 ### 5. Activate AND Hit event for any Activator
 ```json
@@ -228,7 +230,7 @@ Depending on the `type`, add these:
               {"formID": "Skyrim.esm:00064B32", "count": 1},
               {"formID": "Skyrim.esm:000669A3", "count": 1}
             ]    
-        },
+        }
     }
 ]
 ```
@@ -236,9 +238,3 @@ Depending on the `type`, add these:
 
 ---
 
-## Extra Tips
-
-- **Case sensitivity**: Configuration files are case sensitive, so be careful.
-- **Form IDs Must Match**: Make sure the `formID` fits the effect (e.g., a spell ID for `"SpawnSpell"`, an item ID for `"SpawnItem"`).
-- **Check the Log**: If something doesn’t work, look at the mod’s log file for error messages. The log can be found inside `Documents\My Games\Skyrim Special Edition\SKSE`.
-- **Keywords Note**: For containers, doors, statics, movable statics, and trees, the `keywords` filter is ignored since they don’t use keywords.
