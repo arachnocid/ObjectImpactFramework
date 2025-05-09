@@ -14,7 +14,6 @@ This guide explains how to set up those JSON files so you can customize the mod 
 - **Everything is case sensitive.** Make sure to check the documentation.
 - **Check the Log**: If something doesn’t work, look at the mod’s log file for error messages. The log can be found inside `Documents\My Games\Skyrim Special Edition\SKSE`.
 - **Form IDs Must Match**: Make sure the `formID` fits the effect (e.g., a spell ID for `"SpawnSpell"`, an item ID for `"SpawnItem"`).
-- **Check the Log**: If something doesn’t work, look at the mod’s log file for error messages. The log can be found inside `Documents\My Games\Skyrim Special Edition\SKSE`.
 - **Keywords Note**: For containers, doors, statics, movable statics, and trees, the `keywords` filter is ignored since they don’t use keywords.
 
 ---
