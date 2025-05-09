@@ -395,7 +395,8 @@ namespace OIF {
             bool skipKeywordCheck = (ctx.baseObj->GetFormType() == RE::FormType::Container ||
                                      ctx.baseObj->GetFormType() == RE::FormType::Static ||
                                      ctx.baseObj->GetFormType() == RE::FormType::MovableStatic ||
-                                     ctx.baseObj->GetFormType() == RE::FormType::Tree);
+                                     ctx.baseObj->GetFormType() == RE::FormType::Tree ||
+                                     ctx.baseObj->GetFormType() == RE::FormType::Door);
 
             if (!skipKeywordCheck) {
                 if (auto* kwf = ctx.baseObj->As<RE::BGSKeywordForm>()) {
