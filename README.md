@@ -124,16 +124,17 @@ The `effect` part says what to do. You can use one effect or a list of effects. 
   - `"SpawnExplosion"`: Spawns explosions.
   - `"SwapItem"`: Replaces the object with another.
   - `"PlaySound"`: Plays provided sound descriptors.
+  - `"SpillInventory"`: Spills a container's inventory out.
 
 Depending on the `type`, add these:
 
-- For each of the `type` except for `"RemoveItem"`:
+- For each of the `type` except for `"RemoveItem"` and `"SpillInventory"`:
   - **items**: A list of objects to spawn or swap, each with:
     - **formID**: The ID, in `"modName:formID"` format.
     - **count** (optional): How many of that item (default is 1).
     - **chance** (optional): A number from 0 to 100 for the chance this effect happens.
 
-- `"RemoveItem"` doesn’t need extra fields.
+- `"RemoveItem"` and `"SpillInventory"` don’t need extra fields.
 
 ---
 
