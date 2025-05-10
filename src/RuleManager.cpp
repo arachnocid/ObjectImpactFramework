@@ -72,6 +72,31 @@ namespace OIF {
         return it != weaponTypeMap.end() ? it->second : "Other";
     }
 
+    static RE::BGSKeyword* GetKeywordByName(const std::string& keywordName) {
+        if (keywordName.empty()) {
+            logger::warn("Empty keyword name provided");
+            return nullptr;
+        }
+
+        static std::mutex dataHandlerMutex;
+        std::lock_guard<std::mutex> lock(dataHandlerMutex);
+        
+        auto* dh = RE::TESDataHandler::GetSingleton();
+        if (!dh) {
+            logger::error("TESDataHandler not available");
+            return nullptr;
+        }
+    
+        for (auto& keyword : dh->GetFormArray<RE::BGSKeyword>()) {
+            if (keyword && keyword->GetFormEditorID() && 
+                _stricmp(keyword->GetFormEditorID(), keywordName.c_str()) == 0) {
+                return keyword;
+            }
+        }
+        
+        return nullptr;
+    }
+
 	template <class T>
     T* RuleManager::GetFormFromIdentifier(const std::string& identifier) {
 
@@ -239,12 +264,22 @@ namespace OIF {
                 }
 
                 if (jf.contains("keywords") && jf["keywords"].is_array()) {
-                    for (auto const& kwStr : jf["keywords"]) {
-                        if (kwStr.is_string()) {
-                            if (auto* kw = GetFormFromIdentifier<RE::BGSKeyword>(kwStr.get<std::string>())) {
+                    for (auto const& kwEntry : jf["keywords"]) {
+                        if (kwEntry.is_string()) {
+                            std::string kwStr = kwEntry.get<std::string>();
+                            RE::BGSKeyword* kw = nullptr;
+                            
+                            if (kwStr.find(':') != std::string::npos) {
+                                kw = GetFormFromIdentifier<RE::BGSKeyword>(kwStr);
+                            } else {
+                                kw = GetKeywordByName(kwStr);
+                            }
+                            
+                            if (kw) {
                                 r.filter.keywords.insert(kw);
                             } else {
-                                logger::warn("Invalid keyword formID '{}' in filter of {}", kwStr.get<std::string>(), path.string());
+                                logger::warn("Keyword not found: '{}' in keywords filter of {}", 
+                                kwStr, path.string());
                             }
                         }
                     }
@@ -259,6 +294,28 @@ namespace OIF {
                         }
                     }
                 }
+
+                if (jf.contains("weaponsKeywords") && jf["weaponsKeywords"].is_array()) {
+                    for (auto const& kwEntry : jf["weaponsKeywords"]) {
+                        if (kwEntry.is_string()) {
+                            std::string kwStr = kwEntry.get<std::string>();
+                            RE::BGSKeyword* kw = nullptr;
+                
+                            if (kwStr.find(':') != std::string::npos) {
+                                kw = GetFormFromIdentifier<RE::BGSKeyword>(kwStr);
+                            } else {
+                                kw = GetKeywordByName(kwStr);
+                            }
+                
+                            if (kw) {
+                                r.filter.weaponsKeywords.insert(kw);
+                            } else {
+                                logger::warn("Keyword not found: '{}' in weaponsKeywords filter of {}", 
+                                kwStr, path.string());
+                            }
+                        }
+                    }
+                }                
 
                 if (jf.contains("weapons") && jf["weapons"].is_array()) {
                     for (auto const& wf : jf["weapons"]) {
@@ -386,18 +443,17 @@ namespace OIF {
                                      ctx.baseObj->GetFormType() == RE::FormType::Door);
 
             if (!skipKeywordCheck) {
-                if (auto* kwf = ctx.baseObj->As<RE::BGSKeywordForm>()) {
-                    bool has = false;
-                    for (auto* kw : f.keywords) {
-                        if (kw && kwf->HasKeyword(kw)) {
-                            has = true;
-                            break;
-                        }
+                auto* kwf = ctx.baseObj->As<RE::BGSKeywordForm>();
+                if (!kwf) return false;
+                
+                bool hasAny = false;
+                for (auto* kw : f.keywords) {
+                    if (kw && kwf->HasKeyword(kw)) {
+                        hasAny = true;
+                        break;
                     }
-                    if (!has) return false;
-                } else {
-                    return false;
                 }
+                if (!hasAny) return false;
             }
         }
 
@@ -406,6 +462,21 @@ namespace OIF {
             if (!f.weapons.empty() && (!ctx.weapon || f.weapons.find(ctx.weapon) == f.weapons.end())) return false;
             if (!f.projectiles.empty() && (!ctx.projectile || f.projectiles.find(ctx.projectile) == f.projectiles.end())) return false;
             if (!f.attackTypes.empty() && f.attackTypes.find(ctx.attackType) == f.attackTypes.end()) return false;
+            if (!f.weaponsKeywords.empty()) {
+                if (!ctx.weapon) return false;
+
+                auto* kwf = ctx.weapon->As<RE::BGSKeywordForm>();
+                if (!kwf) return false;
+
+                bool hasAny = false;
+                for (auto* kw : f.weaponsKeywords) {
+                    if (kw && kwf->HasKeyword(kw)) {
+                        hasAny = true;
+                        break;
+                    }
+                }
+                if (!hasAny) return false;
+            }
         }
 
         return true;

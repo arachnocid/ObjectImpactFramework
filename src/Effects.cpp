@@ -280,7 +280,6 @@ namespace OIF::Effects
 
         auto* baseObj = containerRef->GetBaseObject();
         if (!baseObj || !baseObj->Is(RE::FormType::Container)) {
-            logger::error("SpillInventory: target is not a container");
             return;
         }
 

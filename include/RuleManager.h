@@ -31,6 +31,7 @@ namespace OIF
 		
 		// New hit-specific filters
 		std::unordered_set<std::string> weaponTypes;          	 	// weapon type categories
+		std::unordered_set<RE::BGSKeyword*> weaponsKeywords;	   	// specific weapon keywords
 		std::unordered_set<RE::TESObjectWEAP*> weapons;       	 	// specific weapons
 		std::unordered_set<RE::BGSProjectile*> projectiles;  	  	// specific projectiles
 		std::unordered_set<std::string> attackTypes;           		// attack types
