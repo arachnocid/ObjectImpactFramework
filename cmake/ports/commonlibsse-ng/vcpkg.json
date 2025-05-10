@@ -1,31 +1,18 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
-  "name": "commonlibsse-ng",
-  "description": "A fork of CommonLibSSE with advanced features for modern SKSE development.",
-  "homepage": "https://github.com/CharmedBaryon/CommonLibSSE",
-  "license": "MIT",
-  "supports": "windows & x64",
-  "dependencies": [
-    {
-      "name": "vcpkg-cmake-config",
-      "host": true
-    },
-    "directxmath",
-    "directxtk",
-    "fmt",
-    "rapidcsv",
-    "spdlog",
-    "xbyak"
-  ],
+  "name": "commonlibsse-plugin",
+  "version-string": "1.0.0",
+  "port-version": 0,
+  "description": "SKSE plugin based on CommonLibSSE, for unified AE/SE/VR deployment.",
   "features": {
-    "tests": {
-      "description": "Build tests for CommonLibSSE.",
+    "plugin": {
+      "description": "Build the SKSE plugin.",
       "dependencies": [
-        "catch2"
+        "commonlibsse-ng",
+        "nlohmann-json",
+        "directxtk"
       ]
     }
   },
-  "default-features": [
-    "tests"
-  ]
+  "default-features": [ "plugin" ]
 }
