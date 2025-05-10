@@ -26,15 +26,6 @@ namespace OIF::Effects
         processedItems.insert(id);
     }
 
-    void RemoveItemFromProcessed(RE::TESObjectREFR* item)
-    {
-        if (!item)
-            return;
-        const auto id = item->GetFormID();
-        std::lock_guard lock(processedItemsMutex);
-        processedItems.erase(id);
-    }
-
     void ClearProcessedItems()
     {
         std::lock_guard lock(processedItemsMutex);
@@ -49,9 +40,6 @@ namespace OIF::Effects
             return;
         }
 
-        if (OIF::Effects::IsItemProcessed(ctx.target))
-            return;
-
         ctx.target->Disable();
         ctx.target->SetDelete(true);
     }
@@ -62,9 +50,6 @@ namespace OIF::Effects
             logger::error("SpawnMultipleItems: No target to spawn items");
             return;
         }
-
-        if (OIF::Effects::IsItemProcessed(ctx.target))
-            return;
 
         for (const auto& itemData : itemsData) {
             if (!itemData.item)
@@ -82,9 +67,6 @@ namespace OIF::Effects
             logger::error("SpawnSpell: No source or spells to spawn");
             return;
         }
-
-        if (OIF::Effects::IsItemProcessed(ctx.target))
-            return;
 
         RE::TESObjectREFR* caster = ctx.target;
         RE::TESObjectREFR* target = ctx.source; // The spell targets the source (attacker)
@@ -122,9 +104,6 @@ namespace OIF::Effects
             return;
         }
 
-        if (OIF::Effects::IsItemProcessed(ctx.target))
-            return;
-
         RE::TESObjectREFR* caster = ctx.source;
         RE::TESObjectREFR* target = ctx.target;
 
@@ -161,9 +140,6 @@ namespace OIF::Effects
             return;
         }
 
-        if (OIF::Effects::IsItemProcessed(ctx.target))
-            return;
-
         for (const auto& actorData : actorsData) {
             if (!actorData.npc)
                 continue;
@@ -180,9 +156,6 @@ namespace OIF::Effects
             logger::error("SpawnImpact: No target or impacts to spawn");
             return;
         }
-
-        if (OIF::Effects::IsItemProcessed(ctx.target))
-            return;
 
         auto* im = RE::BGSImpactManager::GetSingleton();
         if (!im)
@@ -227,9 +200,6 @@ namespace OIF::Effects
             return;
         }
 
-        if (OIF::Effects::IsItemProcessed(ctx.target))
-            return;
-
         for (const auto& explosionData : explosionsData) {
             if (!explosionData.explosion)
                 continue;
@@ -246,9 +216,6 @@ namespace OIF::Effects
             logger::error("SwapWithMultipleItems: No target to swap items");
             return;
         }
-
-        if (OIF::Effects::IsItemProcessed(ctx.target))
-            return;
 
         bool anyItemSpawned = false;
 
@@ -276,9 +243,6 @@ namespace OIF::Effects
             return;
         }
 
-        if (OIF::Effects::IsItemProcessed(ctx.target))
-            return;
-
         RE::NiPoint3 pos = ctx.target->GetPosition();
         RE::BSSoundHandle handle;
         auto* audioManager = RE::BSAudioManager::GetSingleton();
@@ -300,6 +264,43 @@ namespace OIF::Effects
                     logger::error("PlaySound: Failed to play sound");
                 }
             }
+        }
+    }
+
+    void SpillInventory(const RuleContext& ctx)
+    {
+        using RE::TESBoundObject;
+        using RE::ITEM_REMOVE_REASON;
+
+        auto* containerRef = ctx.target;
+        if (!containerRef) {
+            logger::error("SpillInventory: No target to spill inventory");
+            return;
+        }
+
+        auto* baseObj = containerRef->GetBaseObject();
+        if (!baseObj || !baseObj->Is(RE::FormType::Container)) {
+            logger::error("SpillInventory: target is not a container");
+            return;
+        }
+
+        std::vector<std::pair<TESBoundObject*, std::int32_t>> toDrop;
+        for (auto& [obj, data] : containerRef->GetInventory()) {
+            auto count = static_cast<std::int32_t>(data.first);
+            if (obj && count > 0) {
+                toDrop.emplace_back(obj, count);
+            }
+        }
+
+        if (toDrop.empty())
+            return;
+
+        NiPoint3 dropPos = containerRef->GetPosition();
+        NiPoint3 dropAngle = containerRef->GetAngle();
+        dropPos.z += 10.0f;
+
+        for (auto& [obj, count] : toDrop) {
+            containerRef->RemoveItem(obj, count, ITEM_REMOVE_REASON::kDropping, nullptr, containerRef, &dropPos, &dropAngle);
         }
     }
 }

@@ -17,7 +17,7 @@ namespace OIF
 	// ---------------------- Enums ----------------------
 	enum class EventType { kActivate, kHit };
 
-	enum class EffectType { kDisposeItem, kSpawnItem, kSpawnSpell, kSpawnSpellOnItem, kSpawnActor, kSpawnImpact, kSpawnExplosion, kSwapItem, kPlaySound };
+	enum class EffectType { kDisposeItem, kSpawnItem, kSpawnSpell, kSpawnSpellOnItem, kSpawnActor, kSpawnImpact, kSpawnExplosion, kSwapItem, kPlaySound, kSpillInventory };
 
 	// ---------------------- Filer ----------------------
 	struct Filter

@@ -6,7 +6,6 @@ namespace OIF::Effects
     // ------------------ Helpers ------------------
     bool IsItemProcessed(RE::TESObjectREFR* item);
     void MarkItemAsProcessed(RE::TESObjectREFR* item);
-    void RemoveItemFromProcessed(RE::TESObjectREFR* item);
     void ClearProcessedItems();
 
     // ------------------ Effects ------------------
@@ -19,4 +18,5 @@ namespace OIF::Effects
     void SpawnExplosion(const RuleContext& ctx, const std::vector<ExplosionSpawnData>& explosionsData);
     void SwapItem(const RuleContext& ctx, const std::vector<ItemSpawnData>& itemsData);
     void PlaySound(const RuleContext& ctx, const std::vector<SoundSpawnData>& soundsData);
+    void SpillInventory(const RuleContext& ctx);
 }

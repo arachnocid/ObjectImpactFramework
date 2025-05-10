@@ -1,15 +1,6 @@
 #include "RuleManager.h"
 #include "Effects.h"
 #include <nlohmann/json.hpp>
-#include <string>
-#include <fstream>
-#include <algorithm>
-#include <ranges>
-#include <shared_mutex>
-#include <chrono>
-#include <unordered_map>
-#include <cctype>
-#include <functional>
 
 namespace fs = std::filesystem;
 using json = nlohmann::json;
@@ -330,7 +321,8 @@ namespace OIF {
                 {"SpawnImpact", EffectType::kSpawnImpact},
                 {"SpawnExplosion", EffectType::kSpawnExplosion},
                 {"SwapItem", EffectType::kSwapItem},
-                {"PlaySound", EffectType::kPlaySound}
+                {"PlaySound", EffectType::kPlaySound},
+                {"SpillInventory", EffectType::kSpillInventory}
             };
 
             for (const auto& effj : effectArray) {
@@ -349,13 +341,8 @@ namespace OIF {
                 // chance
                 eff.chance = effj.value("chance", r.filter.chance);
 
-                // count
-                if (eff.type == EffectType::kSpawnItem || eff.type == EffectType::kDisposeItem) {
-                    eff.count = effj.value("count", 1U);
-                }
-
                 // items
-                if (eff.type != EffectType::kDisposeItem) {
+                if (eff.type != EffectType::kDisposeItem && eff.type != EffectType::kSpillInventory) {
                     if (effj.contains("items") && effj["items"].is_array()) {
                         for (const auto& itemJson : effj["items"]) {
                             if (!itemJson.is_object() || !itemJson.contains("formID") || !itemJson["formID"].is_string()) continue;
@@ -426,12 +413,8 @@ namespace OIF {
 
     // ------------------ Apply ------------------
     void RuleManager::ApplyEffect(const Effect& eff, const RuleContext& ctx) const {
-        
         if (!ctx.target || !ctx.target->GetBaseObject()) return;
-
-        if (OIF::Effects::IsItemProcessed(ctx.target)) return;
-        OIF::Effects::MarkItemAsProcessed(ctx.target);
-
+        
         static thread_local std::mt19937 rng(std::random_device{}());
         if (std::uniform_real_distribution<float>(0.f, 100.f)(rng) > eff.chance) return;
 
@@ -637,6 +620,10 @@ namespace OIF {
                     }
                     break;
 
+                case EffectType::kSpillInventory:
+                    Effects::SpillInventory(newCtx);
+                    break;
+
                 default:
                     logger::warn("Unknown effect type {}", static_cast<int>(effCopy.type));
                 }
@@ -645,7 +632,6 @@ namespace OIF {
             } catch (...) {
                 logger::error("Unknown exception in effect task");
             }
-            OIF::Effects::RemoveItemFromProcessed(target);
         });
     }
 
@@ -653,8 +639,10 @@ namespace OIF {
     void RuleManager::Trigger(const RuleContext& ctx)
     {
         std::unique_lock lock(_ruleMutex);
-        if (!ctx.target || !ctx.source)
-            return;
+        if (!ctx.target || !ctx.source) return;
+
+        if (OIF::Effects::IsItemProcessed(ctx.target)) return;
+        OIF::Effects::MarkItemAsProcessed(ctx.target);
 
         // Unique key for interaction counters
         const std::uint64_t eventKey =
