@@ -156,7 +156,7 @@ Depending on the `type`, add these:
 ]
 
 ```
-- When you activate the object `MyMod.esp:0x12345`, it drops a gold coin.
+- When you activate an object, it drops a gold coin.
 
 ### 2. Delete an Object When Hit
 ```json
@@ -172,7 +172,7 @@ Depending on the `type`, add these:
     }
 ]
 ```
-- When you hit an item `MyMod.esp:0x67890`, it disappears.
+- When you hit a static item, it disappears.
 
 ### 3. Spawn Items with a Chance
 ```json
