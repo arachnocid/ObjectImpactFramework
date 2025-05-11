@@ -125,6 +125,7 @@ The `effect` part says what to do. You can use one effect or a list of effects. 
   - `"SpawnImpact"`: Plays Impact Data Sets (NOT a simple impact).
   - `"SpawnExplosion"`: Spawns explosions.
   - `"SwapItem"`: Replaces the object with another.
+  - `"SwapActor"`: Replaces the object with actors.
   - `"PlaySound"`: Plays provided sound descriptors.
   - `"SpillInventory"`: Spills a container's inventory out.
 
