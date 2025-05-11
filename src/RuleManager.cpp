@@ -379,7 +379,8 @@ namespace OIF {
                 {"SpawnExplosion", EffectType::kSpawnExplosion},
                 {"SwapItem", EffectType::kSwapItem},
                 {"PlaySound", EffectType::kPlaySound},
-                {"SpillInventory", EffectType::kSpillInventory}
+                {"SpillInventory", EffectType::kSpillInventory},
+                {"SwapActor", EffectType::kSwapActor}
             };
 
             for (const auto& effj : effectArray) {
@@ -693,6 +694,29 @@ namespace OIF {
 
                 case EffectType::kSpillInventory:
                     Effects::SpillInventory(newCtx);
+                    break;
+
+                case EffectType::kSwapActor:
+                    {
+                        std::vector<ActorSpawnData> actorsData;
+                        for (const auto& [form, extData] : effCopy.items) {
+                            if (!form) {
+                                logger::error("No form provided for SwapActor effect");
+                                continue;
+                            }
+                            if (std::uniform_real_distribution<float>(0.f, 100.f)(rng) > extData.chance) {
+                                continue;
+                            }
+                            if (auto* actor = form->As<RE::TESNPC>()) {
+                                actorsData.emplace_back(actor, extData.count);
+                            } else {
+                                logger::error("FormID {:08X} is not TESNPC", form->GetFormID());
+                            }
+                        }
+                        if (!actorsData.empty()) {
+                            Effects::SwapActor(newCtx, actorsData);
+                        }
+                    }
                     break;
 
                 default:

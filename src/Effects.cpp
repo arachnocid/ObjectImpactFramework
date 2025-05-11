@@ -47,7 +47,7 @@ namespace OIF::Effects
     void SpawnItem(const RuleContext& ctx, const std::vector<ItemSpawnData>& itemsData)
     {
         if (!ctx.target) {
-            logger::error("SpawnMultipleItems: No target to spawn items");
+            logger::error("SpawnItem: No target to spawn items");
             return;
         }
 
@@ -56,7 +56,7 @@ namespace OIF::Effects
                 continue;
 
             for (std::uint32_t i = 0; i < itemData.count; ++i) {
-                ctx.target->PlaceObjectAtMe(itemData.item, false);
+                ctx.target->PlaceObjectAtMe(itemData.item, true);
             }
         }
     }
@@ -136,7 +136,7 @@ namespace OIF::Effects
     void SpawnActor(const RuleContext& ctx, const std::vector<ActorSpawnData>& actorsData)
     {
         if (!ctx.target) {
-            logger::error("SpawnMultipleActors: No target to spawn actors");
+            logger::error("SpawnActor: No target to spawn actors");
             return;
         }
 
@@ -145,7 +145,10 @@ namespace OIF::Effects
                 continue;
 
             for (std::uint32_t i = 0; i < actorData.count; ++i) {
-                ctx.target->PlaceObjectAtMe(actorData.npc, false);
+                RE::NiPointer<RE::TESObjectREFR> npc = ctx.target->PlaceObjectAtMe(actorData.npc, true);
+                if (npc) {
+                    npc->MoveTo(ctx.target);
+                }
             }
         }
     }
@@ -213,7 +216,7 @@ namespace OIF::Effects
     void SwapItem(const RuleContext& ctx, const std::vector<ItemSpawnData>& itemsData)
     {
         if (!ctx.target) {
-            logger::error("SwapWithMultipleItems: No target to swap items");
+            logger::error("SwapItem: No target to swap items");
             return;
         }
 
@@ -224,7 +227,7 @@ namespace OIF::Effects
                 continue;
 
             for (std::uint32_t i = 0; i < itemData.count; ++i) {
-                if (ctx.target->PlaceObjectAtMe(itemData.item, false)) {
+                if (ctx.target->PlaceObjectAtMe(itemData.item, true)) {
                     anyItemSpawned = true;
                 }
             }
@@ -279,7 +282,7 @@ namespace OIF::Effects
         }
 
         auto* baseObj = containerRef->GetBaseObject();
-        if (!baseObj || !baseObj->Is(RE::FormType::Container)) {
+        if (!baseObj || (!baseObj->Is(RE::FormType::Container))) {
             return;
         }
 
@@ -300,6 +303,34 @@ namespace OIF::Effects
 
         for (auto& [obj, count] : toDrop) {
             containerRef->RemoveItem(obj, count, ITEM_REMOVE_REASON::kDropping, nullptr, containerRef, &dropPos, &dropAngle);
+        }
+    }
+
+    void SwapActor(const RuleContext& ctx, const std::vector<ActorSpawnData>& actorsData)
+    {
+        if (!ctx.target) {
+            logger::error("SwapActor: No target to swap actors");
+            return;
+        }
+
+        bool anyActorSpawned = false;
+
+        for (const auto& actorData : actorsData) {
+            if (!actorData.npc)
+                continue;
+
+            for (std::uint32_t i = 0; i < actorData.count; ++i) {
+                RE::NiPointer<RE::TESObjectREFR> npc = ctx.target->PlaceObjectAtMe(actorData.npc, true);
+                if (npc) {
+                    npc->MoveTo(ctx.target);
+                    anyActorSpawned = true;
+                }
+            }
+        }
+
+        if (anyActorSpawned) {
+            ctx.target->Disable();
+            ctx.target->SetDelete(true);
         }
     }
 }

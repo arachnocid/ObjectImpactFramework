@@ -19,4 +19,5 @@ namespace OIF::Effects
     void SwapItem(const RuleContext& ctx, const std::vector<ItemSpawnData>& itemsData);
     void PlaySound(const RuleContext& ctx, const std::vector<SoundSpawnData>& soundsData);
     void SpillInventory(const RuleContext& ctx);
+    void SwapActor(const RuleContext& ctx, const std::vector<ActorSpawnData>& actorsData);
 }
