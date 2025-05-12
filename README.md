@@ -11,7 +11,6 @@ This guide explains how to set up those JSON files so you can customize the mod 
 
 - Place your JSON files in: `Data/SKSE/Plugins/ObjectImpactFramework/`.
 - You can modify existing JSON files without quitting the game, edit the file and reload the save.
-- **Everything is case sensitive.** Make sure to check the documentation.
 - **Check the Log**: If something doesn’t work, look at the mod’s log file for error messages. The log can be found inside `Documents\My Games\Skyrim Special Edition\SKSE`.
 - **Form IDs Must Match**: Make sure the `formID` fits the effect (e.g., a spell ID for `"SpawnSpell"`, an item ID for `"SpawnItem"`).
 - **Keywords Note**: For containers, doors, statics, movable statics, and trees, the `keywords` filter is ignored since they don’t use keywords.
@@ -61,7 +60,7 @@ The `filter` part decides which objects the rule applies to. Here are the option
   - `"note"`
   - `"scroll"`
   - `"soulgem"`
-  - `"potion"`
+  - `"potion"`     (potions, poisons, food, and drinks are covered)
   - `"furniture"`
   - `"door"`
   - `"flora"`
@@ -92,6 +91,9 @@ For `"Hit"` events, you can add these extra filters:
   - `"staff"`
   - `"handtohand"`
   - `"spell"`
+  - `"ability"`
+  - `"power"`
+  - `"lesserpower"`
   - `"total"`
   - `"other"`
 
