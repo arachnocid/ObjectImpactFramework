@@ -71,7 +71,7 @@ The `filter` part decides which objects the rule applies to. Here are the option
 
 - **formIDs** (optional): Specific object IDs in the format `"modName:formID"` (e.g., `"Skyrim.esm:0x123456"`). Use an array ([""]). The formID itself can be written as: `0x123456` if the plugin an esp/esm, `0x456` if esl/espfe, `00123456`, or `123456`.
 
-- **keywords** (optional): Keywords the object must have, also in `"modName:formID"` or `"KeywordName"` (non-case sensitive) formats. Use an array. (Note: Ignored for containers, statics, movable statics, and trees.)
+- **keywords** (optional): Keywords the object must have, also in `"modName:formID"` or `"KeywordName"` formats. Use an array. (Note: Ignored for containers, statics, movable statics, and trees.)
 
 - **chance** (optional): A number from 0 to 100 for the chance this effect happens. If not set, it uses the rule’s `chance` or defaults to 100.
 
@@ -99,7 +99,7 @@ For `"Hit"` events, you can add these extra filters:
 
 - **weapons** (optional): Specific weapon IDs that must be used, in `"modName:formID"` format. Use an array.
 
-- **weaponsKeywords** (optional): Keywords that the weapon/spell must have, in `"modName:formID"` or `"KeywordName"` (non-case sensitive) formats. Use an array.
+- **weaponsKeywords** (optional): Keywords that the weapon/spell must have, in `"modName:formID"` or `"KeywordName"` formats. Use an array.
 
 - **attacks** (optional): Type of attack. Use an array:
   - `"regular"`
