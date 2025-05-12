@@ -1,4 +1,6 @@
 #include "EventSinks.h"
+#include "RE/Skyrim.h"
+#include "SKSE/SKSE.h"
 
 namespace OIF
 {
@@ -14,6 +16,10 @@ namespace OIF
         Ranged,
         Staff,
         Spell,
+        Shout,
+        Ability,
+        LesserPower,
+        Power,
         Total,
         Other
     };
@@ -108,59 +114,69 @@ namespace OIF
         RE::BGSProjectile* projectile = nullptr;
         WeaponType weaponType = WeaponType::Other;
         AttackType attackType = AttackType::Regular;
+
+        RE::TESForm* hitSourceForm = evn->source ? RE::TESForm::LookupByID(evn->source) : nullptr;
+
+        RE::HighProcessData* highData = nullptr;
+        if (auto* actorState = source->GetActorRuntimeData().currentProcess) {
+            if (actorState->high) {
+                highData = actorState->high;
+                if (highData->attackData) {
+                    attackType = GetAttackType(highData->attackData.get(), projectile);
+                }
+            }
+        }
         
         if (source) {
             
-            // Determine equipped objects in both hands
-            RE::TESForm* rightObj = source->GetEquippedObject(false);  // Right hand
-            RE::TESForm* leftObj  = source->GetEquippedObject(true);   // Left hand
-
-            // Resolve the form that generated the hit
-            RE::TESForm* hitSourceForm = evn->source ? RE::TESForm::LookupByID(evn->source) : nullptr;
+            RE::TESForm* rightObj = source->GetEquippedObject(false);
+            RE::TESForm* leftObj  = source->GetEquippedObject(true);
 
             bool leftHandAttack  = hitSourceForm && leftObj  && (hitSourceForm == leftObj);
             bool rightHandAttack = hitSourceForm && rightObj && (hitSourceForm == rightObj);
 
-            // Select weapon based on attacking hand
             if (leftHandAttack) {
                 weapon = leftObj ? leftObj->As<RE::TESObjectWEAP>() : nullptr;
             } else if (rightHandAttack) {
                 weapon = rightObj ? rightObj->As<RE::TESObjectWEAP>() : nullptr;
             }
 
-            // Retrieve attack and projectile data with null safety
-            if (auto* actorState = source->GetActorRuntimeData().currentProcess) {
-                if (auto* highData = actorState->high) {
-                    if (highData->attackData) {
-                        attackType = GetAttackType(highData->attackData.get(), nullptr);
+            if (weapon) {
+                weaponType = GetWeaponType(weapon);
+            } else if (hitSourceForm) {
+                if (auto* spell = hitSourceForm->As<RE::SpellItem>()) {
+                    switch (spell->GetSpellType()) {
+                        case RE::MagicSystem::SpellType::kSpell:        weaponType = WeaponType::Spell;        break;
+                        case RE::MagicSystem::SpellType::kVoicePower:   weaponType = WeaponType::Shout;        break;
+                        case RE::MagicSystem::SpellType::kAbility:      weaponType = WeaponType::Ability;      break;
+                        case RE::MagicSystem::SpellType::kLesserPower:  weaponType = WeaponType::LesserPower;  break;
+                        case RE::MagicSystem::SpellType::kPower:        weaponType = WeaponType::Power;        break;
+                        default:                                        weaponType = WeaponType::Other;        break;
                     }
-                    if (highData->muzzleFlash && highData->muzzleFlash->baseProjectile) {
-                        projectile = highData->muzzleFlash->baseProjectile;
-                        attackType = AttackType::Projectile;
+                }
+            } else {
+                for (auto cs : {
+                    RE::MagicSystem::CastingSource::kLeftHand,
+                    RE::MagicSystem::CastingSource::kRightHand,
+                    RE::MagicSystem::CastingSource::kOther,
+                    RE::MagicSystem::CastingSource::kInstant })
+                {
+                    if (auto* mc = source->GetMagicCaster(cs)) {
+                        if (auto* spell = mc->currentSpell) {
+                            switch (spell->GetSpellType()) {
+                                case RE::MagicSystem::SpellType::kSpell:        weaponType = WeaponType::Spell;        break;
+                                case RE::MagicSystem::SpellType::kVoicePower:   weaponType = WeaponType::Shout;        break;
+                                case RE::MagicSystem::SpellType::kAbility:      weaponType = WeaponType::Ability;      break;
+                                case RE::MagicSystem::SpellType::kLesserPower:  weaponType = WeaponType::LesserPower;  break;
+                                case RE::MagicSystem::SpellType::kPower:        weaponType = WeaponType::Power;        break;
+                                default:                                        weaponType = WeaponType::Other;        break;
+                            }
+                        }
                     }
                 }
             }
-
-            // Spell detection per hand
-            bool leftSpell = false;
-            bool rightSpell = false;
-            if (auto* magicCasterLeft = source->GetMagicCaster(RE::MagicSystem::CastingSource::kLeftHand)) {
-                leftSpell = magicCasterLeft->currentSpell != nullptr;
-            }
-            if (auto* magicCasterRight = source->GetMagicCaster(RE::MagicSystem::CastingSource::kRightHand)) {
-                rightSpell = magicCasterRight->currentSpell != nullptr;
-            }
-
-            // Determine weapon type
-            if (weapon) {
-                weaponType = GetWeaponType(weapon);
-            } else if ((leftHandAttack && leftSpell) || (rightHandAttack && rightSpell) || (!weapon && (leftSpell || rightSpell))) {
-                weaponType = WeaponType::Spell;
-                weapon = nullptr;  // Spells are not weapons
-            }
         }
 
-        // Convert enums to strings for RuleContext compatibility
         std::string weaponTypeStr;
         switch (weaponType) {
             case WeaponType::HandToHand:   weaponTypeStr = "HandToHand";   break;
@@ -173,6 +189,11 @@ namespace OIF
             case WeaponType::Ranged:       weaponTypeStr = "Ranged";       break;
             case WeaponType::Staff:        weaponTypeStr = "Staff";        break;
             case WeaponType::Spell:        weaponTypeStr = "Spell";        break;
+            case WeaponType::Shout:        weaponTypeStr = "Shout";        break;
+            case WeaponType::Ability:      weaponTypeStr = "Ability";      break;
+            case WeaponType::LesserPower:  weaponTypeStr = "LesserPower";  break;
+            case WeaponType::Power:        weaponTypeStr = "Power";        break;
+            case WeaponType::Total:        weaponTypeStr = "Total";        break;
             default:                       weaponTypeStr = "Other";        break;
         }
 

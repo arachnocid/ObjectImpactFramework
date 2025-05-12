@@ -32,6 +32,16 @@ namespace OIF::Effects
         processedItems.clear();
     }
 
+    void CopyOwnership(RE::TESObjectREFR* from, RE::TESObjectREFR* to)
+    {
+        if (!from || !to || !from->GetOwner()) return;
+
+        if (auto* owner = from->GetOwner()) {
+            to->SetOwner(owner);
+        }
+    }
+
+
     // ------------------ Effects ------------------
     void DisposeItem(const RuleContext& ctx)
     {
@@ -56,7 +66,8 @@ namespace OIF::Effects
                 continue;
 
             for (std::uint32_t i = 0; i < itemData.count; ++i) {
-                ctx.target->PlaceObjectAtMe(itemData.item, true);
+                RE::NiPointer<RE::TESObjectREFR> item = ctx.target->PlaceObjectAtMe(itemData.item, true);
+                CopyOwnership(ctx.target, item.get());
             }
         }
     }
@@ -100,7 +111,7 @@ namespace OIF::Effects
     void SpawnSpellOnItem(const RuleContext& ctx, const std::vector<SpellSpawnData>& spellsData)
     {
         if (!ctx.source || spellsData.empty()) {
-            logger::error("SpawnSpell: No source or spells to spawn");
+            logger::error("SpawnSpellOnItem: No source or spells to spawn");
             return;
         }
 
@@ -227,11 +238,13 @@ namespace OIF::Effects
                 continue;
 
             for (std::uint32_t i = 0; i < itemData.count; ++i) {
-                if (ctx.target->PlaceObjectAtMe(itemData.item, true)) {
-                    anyItemSpawned = true;
+                RE::NiPointer<RE::TESObjectREFR> item = (ctx.target->PlaceObjectAtMe(itemData.item, true));
+                    if (item) {
+                        anyItemSpawned = true;
+                        CopyOwnership(ctx.target, item.get());
+                    }
                 }
             }
-        }
 
         if (anyItemSpawned) {
             ctx.target->Disable();

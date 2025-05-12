@@ -1,6 +1,4 @@
 #pragma once
-#include "RE/Skyrim.h"
-#include "SKSE/SKSE.h"
 #include "RuleManager.h"
 
 namespace OIF

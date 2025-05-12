@@ -1,23 +1,27 @@
 #pragma once
-#include <vector>
-#include <string>
-#include <unordered_set>
-#include <unordered_map>
-#include <chrono>
-#include <functional>
-#include <random>
-#include <filesystem>
 #include <shared_mutex>
-#include <mutex>
-#include "RE/Skyrim.h"
-#include "SKSE/SKSE.h"
 
 namespace OIF
 {
 	// ---------------------- Enums ----------------------
-	enum class EventType { kActivate, kHit };
+	enum class EventType { 
+		kActivate, 
+		kHit 
+	};
 
-	enum class EffectType { kDisposeItem, kSpawnItem, kSpawnSpell, kSpawnSpellOnItem, kSpawnActor, kSpawnImpact, kSpawnExplosion, kSwapItem, kPlaySound, kSpillInventory, kSwapActor };
+	enum class EffectType { 
+		kDisposeItem, 
+		kSpawnItem, 
+		kSpawnSpell, 
+		kSpawnSpellOnItem, 
+		kSpawnActor, 
+		kSpawnImpact, 
+		kSpawnExplosion, 
+		kSwapItem, 
+		kPlaySound, 
+		kSpillInventory, 
+		kSwapActor
+	};
 
 	// ---------------------- Filer ----------------------
 	struct Filter
@@ -41,16 +45,18 @@ namespace OIF
 	// ---------------------- Effect ----------------------
 	struct EffectExtendedData
 	{
-		RE::TESForm* form{ nullptr };  							   			// the thing to spawn / cast / play
-		std::uint32_t count{ 1 };      							   			// the amount for SpawnItem / SpawnActor
+		RE::TESForm* form{ nullptr };  							   			// the thing to spawn/cast/play
+		std::uint32_t count{ 1 };      							   			// the amount of items to spawn/cast/play
 		float chance{ 100.f };         							   			// the chance of 0‑100 %
+		float duration{ -1.f };												// the duration for effect shaders
+		RE::NiAVObject* attachNode{ nullptr };								// the node to attach
 	};
 
 	struct Effect
 	{
 		EffectType type{ EffectType::kSpawnItem };
-		RE::TESForm* form{ nullptr };  							   			// the thing to spawn / cast / play
-		std::uint32_t count{ 1 };      							   			// the amount for SpawnItem / SpawnActor
+		RE::TESForm* form{ nullptr };  							   			// the thing to spawn/cast/play
+		std::uint32_t count{ 1 };      							   			// the amount of items to spawn/cast/play
 		float chance{ 100.f };         							   			// the chance of 0‑100 %
 		std::vector<std::pair<RE::TESForm*, EffectExtendedData>> items;		// the vector of items to utilize
 		std::uint32_t interactions{1};										// number of interactions required to satisfy filter
@@ -151,7 +157,6 @@ namespace OIF
 
 		std::vector<Rule> _rules;
 		mutable std::shared_mutex _ruleMutex;
-		std::unordered_map<std::uint64_t, std::chrono::steady_clock::time_point>  _recentRuleHits;	// dedup map
-		std::unordered_map<uint64_t, uint32_t> _filterInteractionCounts; 							// counts for filters
+		std::unordered_map<uint64_t, uint32_t> _filterInteractionCounts;	// counts for filters
 	};
 }

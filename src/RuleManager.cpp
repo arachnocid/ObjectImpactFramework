@@ -1,9 +1,41 @@
 #include "RuleManager.h"
 #include "Effects.h"
 #include <nlohmann/json.hpp>
+#include <ranges>
+#include <algorithm>
+#include <cctype>
 
 namespace fs = std::filesystem;
 using json = nlohmann::json;
+
+// ------------------ Case‑insensitive helpers ------------------
+namespace {
+
+    inline std::string tolower_str(std::string_view a_str)
+    {
+        std::string result(a_str);
+        std::ranges::transform(result, result.begin(), [](unsigned char ch) {
+            return static_cast<unsigned char>(std::tolower(ch));
+        });
+        return result;
+    }
+
+    json lower_keys(const json& j)
+    {
+        if (j.is_object()) {
+            json res = json::object();
+            for (auto it = j.begin(); it != j.end(); ++it)
+                res[tolower_str(it.key())] = lower_keys(it.value());
+            return res;
+        } else if (j.is_array()) {
+            json arr = json::array();
+            for (const auto& el : j)
+                arr.push_back(lower_keys(el));
+            return arr;
+        }
+        return j;
+    }
+}
 
 namespace OIF {
 
@@ -52,23 +84,27 @@ namespace OIF {
         {"ranged", "Ranged"},
         {"staff", "Staff"},
         {"spell", "Spell"},
+        {"shout", "Shout"},
+        {"ability", "Ability"},
+        {"lesserpower", "LesserPower"},
+        {"power", "Power"},
         {"handtohand", "HandToHand"},
         {"total", "Total"},
         {"other", "Other"}
     };
 
     static RE::FormType MapStringToFormType(std::string_view s) {
-        auto it = formTypeMap.find(s);
+        auto it = formTypeMap.find(tolower_str(s));
         return it != formTypeMap.end() ? it->second : RE::FormType::None;
     }
 
     static std::string MapAttackTypeToString(std::string_view s) {
-        auto it = attackTypeMap.find(s);
+        auto it = attackTypeMap.find(tolower_str(s));
         return it != attackTypeMap.end() ? it->second : "Regular";
     }
 
     static std::string MapWeaponTypeToString(std::string_view s) {
-        auto it = weaponTypeMap.find(s);
+        auto it = weaponTypeMap.find(tolower_str(s));
         return it != weaponTypeMap.end() ? it->second : "Other";
     }
 
@@ -78,8 +114,8 @@ namespace OIF {
             return nullptr;
         }
 
-        static std::mutex dataHandlerMutex;
-        std::lock_guard<std::mutex> lock(dataHandlerMutex);
+        static std::recursive_mutex dataHandlerMutex;
+        std::lock_guard<std::recursive_mutex> lock(dataHandlerMutex);
         
         auto* dh = RE::TESDataHandler::GetSingleton();
         if (!dh) {
@@ -88,7 +124,7 @@ namespace OIF {
         }
     
         for (auto& keyword : dh->GetFormArray<RE::BGSKeyword>()) {
-            if (keyword && keyword->GetFormEditorID() && 
+            if (keyword && keyword->GetFormEditorID() &&
                 _stricmp(keyword->GetFormEditorID(), keywordName.c_str()) == 0) {
                 return keyword;
             }
@@ -97,11 +133,11 @@ namespace OIF {
         return nullptr;
     }
 
-	template <class T>
+    template <class T>
     T* RuleManager::GetFormFromIdentifier(const std::string& identifier) {
 
-        static std::mutex dataHandlerMutex;
-        std::lock_guard<std::mutex> lock(dataHandlerMutex);
+        static std::recursive_mutex dataHandlerMutex;
+        std::lock_guard<std::recursive_mutex> lock(dataHandlerMutex);
 
         auto pos = identifier.find(':');
         if (pos == std::string::npos) {
@@ -199,7 +235,10 @@ namespace OIF {
             return;
         }
 
-        for (auto const& jr : j) {
+        // convert entire file to lowercase keys
+        json jLow = lower_keys(j);
+
+        for (auto const& jr : jLow) {
             Rule r;
 
             // -------- events ----------
@@ -222,8 +261,9 @@ namespace OIF {
             }
 
             for (const auto& ev : evStrings) {
-                if (ev == "Hit") r.events.push_back(EventType::kHit);
-                else if (ev == "Activate") r.events.push_back(EventType::kActivate);
+                std::string evLower = tolower_str(ev);
+                if (evLower == "hit") r.events.push_back(EventType::kHit);
+                else if (evLower == "activate") r.events.push_back(EventType::kActivate);
                 else logger::warn("Unknown event '{}' in {}", ev, path.string());
             }
 
@@ -244,15 +284,15 @@ namespace OIF {
                     r.filter.interactions = jf["interactions"].get<std::uint32_t>();
                 }
 
-                if (jf.contains("formTypes") && jf["formTypes"].is_array()) {
-                    for (auto const& ft : jf["formTypes"]) {
+                if (jf.contains("formtypes") && jf["formtypes"].is_array()) {
+                    for (auto const& ft : jf["formtypes"]) {
                         if (ft.is_string())
-                            r.filter.formTypes.insert(MapStringToFormType(ft.get<std::string>()));
+                            r.filter.formTypes.insert(MapStringToFormType(tolower_str(ft.get<std::string>())));
                     }
                 }
 
-                if (jf.contains("formIDs") && jf["formIDs"].is_array()) {
-                    for (auto const& bid : jf["formIDs"]) {
+                if (jf.contains("formids") && jf["formids"].is_array()) {
+                    for (auto const& bid : jf["formids"]) {
                         if (bid.is_string()) {
                             if (auto* form = GetFormFromIdentifier<RE::TESForm>(bid.get<std::string>())) {
                                 r.filter.formIDs.insert(form->GetFormID());
@@ -285,18 +325,18 @@ namespace OIF {
                     }
                 }
 
-                if (jf.contains("weaponsTypes") && jf["weaponsTypes"].is_array()) {
-                    for (auto const& wt : jf["weaponsTypes"]) {
+                if (jf.contains("weaponstypes") && jf["weaponstypes"].is_array()) {
+                    for (auto const& wt : jf["weaponstypes"]) {
                         if (wt.is_string()) {
-                            r.filter.weaponTypes.insert(MapWeaponTypeToString(wt.get<std::string>()));
+                            r.filter.weaponTypes.insert(MapWeaponTypeToString(tolower_str(wt.get<std::string>())));
                         } else {
                             logger::warn("Invalid weapon type '{}' in filter of {}", wt.get<std::string>(), path.string());
                         }
                     }
                 }
 
-                if (jf.contains("weaponsKeywords") && jf["weaponsKeywords"].is_array()) {
-                    for (auto const& kwEntry : jf["weaponsKeywords"]) {
+                if (jf.contains("weaponskeywords") && jf["weaponskeywords"].is_array()) {
+                    for (auto const& kwEntry : jf["weaponskeywords"]) {
                         if (kwEntry.is_string()) {
                             std::string kwStr = kwEntry.get<std::string>();
                             RE::BGSKeyword* kw = nullptr;
@@ -344,7 +384,7 @@ namespace OIF {
                 if (jf.contains("attacks") && jf["attacks"].is_array()) {
                     for (auto const& at : jf["attacks"]) {
                         if (at.is_string()) {
-                            r.filter.attackTypes.insert(MapAttackTypeToString(at.get<std::string>()));
+                            r.filter.attackTypes.insert(MapAttackTypeToString(tolower_str(at.get<std::string>())));
                         } else {
                             logger::warn("Invalid attack type '{}' in filter of {}", at.get<std::string>(), path.string());
                         }
@@ -370,17 +410,17 @@ namespace OIF {
             }
 
             static const std::unordered_map<std::string, EffectType> effectTypeMap = {
-                {"RemoveItem", EffectType::kDisposeItem},
-                {"SpawnItem", EffectType::kSpawnItem},
-                {"SpawnSpell", EffectType::kSpawnSpell},
-                {"SpawnSpellOnItem", EffectType::kSpawnSpellOnItem},
-                {"SpawnActor", EffectType::kSpawnActor},
-                {"SpawnImpact", EffectType::kSpawnImpact},
-                {"SpawnExplosion", EffectType::kSpawnExplosion},
-                {"SwapItem", EffectType::kSwapItem},
-                {"PlaySound", EffectType::kPlaySound},
-                {"SpillInventory", EffectType::kSpillInventory},
-                {"SwapActor", EffectType::kSwapActor}
+                {"removeitem", EffectType::kDisposeItem},
+                {"spawnitem", EffectType::kSpawnItem},
+                {"spawnspell", EffectType::kSpawnSpell},
+                {"spawnspellonitem", EffectType::kSpawnSpellOnItem},
+                {"spawnactor", EffectType::kSpawnActor},
+                {"spawnimpact", EffectType::kSpawnImpact},
+                {"spawnexplosion", EffectType::kSpawnExplosion},
+                {"swapitem", EffectType::kSwapItem},
+                {"playsound", EffectType::kPlaySound},
+                {"spillinventory", EffectType::kSpillInventory},
+                {"swapactor", EffectType::kSwapActor}
             };
 
             for (const auto& effj : effectArray) {
@@ -388,7 +428,8 @@ namespace OIF {
                 Effect eff;
 
                 // type
-                std::string typeStr = effj.value("type", "SpawnItem");
+                std::string typeStrRaw = effj.value("type", "spawnitem");
+                std::string typeStr = tolower_str(typeStrRaw);
                 auto it = effectTypeMap.find(typeStr);
                 if (it == effectTypeMap.end()) {
                     logger::warn("Unknown effect type '{}' in {}", typeStr, path.string());
@@ -403,8 +444,8 @@ namespace OIF {
                 if (eff.type != EffectType::kDisposeItem && eff.type != EffectType::kSpillInventory) {
                     if (effj.contains("items") && effj["items"].is_array()) {
                         for (const auto& itemJson : effj["items"]) {
-                            if (!itemJson.is_object() || !itemJson.contains("formID") || !itemJson["formID"].is_string()) continue;
-                            if (auto* form = GetFormFromIdentifier<RE::TESForm>(itemJson["formID"].get<std::string>())) {
+                            if (!itemJson.is_object() || !itemJson.contains("formid") || !itemJson["formid"].is_string()) continue;
+                            if (auto* form = GetFormFromIdentifier<RE::TESForm>(itemJson["formid"].get<std::string>())) {
                                 EffectExtendedData extData;
                                 extData.form = form;
                                 extData.count = itemJson.value("count", 1U);
@@ -734,7 +775,26 @@ namespace OIF {
     void RuleManager::Trigger(const RuleContext& ctx)
     {
         std::unique_lock lock(_ruleMutex);
+
+        struct ProcessedCleaner {
+            ~ProcessedCleaner() {
+                OIF::Effects::ClearProcessedItems();
+            }
+        } _cleaner;
+
         if (!ctx.target || !ctx.source) return;
+
+        auto formType = ctx.target->GetBaseObject()->GetFormType();
+        bool supported = false;
+        for (const auto& [typeStr, type] : formTypeMap) {
+            if (type == formType) {
+                supported = true;
+                break;
+            }
+        }
+        if (!supported) {
+            return;
+        }
 
         if (OIF::Effects::IsItemProcessed(ctx.target)) return;
         OIF::Effects::MarkItemAsProcessed(ctx.target);
@@ -772,6 +832,10 @@ namespace OIF {
             }
         }
 
-        OIF::Effects::ClearProcessedItems();
+        // Prevent unbounded growth of interaction counter map
+        constexpr std::size_t MAX_INTERACTION_ENTRIES = 5000;
+        if (_filterInteractionCounts.size() > MAX_INTERACTION_ENTRIES) {
+            _filterInteractionCounts.clear();
+        }
     }
 }
