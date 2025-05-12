@@ -10,10 +10,11 @@ This guide explains how to set up those JSON files so you can customize the mod 
 ## Important Notes
 
 - Place your JSON files in: `Data/SKSE/Plugins/ObjectImpactFramework/`.
-- You can modify existing JSON files without quitting the game, edit the file and reload the save.
 - **Check the Log**: If something doesn’t work, look at the mod’s log file for error messages. The log can be found inside `Documents\My Games\Skyrim Special Edition\SKSE\ObjectImpactFramework.log`.
+- **Filter Note**: An object must be defined by at least one of the three parameters - `"formIDs"`, `"formTypes"`, `"keywords"` - for the event to work.
 - **Form IDs Must Match**: Make sure the `formID` fits the effect (e.g., a spell ID for `"SpawnSpell"`, an item ID for `"SpawnItem"`).
 - **Keywords Note**: For containers, doors, statics, movable statics, and trees, the `keywords` filter is ignored since they don’t use keywords.
+- You can modify existing JSON files without quitting the game, edit the file and reload the save.
 
 ---
 
@@ -22,7 +23,7 @@ This guide explains how to set up those JSON files so you can customize the mod 
 Every rule in your JSON file tells the mod what to do. Here’s what each rule needs:
 
 - **event**: What triggers the rule. Use an array with `"Activate"` and/or `"Hit"` (for all objects).
-- **filter (optional)**: Conditions to decide if the rule should run, based on the object.
+- **filter**: Conditions to decide if the rule should run, based on the object.
 - **effect**: What happens when the rule triggers. This can be one effect or a list of effects.
 
 Example of a simple rule:
