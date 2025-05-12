@@ -45,7 +45,7 @@ namespace OIF::Effects
     // ------------------ Effects ------------------
     void DisposeItem(const RuleContext& ctx)
     {
-        if (!ctx.target) {
+        if (!ctx.target || ctx.target->IsDeleted() || ctx.target->IsDisabled()) {
             logger::error("DisposeItem: No target to dispose");
             return;
         }
@@ -56,7 +56,7 @@ namespace OIF::Effects
 
     void SpawnItem(const RuleContext& ctx, const std::vector<ItemSpawnData>& itemsData)
     {
-        if (!ctx.target) {
+        if (!ctx.target || itemsData.empty() || ctx.target->IsDeleted() || ctx.target->IsDisabled()) {
             logger::error("SpawnItem: No target to spawn items");
             return;
         }
@@ -67,7 +67,11 @@ namespace OIF::Effects
 
             for (std::uint32_t i = 0; i < itemData.count; ++i) {
                 RE::NiPointer<RE::TESObjectREFR> item = ctx.target->PlaceObjectAtMe(itemData.item, true);
-                CopyOwnership(ctx.target, item.get());
+                if (item) {
+                    CopyOwnership(ctx.target, item.get());
+                } else {
+                    logger::warn("SpawnItem: Failed to spawn item {}", itemData.item->GetFormID());
+                }
             }
         }
     }
@@ -82,12 +86,12 @@ namespace OIF::Effects
         RE::TESObjectREFR* caster = ctx.target;
         RE::TESObjectREFR* target = ctx.source; // The spell targets the source (attacker)
 
-        if (!target) {
+        if (!target || target->IsDeleted() || target->IsDisabled()) {
             logger::warn("SpawnSpell: No valid target to cast the spell");
             return;
         }
 
-        if (!caster) {
+        if (!caster || caster->IsDeleted() || caster->IsDisabled() || caster->IsDead()) {
             logger::warn("SpawnSpell: No valid source to cast the spell");
             return;
         }
@@ -111,19 +115,19 @@ namespace OIF::Effects
     void SpawnSpellOnItem(const RuleContext& ctx, const std::vector<SpellSpawnData>& spellsData)
     {
         if (!ctx.source || spellsData.empty()) {
-            logger::error("SpawnSpellOnItem: No source or spells to spawn");
+            logger::error("SpawnSpellOnItem: No source or spells to spawn on");
             return;
         }
 
         RE::TESObjectREFR* caster = ctx.source;
         RE::TESObjectREFR* target = ctx.target;
 
-        if (!target) {
+        if (!target || target->IsDeleted() || target->IsDisabled()) {
             logger::warn("SpawnSpell: No valid target to cast the spell");
             return;
         }
 
-        if (!caster) {
+        if (!caster || caster->IsDeleted() || caster->IsDisabled() || caster->IsDead()) {
             logger::warn("SpawnSpell: No valid source to cast the spell");
             return;
         }
@@ -146,7 +150,7 @@ namespace OIF::Effects
 
     void SpawnActor(const RuleContext& ctx, const std::vector<ActorSpawnData>& actorsData)
     {
-        if (!ctx.target) {
+        if (!ctx.target || actorsData.empty() || ctx.target->IsDeleted() || ctx.target->IsDisabled()) {
             logger::error("SpawnActor: No target to spawn actors");
             return;
         }
@@ -166,7 +170,7 @@ namespace OIF::Effects
     
     void SpawnImpact(const RuleContext& ctx, const std::vector<ImpactSpawnData>& impactsData)
     {
-        if (!ctx.target || impactsData.empty()) {
+        if (!ctx.target || impactsData.empty() || ctx.target->IsDeleted() || ctx.target->IsDisabled()) {
             logger::error("SpawnImpact: No target or impacts to spawn");
             return;
         }
@@ -209,7 +213,7 @@ namespace OIF::Effects
 
     void SpawnExplosion(const RuleContext& ctx, const std::vector<ExplosionSpawnData>& explosionsData)
     {
-        if (!ctx.target || explosionsData.empty()) {
+        if (!ctx.target || explosionsData.empty() || ctx.target->IsDeleted() || ctx.target->IsDisabled()) {
             logger::error("SpawnExplosion: No target or explosions to spawn");
             return;
         }
@@ -226,7 +230,7 @@ namespace OIF::Effects
 
     void SwapItem(const RuleContext& ctx, const std::vector<ItemSpawnData>& itemsData)
     {
-        if (!ctx.target) {
+        if (!ctx.target || itemsData.empty() || ctx.target->IsDeleted() || ctx.target->IsDisabled()) {
             logger::error("SwapItem: No target to swap items");
             return;
         }
@@ -242,6 +246,8 @@ namespace OIF::Effects
                     if (item) {
                         anyItemSpawned = true;
                         CopyOwnership(ctx.target, item.get());
+                    } else {
+                        logger::warn("SwapItem: Failed to swap with item {}", itemData.item->GetFormID());
                     }
                 }
             }
@@ -254,7 +260,7 @@ namespace OIF::Effects
 
     void PlaySound(const RuleContext& ctx, const std::vector<SoundSpawnData>& soundsData)
     {
-        if (!ctx.target || soundsData.empty()) {
+        if (!ctx.target || soundsData.empty() || ctx.target->IsDeleted() || ctx.target->IsDisabled()) {
             logger::error("PlaySound: No target or sounds to play");
             return;
         }
@@ -289,7 +295,7 @@ namespace OIF::Effects
         using RE::ITEM_REMOVE_REASON;
 
         auto* containerRef = ctx.target;
-        if (!containerRef) {
+        if (!containerRef || containerRef->IsDeleted() || containerRef->IsDisabled()) {
             logger::error("SpillInventory: No target to spill inventory");
             return;
         }
@@ -299,29 +305,23 @@ namespace OIF::Effects
             return;
         }
 
-        std::vector<std::pair<TESBoundObject*, std::int32_t>> toDrop;
-        for (auto& [obj, data] : containerRef->GetInventory()) {
-            auto count = static_cast<std::int32_t>(data.first);
-            if (obj && count > 0) {
-                toDrop.emplace_back(obj, count);
-            }
-        }
-
-        if (toDrop.empty())
-            return;
-
         NiPoint3 dropPos = containerRef->GetPosition();
         NiPoint3 dropAngle = containerRef->GetAngle();
         dropPos.z += 10.0f;
 
-        for (auto& [obj, count] : toDrop) {
-            containerRef->RemoveItem(obj, count, ITEM_REMOVE_REASON::kDropping, nullptr, containerRef, &dropPos, &dropAngle);
+        for (auto& [obj, data] : containerRef->GetInventory()) {
+            if (!obj) {
+                logger::warn("SpillInventory: Invalid inventory object for target {}", containerRef->GetFormID());
+                continue;
+            } else if (obj && (data.first > 0)) {
+                containerRef->RemoveItem(obj, data.first, ITEM_REMOVE_REASON::kDropping, nullptr, containerRef, &dropPos, &dropAngle);
+            }
         }
     }
 
     void SwapActor(const RuleContext& ctx, const std::vector<ActorSpawnData>& actorsData)
     {
-        if (!ctx.target) {
+        if (!ctx.target || actorsData.empty() || ctx.target->IsDeleted() || ctx.target->IsDisabled()) {
             logger::error("SwapActor: No target to swap actors");
             return;
         }

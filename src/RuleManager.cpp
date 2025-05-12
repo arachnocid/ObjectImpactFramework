@@ -1,16 +1,13 @@
 #include "RuleManager.h"
 #include "Effects.h"
 #include <nlohmann/json.hpp>
-#include <ranges>
-#include <algorithm>
-#include <cctype>
 
 namespace fs = std::filesystem;
 using json = nlohmann::json;
 
-// ------------------ Case‑insensitive helpers ------------------
 namespace {
 
+    // ------------------ Case‑insensitive helpers ------------------
     inline std::string tolower_str(std::string_view a_str)
     {
         std::string result(a_str);
@@ -235,7 +232,6 @@ namespace OIF {
             return;
         }
 
-        // convert entire file to lowercase keys
         json jLow = lower_keys(j);
 
         for (auto const& jr : jLow) {
@@ -272,7 +268,9 @@ namespace OIF {
                 continue;
             }
 
-            // -------- filter ----------
+            // -------- filters ----------
+            bool hasObjectIdentifier = false;
+
             if (jr.contains("filter") && jr["filter"].is_object()) {
                 const auto& jf = jr["filter"];
 
@@ -289,6 +287,9 @@ namespace OIF {
                         if (ft.is_string())
                             r.filter.formTypes.insert(MapStringToFormType(tolower_str(ft.get<std::string>())));
                     }
+                    if (!r.filter.formTypes.empty()) {
+                        hasObjectIdentifier = true;
+                    }
                 }
 
                 if (jf.contains("formids") && jf["formids"].is_array()) {
@@ -300,6 +301,9 @@ namespace OIF {
                                 logger::warn("Invalid formID '{}' in filter of {}", bid.get<std::string>(), path.string());
                             }
                         }
+                    }
+                    if (!r.filter.formIDs.empty()) {
+                        hasObjectIdentifier = true;
                     }
                 }
 
@@ -322,6 +326,9 @@ namespace OIF {
                                 kwStr, path.string());
                             }
                         }
+                    }
+                    if (!r.filter.keywords.empty()) {
+                        hasObjectIdentifier = true;
                     }
                 }
 
@@ -392,7 +399,12 @@ namespace OIF {
                 }
             }
 
-            // -------- effect ----------
+            if (!hasObjectIdentifier) {
+                logger::warn("Skipping rule in {}: no valid object identifiers (formTypes, formIDs, or keywords)", path.string());
+                continue;
+            }
+
+            // -------- effects ----------
             if (!jr.contains("effect")) {
                 logger::warn("Skipping rule in {}: missing 'effect' field", path.string());
                 continue;
@@ -427,7 +439,6 @@ namespace OIF {
                 if (!effj.is_object()) continue;
                 Effect eff;
 
-                // type
                 std::string typeStrRaw = effj.value("type", "spawnitem");
                 std::string typeStr = tolower_str(typeStrRaw);
                 auto it = effectTypeMap.find(typeStr);
@@ -437,10 +448,8 @@ namespace OIF {
                 }
                 eff.type = it->second;
 
-                // chance
                 eff.chance = effj.value("chance", r.filter.chance);
 
-                // items
                 if (eff.type != EffectType::kDisposeItem && eff.type != EffectType::kSpillInventory) {
                     if (effj.contains("items") && effj["items"].is_array()) {
                         for (const auto& itemJson : effj["items"]) {
@@ -505,7 +514,7 @@ namespace OIF {
             if (!f.projectiles.empty() && (!ctx.projectile || f.projectiles.find(ctx.projectile) == f.projectiles.end())) return false;
             if (!f.attackTypes.empty() && f.attackTypes.find(ctx.attackType) == f.attackTypes.end()) return false;
             if (!f.weaponsKeywords.empty()) {
-                if (!ctx.weapon) return false;
+                if (!ctx.weapon) return false; 
 
                 auto* kwf = ctx.weapon->As<RE::BGSKeywordForm>();
                 if (!kwf) return false;
@@ -527,19 +536,29 @@ namespace OIF {
     // ------------------ Apply ------------------
     void RuleManager::ApplyEffect(const Effect& eff, const RuleContext& ctx) const {
         if (!ctx.target || !ctx.target->GetBaseObject()) return;
+        if (!ctx.source || !ctx.source->GetBaseObject()) return;
         
         static thread_local std::mt19937 rng(std::random_device{}());
         if (std::uniform_real_distribution<float>(0.f, 100.f)(rng) > eff.chance) return;
 
         RE::FormID targetFormID = ctx.target->GetFormID();
-        RE::FormID sourceFormID = ctx.source ? ctx.source->GetFormID() : 0;
+        RE::FormID sourceFormID = ctx.source->GetFormID();
         Effect effCopy = eff;
         EventType eventType = ctx.event;
 
         SKSE::GetTaskInterface()->AddTask([effCopy, targetFormID, sourceFormID, eventType]() {
             auto* target = RE::TESForm::LookupByID<RE::TESObjectREFR>(targetFormID);
             auto* source = sourceFormID ? RE::TESForm::LookupByID<RE::Actor>(sourceFormID) : nullptr;
-            if (!target || !target->GetBaseObject()) return;
+            
+            if (!target || !target->GetBaseObject() || target->IsDisabled() || target->IsDeleted()) {
+                logger::warn("Target {} is invalid or deleted", targetFormID);
+                return;
+            }
+
+            if (!source || !source->GetBaseObject() || source->IsDisabled() || source->IsDeleted() || source->IsDead()) {
+                logger::warn("Source {} is invalid, dead or deleted", sourceFormID);
+                return;
+            }
 
             RuleContext newCtx{eventType, source, target, target->GetBaseObject()};
 
@@ -782,7 +801,14 @@ namespace OIF {
             }
         } _cleaner;
 
-        if (!ctx.target || !ctx.source) return;
+        if (!ctx.target || 
+            ctx.target->IsDisabled() || 
+            ctx.target->IsDeleted() || 
+            !ctx.source || 
+            ctx.source->IsDisabled() || 
+            ctx.source->IsDeleted() || 
+            ctx.source->IsDead())
+            return;
 
         auto formType = ctx.target->GetBaseObject()->GetFormType();
         bool supported = false;

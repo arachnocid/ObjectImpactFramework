@@ -73,20 +73,32 @@ namespace OIF
         if (!evn || !evn->objectActivated || !evn->objectActivated.get()) 
             return RE::BSEventNotifyControl::kContinue;
 
-        auto* target = evn->objectActivated.get();
-        auto* baseObj = target->GetBaseObject();
-        if (!baseObj) return RE::BSEventNotifyControl::kContinue;
+        auto* targetRef = evn->objectActivated.get();
+
+        if (targetRef->formFlags & RE::TESForm::RecordFlags::kDeleted || targetRef->IsDisabled())
+            return RE::BSEventNotifyControl::kContinue;
+
+        if (!targetRef->Is3DLoaded())
+            return RE::BSEventNotifyControl::kContinue;
+
+        auto* baseObj = targetRef->GetBaseObject();
+        if (!baseObj) 
+            return RE::BSEventNotifyControl::kContinue;
 
         RE::Actor* source = nullptr;
-        if (evn->actionRef && evn->actionRef.get()) {
+        if (evn->actionRef && evn->actionRef.get())
             source = evn->actionRef.get()->As<RE::Actor>();
-            if (!source) return RE::BSEventNotifyControl::kContinue;
-        }
+
+        if (!source) 
+            return RE::BSEventNotifyControl::kContinue;
+
+        if (source->formFlags & RE::TESForm::RecordFlags::kDeleted || source->IsDisabled())
+            return RE::BSEventNotifyControl::kContinue;
 
         RuleContext ctx{ 
             EventType::kActivate, 
             source, 
-            target, 
+            targetRef, 
             baseObj
         };
 
@@ -101,14 +113,26 @@ namespace OIF
             return RE::BSEventNotifyControl::kContinue;
 
         auto* targetRef = evn->target.get();
+
+        if (targetRef->formFlags & RE::TESForm::RecordFlags::kDeleted || targetRef->IsDisabled())
+            return RE::BSEventNotifyControl::kContinue;
+
+        if (!targetRef->Is3DLoaded())
+            return RE::BSEventNotifyControl::kContinue;
+
         auto* baseObj = targetRef->GetBaseObject();
-        if (!baseObj) return RE::BSEventNotifyControl::kContinue;
+        if (!baseObj) 
+            return RE::BSEventNotifyControl::kContinue;
 
         RE::Actor* source = nullptr;
-        if (evn->cause && evn->cause.get()) {
+        if (evn->cause && evn->cause.get())
             source = evn->cause.get()->As<RE::Actor>();
-            if (!source) return RE::BSEventNotifyControl::kContinue;
-        }
+        
+        if (!source) 
+            return RE::BSEventNotifyControl::kContinue;
+
+        if (source->formFlags & RE::TESForm::RecordFlags::kDeleted || source->IsDisabled())
+            return RE::BSEventNotifyControl::kContinue;
 
         RE::TESObjectWEAP* weapon = nullptr;
         RE::BGSProjectile* projectile = nullptr;
@@ -116,6 +140,10 @@ namespace OIF
         AttackType attackType = AttackType::Regular;
 
         RE::TESForm* hitSourceForm = evn->source ? RE::TESForm::LookupByID(evn->source) : nullptr;
+
+        if (!hitSourceForm) {
+            weaponType = WeaponType::Other;
+        }
 
         RE::HighProcessData* highData = nullptr;
         if (auto* actorState = source->GetActorRuntimeData().currentProcess) {
