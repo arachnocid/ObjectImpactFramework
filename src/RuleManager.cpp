@@ -260,6 +260,9 @@ namespace OIF {
                 std::string evLower = tolower_str(ev);
                 if (evLower == "hit") r.events.push_back(EventType::kHit);
                 else if (evLower == "activate") r.events.push_back(EventType::kActivate);
+                else if (evLower == "grab") r.events.push_back(EventType::kGrab);
+                else if (evLower == "release") r.events.push_back(EventType::kRelease);
+                else if (evLower == "throw") r.events.push_back(EventType::kThrow);
                 else logger::warn("Unknown event '{}' in {}", ev, path.string());
             }
 
@@ -280,6 +283,10 @@ namespace OIF {
 
                 if (jf.contains("interactions") && jf["interactions"].is_number_unsigned()) {
                     r.filter.interactions = jf["interactions"].get<std::uint32_t>();
+                }
+
+                if (jf.contains("limit") && jf["limit"].is_number_unsigned()) {
+                    r.filter.limit = jf["limit"].get<std::uint32_t>();
                 }
 
                 if (jf.contains("formtypes") && jf["formtypes"].is_array()) {
@@ -537,9 +544,6 @@ namespace OIF {
     void RuleManager::ApplyEffect(const Effect& eff, const RuleContext& ctx) const {
         if (!ctx.target || !ctx.target->GetBaseObject()) return;
         if (!ctx.source || !ctx.source->GetBaseObject()) return;
-        
-        static thread_local std::mt19937 rng(std::random_device{}());
-        if (std::uniform_real_distribution<float>(0.f, 100.f)(rng) > eff.chance) return;
 
         RE::FormID targetFormID = ctx.target->GetFormID();
         RE::FormID sourceFormID = ctx.source->GetFormID();
@@ -562,27 +566,29 @@ namespace OIF {
 
             RuleContext newCtx{eventType, source, target, target->GetBaseObject()};
 
+            static thread_local std::mt19937 rng(std::random_device{}());
+            float globalRoll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
+            if (globalRoll > effCopy.chance) return;
+
             try {
                 switch (effCopy.type) {
-                case EffectType::kDisposeItem:
-                    Effects::DisposeItem(newCtx);
-                    break;
+                    case EffectType::kDisposeItem:
+                        Effects::DisposeItem(newCtx);
+                        break;
 
-                case EffectType::kSpawnItem:
+                    case EffectType::kSpillInventory:
+                        Effects::SpillInventory(newCtx);
+                        break;
+
+                    case EffectType::kSpawnItem:
                     {
                         std::vector<ItemSpawnData> itemsData;
                         for (const auto& [form, extData] : effCopy.items) {
-                            if (!form) {
-                                logger::error("No form provided for SpawnItem effect");
-                                continue;
-                            }
-                            if (std::uniform_real_distribution<float>(0.f, 100.f)(rng) > extData.chance) {
-                                continue;
-                            }
+                            if (!form) continue;
+                            float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
+                            if (roll > extData.chance) continue;
                             if (auto* item = form->As<RE::TESBoundObject>()) {
                                 itemsData.emplace_back(item, extData.count);
-                            } else {
-                                logger::error("FormID {:08X} is not TESBoundObject", form->GetFormID());
                             }
                         }
                         if (!itemsData.empty()) {
@@ -590,22 +596,16 @@ namespace OIF {
                         }
                     }
                     break;
-
-                case EffectType::kSpawnSpell:
-                    {  
+                    
+                    case EffectType::kSpawnSpell:
+                    {
                         std::vector<SpellSpawnData> spellsData;
                         for (const auto& [form, extData] : effCopy.items) {
-                            if (!form) {
-                                logger::error("No form provided for SpawnSpell effect");
-                                continue;
-                            }
-                            if (std::uniform_real_distribution<float>(0.f, 100.f)(rng) > extData.chance) {
-                                continue;
-                            }
+                            if (!form) continue;
+                            float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
+                            if (roll > extData.chance) continue;
                             if (auto* spell = form->As<RE::SpellItem>()) {
                                 spellsData.emplace_back(spell, extData.count);
-                            } else {
-                                logger::error("FormID {:08X} is not SpellItem", form->GetFormID());
                             }
                         }
                         if (!spellsData.empty()) {
@@ -613,22 +613,16 @@ namespace OIF {
                         }
                     }
                     break;
-
-                case EffectType::kSpawnSpellOnItem:
+                    
+                    case EffectType::kSpawnSpellOnItem:
                     {
                         std::vector<SpellSpawnData> spellsData;
                         for (const auto& [form, extData] : effCopy.items) {
-                            if (!form) {
-                                logger::error("No form provided for SpawnSpellOnItem effect");
-                                continue;
-                            }
-                            if (std::uniform_real_distribution<float>(0.f, 100.f)(rng) > extData.chance) {
-                                continue;
-                            }
+                            if (!form) continue;
+                            float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
+                            if (roll > extData.chance) continue;
                             if (auto* spell = form->As<RE::SpellItem>()) {
                                 spellsData.emplace_back(spell, extData.count);
-                            } else {
-                                logger::error("FormID {:08X} is not SpellItem", form->GetFormID());
                             }
                         }
                         if (!spellsData.empty()) {
@@ -636,22 +630,16 @@ namespace OIF {
                         }
                     }
                     break;
-
-                case EffectType::kSpawnActor:
+                    
+                    case EffectType::kSpawnActor:
                     {
                         std::vector<ActorSpawnData> actorsData;
                         for (const auto& [form, extData] : effCopy.items) {
-                            if (!form) {
-                                logger::error("No form provided for SpawnActor effect");
-                                continue;
-                            }
-                            if (std::uniform_real_distribution<float>(0.f, 100.f)(rng) > extData.chance) {
-                                continue;
-                            }
+                            if (!form) continue;
+                            float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
+                            if (roll > extData.chance) continue;
                             if (auto* actor = form->As<RE::TESNPC>()) {
                                 actorsData.emplace_back(actor, extData.count);
-                            } else {
-                                logger::error("FormID {:08X} is not TESNPC", form->GetFormID());
                             }
                         }
                         if (!actorsData.empty()) {
@@ -659,22 +647,16 @@ namespace OIF {
                         }
                     }
                     break;
-
-                case EffectType::kSpawnImpact:
+                    
+                    case EffectType::kSpawnImpact:
                     {
                         std::vector<ImpactSpawnData> impactsData;
                         for (const auto& [form, extData] : effCopy.items) {
-                            if (!form) {
-                                logger::error("No form provided for SpawnImpact effect");
-                                continue;
-                            }
-                            if (std::uniform_real_distribution<float>(0.f, 100.f)(rng) > extData.chance) {
-                                continue;
-                            }
+                            if (!form) continue;
+                            float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
+                            if (roll > extData.chance) continue;
                             if (auto* impact = form->As<RE::BGSImpactDataSet>()) {
                                 impactsData.emplace_back(impact, extData.count);
-                            } else {
-                                logger::error("FormID {:08X} is not BGSImpactDataSet", form->GetFormID());
                             }
                         }
                         if (!impactsData.empty()) {
@@ -682,22 +664,16 @@ namespace OIF {
                         }
                     }
                     break;
-
-                case EffectType::kSpawnExplosion:
+                    
+                    case EffectType::kSpawnExplosion:
                     {
                         std::vector<ExplosionSpawnData> explosionsData;
                         for (const auto& [form, extData] : effCopy.items) {
-                            if (!form) {
-                                logger::error("No form provided for SpawnExplosion effect");
-                                continue;
-                            }
-                            if (std::uniform_real_distribution<float>(0.f, 100.f)(rng) > extData.chance) {
-                                continue;
-                            }
+                            if (!form) continue;
+                            float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
+                            if (roll > extData.chance) continue;
                             if (auto* explosion = form->As<RE::BGSExplosion>()) {
                                 explosionsData.emplace_back(explosion, extData.count);
-                            } else {
-                                logger::error("FormID {:08X} is not BGSExplosion", form->GetFormID());
                             }
                         }
                         if (!explosionsData.empty()) {
@@ -705,22 +681,16 @@ namespace OIF {
                         }
                     }
                     break;
-
-                case EffectType::kSwapItem:
+                    
+                    case EffectType::kSwapItem:
                     {
                         std::vector<ItemSpawnData> itemsData;
                         for (const auto& [form, extData] : effCopy.items) {
-                            if (!form) {
-                                logger::error("No form provided for SwapItem effect");
-                                continue;
-                            }
-                            if (std::uniform_real_distribution<float>(0.f, 100.f)(rng) > extData.chance) {
-                                continue;
-                            }
+                            if (!form) continue;
+                            float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
+                            if (roll > extData.chance) continue;
                             if (auto* item = form->As<RE::TESBoundObject>()) {
                                 itemsData.emplace_back(item, extData.count);
-                            } else {
-                                logger::error("FormID {:08X} is not TESBoundObject", form->GetFormID());
                             }
                         }
                         if (!itemsData.empty()) {
@@ -728,22 +698,16 @@ namespace OIF {
                         }
                     }
                     break;
-
-                case EffectType::kPlaySound:
+                    
+                    case EffectType::kPlaySound:
                     {
                         std::vector<SoundSpawnData> soundsData;
                         for (const auto& [form, extData] : effCopy.items) {
-                            if (!form) {
-                                logger::error("No form provided for PlaySound effect");
-                                continue;
-                            }
-                            if (std::uniform_real_distribution<float>(0.f, 100.f)(rng) > extData.chance) {
-                                continue;
-                            }
+                            if (!form) continue;
+                            float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
+                            if (roll > extData.chance) continue;
                             if (auto* sound = form->As<RE::BGSSoundDescriptorForm>()) {
                                 soundsData.emplace_back(sound, extData.count);
-                            } else {
-                                logger::error("FormID {:08X} is not BGSImpactDataSet", form->GetFormID());
                             }
                         }
                         if (!soundsData.empty()) {
@@ -751,33 +715,23 @@ namespace OIF {
                         }
                     }
                     break;
-
-                case EffectType::kSpillInventory:
-                    Effects::SpillInventory(newCtx);
-                    break;
-
-                case EffectType::kSwapActor:
+                    
+                    case EffectType::kSwapActor:
                     {
                         std::vector<ActorSpawnData> actorsData;
                         for (const auto& [form, extData] : effCopy.items) {
-                            if (!form) {
-                                logger::error("No form provided for SwapActor effect");
-                                continue;
-                            }
-                            if (std::uniform_real_distribution<float>(0.f, 100.f)(rng) > extData.chance) {
-                                continue;
-                            }
+                            if (!form) continue;
+                            float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
+                            if (roll > extData.chance) continue;
                             if (auto* actor = form->As<RE::TESNPC>()) {
                                 actorsData.emplace_back(actor, extData.count);
-                            } else {
-                                logger::error("FormID {:08X} is not TESNPC", form->GetFormID());
                             }
                         }
                         if (!actorsData.empty()) {
                             Effects::SwapActor(newCtx, actorsData);
                         }
                     }
-                    break;
+                    break;                        
 
                 default:
                     logger::warn("Unknown effect type {}", static_cast<int>(effCopy.type));
@@ -843,13 +797,25 @@ namespace OIF {
             if (!MatchFilter(r.filter, ctx))
                 continue;
 
+            // Unique key for interaction counters
+            std::uint64_t baseKey = (eventKey << 16) | ruleIdx;
+            std::uint64_t limitKey = baseKey | 0x1;
+            std::uint64_t interactionsKey = baseKey | 0x2;
+
+            // Limit of interactions (if limit is 0, it means no limit)
+            if (r.filter.limit > 0) {
+                std::uint32_t& limitCnt = _filterInteractionCounts[limitKey];
+                if (limitCnt >= r.filter.limit)
+                    continue;
+                ++limitCnt;
+            }
+
             // Interaction quota ("hit twice before effect")
             if (r.filter.interactions > 1) {
-                std::uint64_t fKey = (eventKey << 16) | ruleIdx;
-                std::uint32_t& fCnt = _filterInteractionCounts[fKey];
-                if (++fCnt < r.filter.interactions)
+                std::uint32_t& interactionsCnt = _filterInteractionCounts[interactionsKey];
+                if (++interactionsCnt < r.filter.interactions)
                     continue;
-                fCnt = 0;
+                interactionsCnt = 0;
             }
 
             // Apply every effect bound to this rule

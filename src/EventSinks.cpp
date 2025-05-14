@@ -1,6 +1,9 @@
 #include "EventSinks.h"
 #include "RE/Skyrim.h"
 #include "SKSE/SKSE.h"
+#include "TESDestructionStageChangedEvent.h"
+
+using namespace std::chrono;
 
 namespace OIF
 {
@@ -32,7 +35,16 @@ namespace OIF
         Charge,
         Rotating,
         Continuous
-    };
+    }; 
+
+    // ------------------ Static Variables ------------------
+    static std::unordered_set<RE::FormID> grabbedObjects;
+    static std::unordered_map<RE::FormID, float> releasedObjects;
+
+    static float lastCleanupTime = 0.0f;
+    static constexpr float kReleaseTimeout = 10.0f;
+    static constexpr float kCleanupInterval = 2.0f;
+    static auto startTime = std::chrono::steady_clock::now();
 
     // ------------------ Helpers ------------------
     WeaponType GetWeaponType(RE::TESObjectWEAP* weapon) {
@@ -66,6 +78,22 @@ namespace OIF
         return AttackType::Regular;
     }
 
+    void CleanupExpiredReleased()
+    {
+        using namespace std::chrono;
+        float now = duration_cast<duration<float>>(steady_clock::now() - startTime).count();
+
+        if (now - lastCleanupTime < kCleanupInterval)
+            return;
+
+        for (auto it = releasedObjects.begin(); it != releasedObjects.end(); ) {
+            if (now - it->second > kReleaseTimeout)
+                it = releasedObjects.erase(it);
+            else
+                ++it;
+        }
+    }
+
     // ------------------ Sinks ------------------
     RE::BSEventNotifyControl ActivateSink::ProcessEvent(const RE::TESActivateEvent* evn,
         RE::BSTEventSource<RE::TESActivateEvent>*)
@@ -79,6 +107,9 @@ namespace OIF
             return RE::BSEventNotifyControl::kContinue;
 
         if (!targetRef->Is3DLoaded())
+            return RE::BSEventNotifyControl::kContinue;
+
+        if (!targetRef->GetFormID())
             return RE::BSEventNotifyControl::kContinue;
 
         auto* baseObj = targetRef->GetBaseObject();
@@ -119,10 +150,25 @@ namespace OIF
 
         if (!targetRef->Is3DLoaded())
             return RE::BSEventNotifyControl::kContinue;
+        
+        if (!targetRef->GetFormID())
+            return RE::BSEventNotifyControl::kContinue;
 
         auto* baseObj = targetRef->GetBaseObject();
         if (!baseObj) 
             return RE::BSEventNotifyControl::kContinue;
+
+        if (releasedObjects.contains(targetRef->GetFormID())) {
+            releasedObjects.erase(targetRef->GetFormID());
+            RuleContext ctx{
+                EventType::kThrow,
+                RE::PlayerCharacter::GetSingleton(),
+                targetRef,
+                baseObj
+            };
+            RuleManager::GetSingleton()->Trigger(ctx);
+            return RE::BSEventNotifyControl::kContinue;
+        }
 
         RE::Actor* source = nullptr;
         if (evn->cause && evn->cause.get())
@@ -253,10 +299,69 @@ namespace OIF
         return RE::BSEventNotifyControl::kContinue;
     }
 
+    RE::BSEventNotifyControl GrabReleaseSink::ProcessEvent(const RE::TESGrabReleaseEvent* evn,
+        RE::BSTEventSource<RE::TESGrabReleaseEvent>*)
+    {
+        if (!evn || !evn->ref || !evn->ref.get())
+            return RE::BSEventNotifyControl::kContinue;
+    
+        auto* targetRef = evn->ref.get();
+    
+        if (targetRef->formFlags & RE::TESForm::RecordFlags::kDeleted || targetRef->IsDisabled() )
+            return RE::BSEventNotifyControl::kContinue;
+    
+        if (!targetRef->Is3DLoaded())
+            return RE::BSEventNotifyControl::kContinue;
+
+        if (!targetRef->GetFormID())
+            return RE::BSEventNotifyControl::kContinue;
+    
+        RE::Actor* source = nullptr;
+        if (auto* handle = RE::PlayerCharacter::GetSingleton()) {
+            source = handle->As<RE::Actor>();
+        }
+    
+        if (!source || source->formFlags & RE::TESForm::RecordFlags::kDeleted || source->IsDisabled())
+            return RE::BSEventNotifyControl::kContinue;
+    
+        auto* baseObj = targetRef->GetBaseObject();
+        if (!baseObj)
+            return RE::BSEventNotifyControl::kContinue;
+
+        bool isGrabbed = evn->grabbed;
+
+        if (isGrabbed) {
+            grabbedObjects.insert(evn->ref->GetFormID());
+            releasedObjects.erase(evn->ref->GetFormID());
+            RuleContext ctx{
+                EventType::kGrab,
+                source,
+                targetRef,
+                baseObj
+            };
+            RuleManager::GetSingleton()->Trigger(ctx);
+        } else {
+            float now = duration_cast<duration<float>>(steady_clock::now() - startTime).count();
+            releasedObjects.insert({ evn->ref->GetFormID(), now});
+            grabbedObjects.erase(evn->ref->GetFormID());
+            RuleContext ctx{
+                EventType::kRelease,
+                source,
+                targetRef,
+                baseObj
+            };
+            RuleManager::GetSingleton()->Trigger(ctx);
+            CleanupExpiredReleased();
+        }
+
+        return RE::BSEventNotifyControl::kContinue;
+    }
+
     void RegisterSinks()
     {
         auto holder = RE::ScriptEventSourceHolder::GetSingleton();
         holder->GetEventSource<RE::TESActivateEvent>()->AddEventSink(ActivateSink::GetSingleton());
         holder->GetEventSource<RE::TESHitEvent>()->AddEventSink(HitSink::GetSingleton());
+        holder->GetEventSource<RE::TESGrabReleaseEvent>()->AddEventSink(GrabReleaseSink::GetSingleton());
     }
 }

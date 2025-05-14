@@ -307,7 +307,7 @@ namespace OIF::Effects
 
         NiPoint3 dropPos = containerRef->GetPosition();
         NiPoint3 dropAngle = containerRef->GetAngle();
-        dropPos.z += 10.0f;
+        dropPos.z += 15.0f;
 
         for (auto& [obj, data] : containerRef->GetInventory()) {
             if (!obj) {

@@ -31,5 +31,19 @@ namespace OIF
             RE::BSTEventSource<RE::TESHitEvent>*) override;
     };
 
+    class GrabReleaseSink : public RE::BSTEventSink<RE::TESGrabReleaseEvent>
+    {
+    public:
+        static GrabReleaseSink* GetSingleton()
+        {
+            static GrabReleaseSink sink;
+            return &sink;
+        }
+
+        RE::BSEventNotifyControl ProcessEvent(
+            const RE::TESGrabReleaseEvent* evn,
+            RE::BSTEventSource<RE::TESGrabReleaseEvent>*) override;
+    };
+
     void RegisterSinks();
 }

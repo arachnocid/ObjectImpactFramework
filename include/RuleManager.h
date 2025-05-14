@@ -6,7 +6,10 @@ namespace OIF
 	// ---------------------- Enums ----------------------
 	enum class EventType { 
 		kActivate, 
-		kHit 
+		kHit,
+		kGrab,
+		kRelease,
+		kThrow
 	};
 
 	enum class EffectType { 
@@ -32,6 +35,7 @@ namespace OIF
 		std::unordered_set<RE::BGSKeyword*> keywords;        	  	// must have ANY of these keywords
 		float chance{ 100.f };         							   	// the chance of 0‑100 %
 		std::uint32_t interactions{1};								// number of interactions required to satisfy filter
+		std::uint32_t limit = 0; 									// number of interactions to stop the effect
 		
 		// New hit-specific filters
 		std::unordered_set<std::string> weaponTypes;          	 	// weapon type categories
