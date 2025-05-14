@@ -22,7 +22,7 @@ This guide explains how to set up those JSON files so you can customize the mod 
 
 Every rule in your JSON file tells the mod what to do. Here’s what each rule needs:
 
-- **event**: What triggers the rule. Use an array with `"Activate"` and/or `"Hit"` (for all objects).
+- **event**: What triggers the rule. Use an array with any of: `"Activate"`, `"Hit"`, `"Grab"`, `"Release"`, and `"Throw"` (the last one works only with **Grab And Throw** by powerofthree).
 - **filter**: Conditions to decide if the rule should run, based on the object.
 - **effect**: What happens when the rule triggers. This can be one effect or a list of effects.
 
