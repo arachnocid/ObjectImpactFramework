@@ -122,13 +122,19 @@ The `effect` part says what to do. You can use one effect or a list of effects. 
 - **type**: The kind of effect. Choose one:
   - `"RemoveItem"`: Deletes the object.
   - `"SpawnItem"`: Spawns items.
+  - `"SpawnLeveledItem"`: Spawns random leveled items based on the player's level.
+  - `"SwapItem"`: Replaces the object with another.
+  - `"SwapLeveledItem"`: Replaces the object with random leveled one based on the player's level.
   - `"SpawnSpell"`: Casts spells (the one who activated/hit becomes a target).
+  - `"SpawnLeveledSpell"`: Casts random leveled spells based on the player's level.
   - `"SpawnSpellOnItem"`: Casts spells on the target object.
+  - `"SpawnLeveledSpellOnItem"`: Casts random leveled spells on the target object based on the player's level.
   - `"SpawnActor"`: Spawns actors.
+  - `"SpawnLeveledActor"`: Spawns random leveled actors based on the player's level.
+  - `"SwapActor"`: Replaces the object with actors.
+  - `"SwapLeveledActor"`: Replaces the object with random leveled actors based on the player's level.
   - `"SpawnImpact"`: Plays Impact Data Sets (NOT a simple impact).
   - `"SpawnExplosion"`: Spawns explosions.
-  - `"SwapItem"`: Replaces the object with another.
-  - `"SwapActor"`: Replaces the object with actors.
   - `"PlaySound"`: Plays provided sound descriptors.
   - `"SpillInventory"`: Spills a container's inventory out.
 
