@@ -439,7 +439,13 @@ namespace OIF {
                 {"swapitem", EffectType::kSwapItem},
                 {"playsound", EffectType::kPlaySound},
                 {"spillinventory", EffectType::kSpillInventory},
-                {"swapactor", EffectType::kSwapActor}
+                {"swapactor", EffectType::kSwapActor},
+                {"spawnleveleditem", EffectType::kSpawnLeveledItem},
+                {"swapleveleditem", EffectType::kSwapLeveledItem},
+                {"spawnleveledspell", EffectType::kSpawnLeveledSpell},
+                {"spawnleveledspellonitem", EffectType::kSpawnLeveledSpellOnItem},
+                {"spawnleveledactor", EffectType::kSpawnLeveledActor},
+                {"swapleveledactor", EffectType::kSwapLeveledActor}
             };
 
             for (const auto& effj : effectArray) {
@@ -550,16 +556,17 @@ namespace OIF {
         Effect effCopy = eff;
         EventType eventType = ctx.event;
 
+
         SKSE::GetTaskInterface()->AddTask([effCopy, targetFormID, sourceFormID, eventType]() {
             auto* target = RE::TESForm::LookupByID<RE::TESObjectREFR>(targetFormID);
             auto* source = sourceFormID ? RE::TESForm::LookupByID<RE::Actor>(sourceFormID) : nullptr;
             
-            if (!target || !target->GetBaseObject() || target->IsDisabled() || target->IsDeleted()) {
+            if (!target || !target->GetBaseObject() || target->IsDeleted()) {
                 logger::warn("Target {} is invalid or deleted", targetFormID);
                 return;
             }
 
-            if (!source || !source->GetBaseObject() || source->IsDisabled() || source->IsDeleted() || source->IsDead()) {
+            if (!source || !source->GetBaseObject() || source->IsDeleted()) {
                 logger::warn("Source {} is invalid, dead or deleted", sourceFormID);
                 return;
             }
@@ -604,9 +611,8 @@ namespace OIF {
                             if (!form) continue;
                             float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
                             if (roll > extData.chance) continue;
-                            if (auto* spell = form->As<RE::SpellItem>()) {
+                            if (auto* spell = form->As<RE::SpellItem>())
                                 spellsData.emplace_back(spell, extData.count);
-                            }
                         }
                         if (!spellsData.empty()) {
                             Effects::SpawnSpell(newCtx, spellsData);
@@ -621,9 +627,8 @@ namespace OIF {
                             if (!form) continue;
                             float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
                             if (roll > extData.chance) continue;
-                            if (auto* spell = form->As<RE::SpellItem>()) {
+                            if (auto* spell = form->As<RE::SpellItem>())
                                 spellsData.emplace_back(spell, extData.count);
-                            }
                         }
                         if (!spellsData.empty()) {
                             Effects::SpawnSpellOnItem(newCtx, spellsData);
@@ -638,9 +643,8 @@ namespace OIF {
                             if (!form) continue;
                             float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
                             if (roll > extData.chance) continue;
-                            if (auto* actor = form->As<RE::TESNPC>()) {
+                            if (auto* actor = form->As<RE::TESNPC>())
                                 actorsData.emplace_back(actor, extData.count);
-                            }
                         }
                         if (!actorsData.empty()) {
                             Effects::SpawnActor(newCtx, actorsData);
@@ -723,15 +727,116 @@ namespace OIF {
                             if (!form) continue;
                             float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
                             if (roll > extData.chance) continue;
-                            if (auto* actor = form->As<RE::TESNPC>()) {
+                            if (auto* actor = form->As<RE::TESNPC>())
                                 actorsData.emplace_back(actor, extData.count);
-                            }
                         }
                         if (!actorsData.empty()) {
                             Effects::SwapActor(newCtx, actorsData);
                         }
                     }
-                    break;                        
+                    break;
+                    
+                    case EffectType::kSpawnLeveledItem:
+                    {
+                        std::vector<LvlItemSpawnData> lvlItemsData;
+                        for (const auto& [form, ext] : effCopy.items) {
+                            if (!form) continue;
+                            float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
+                            if (roll > ext.chance) continue;
+
+                            if (auto* lvli = form->As<RE::TESLevItem>())
+                                lvlItemsData.emplace_back(lvli, ext.count);
+                        }
+                        if (!lvlItemsData.empty()) {
+                            Effects::SpawnLeveledItem(newCtx, lvlItemsData);
+                        }
+                    }
+                    break;
+
+                    case EffectType::kSwapLeveledItem:
+                    {
+                        std::vector<LvlItemSpawnData> lvlItemsData;
+                        for (const auto& [form, ext] : effCopy.items) {
+                            if (!form) continue;
+                            float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
+                            if (roll > ext.chance) continue;
+
+                            if (auto* lvli = form->As<RE::TESLevItem>())
+                                lvlItemsData.emplace_back(lvli, ext.count);
+                        }
+                        if (!lvlItemsData.empty()) {
+                            Effects::SwapLeveledItem(newCtx, lvlItemsData);
+                        }
+                    }
+                    break;
+
+                    case EffectType::kSpawnLeveledSpell:
+                    {
+                        std::vector<LvlSpellSpawnData> lvlSpellsData;
+                        for (const auto& [form, ext] : effCopy.items) {
+                            if (!form) continue;
+                            float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
+                            if (roll > ext.chance) continue;
+
+                            if (auto* lvls = form->As<RE::TESLevSpell>())
+                                lvlSpellsData.emplace_back(lvls, ext.count);
+                        }
+                        if (!lvlSpellsData.empty()) {
+                            Effects::SpawnLeveledSpell(newCtx, lvlSpellsData);
+                        }
+                    }
+                    break;
+
+                    case EffectType::kSpawnLeveledSpellOnItem:
+                    {
+                        std::vector<LvlSpellSpawnData> lvlSpellsData;
+                        for (const auto& [form, ext] : effCopy.items) {
+                            if (!form) continue;
+                            float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
+                            if (roll > ext.chance) continue;
+
+                            if (auto* lvls = form->As<RE::TESLevSpell>())
+                                lvlSpellsData.emplace_back(lvls, ext.count);
+                        }
+                        if (!lvlSpellsData.empty()) {
+                            Effects::SpawnLeveledSpellOnItem(newCtx, lvlSpellsData);
+                        }
+                    }
+                    break;
+
+                    case EffectType::kSpawnLeveledActor:
+                    {
+                        std::vector<LvlActorSpawnData> lvlActorsData;
+                        for (const auto& [form, ext] : effCopy.items) {
+                            if (!form) continue;
+                            float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
+                            if (roll > ext.chance) continue;
+
+                            if (auto* lvlc = form->As<RE::TESLevCharacter>())
+                                lvlActorsData.emplace_back(lvlc, ext.count);
+                        }
+                        if (!lvlActorsData.empty()) {
+                            Effects::SpawnLeveledActor(newCtx, lvlActorsData);
+                        }
+                    }
+                    break;
+
+                    case EffectType::kSwapLeveledActor:
+                    {
+                        std::vector<LvlActorSpawnData> lvlActorsData;
+                        for (const auto& [form, ext] : effCopy.items) {
+                            if (!form) continue;
+                            float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
+                            if (roll > ext.chance) continue;
+
+                            if (auto* lvlc = form->As<RE::TESLevCharacter>())
+                                lvlActorsData.emplace_back(lvlc, ext.count);
+                        }
+                        if (!lvlActorsData.empty()) {
+                            Effects::SwapLeveledActor(newCtx, lvlActorsData);
+                        }
+                    }
+                    break;
 
                 default:
                     logger::warn("Unknown effect type {}", static_cast<int>(effCopy.type));
@@ -755,13 +860,7 @@ namespace OIF {
             }
         } _cleaner;
 
-        if (!ctx.target || 
-            ctx.target->IsDisabled() || 
-            ctx.target->IsDeleted() || 
-            !ctx.source || 
-            ctx.source->IsDisabled() || 
-            ctx.source->IsDeleted() || 
-            ctx.source->IsDead())
+        if (!ctx.target || ctx.target->IsDeleted() || !ctx.source || ctx.source->IsDeleted())
             return;
 
         auto formType = ctx.target->GetBaseObject()->GetFormType();

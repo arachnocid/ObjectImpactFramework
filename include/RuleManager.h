@@ -23,7 +23,13 @@ namespace OIF
 		kSwapItem, 
 		kPlaySound, 
 		kSpillInventory, 
-		kSwapActor
+		kSwapActor,
+		kSpawnLeveledItem,
+		kSwapLeveledItem,
+		kSpawnLeveledSpell,
+		kSpawnLeveledSpellOnItem,
+		kSpawnLeveledActor,
+		kSwapLeveledActor
 	};
 
 	// ---------------------- Filer ----------------------
@@ -35,7 +41,7 @@ namespace OIF
 		std::unordered_set<RE::BGSKeyword*> keywords;        	  	// must have ANY of these keywords
 		float chance{ 100.f };         							   	// the chance of 0‑100 %
 		std::uint32_t interactions{1};								// number of interactions required to satisfy filter
-		std::uint32_t limit = 0; 									// number of interactions to stop the effect
+		std::uint32_t limit = 0; 									// number of interactions to stop the effect (BETA)
 		
 		// New hit-specific filters
 		std::unordered_set<std::string> weaponTypes;          	 	// weapon type categories
@@ -106,6 +112,30 @@ namespace OIF
 		float chance{ 100.f };
 	};
 
+	struct LvlItemSpawnData 
+	{
+		RE::TESLevItem* item;
+		std::uint32_t count;
+		std::uint32_t formID;
+		float chance{ 100.f };
+	};
+
+	struct LvlSpellSpawnData 
+	{
+		RE::TESLevSpell* spell;
+		std::uint32_t count;
+		std::uint32_t formID;
+		float chance{ 100.f };
+	};
+
+	struct LvlActorSpawnData 
+	{
+		RE::TESLevCharacter* npc;
+		std::uint32_t count;
+		std::uint32_t formID;
+		float chance{ 100.f };
+	};
+
 	struct ImpactSpawnData 
 	{
 		RE::BGSImpactDataSet* impact;
@@ -161,6 +191,6 @@ namespace OIF
 
 		std::vector<Rule> _rules;
 		mutable std::shared_mutex _ruleMutex;
-		std::unordered_map<uint64_t, uint32_t> _filterInteractionCounts;	// counts for filters
+		std::unordered_map<uint64_t, uint32_t> _filterInteractionCounts;
 	};
 }

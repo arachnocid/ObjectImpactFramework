@@ -20,4 +20,10 @@ namespace OIF::Effects
     void PlaySound(const RuleContext& ctx, const std::vector<SoundSpawnData>& soundsData);
     void SpillInventory(const RuleContext& ctx);
     void SwapActor(const RuleContext& ctx, const std::vector<ActorSpawnData>& actorsData);
+    void SpawnLeveledItem(const RuleContext& ctx, const std::vector<LvlItemSpawnData>& leveledItemsData);
+    void SwapLeveledItem(const RuleContext& ctx, const std::vector<LvlItemSpawnData>& leveledItemsData);
+    void SpawnLeveledSpell(const RuleContext& ctx, const std::vector<LvlSpellSpawnData>& leveledSpellsData);
+    void SpawnLeveledSpellOnItem(const RuleContext& ctx, const std::vector<LvlSpellSpawnData>& leveledSpellsData);
+    void SpawnLeveledActor(const RuleContext& ctx, const std::vector<LvlActorSpawnData>& leveledActorsData);
+    void SwapLeveledActor(const RuleContext& ctx, const std::vector<LvlActorSpawnData>& leveledActorsData);
 }
