@@ -184,6 +184,66 @@ namespace OIF {
         return typedForm;
     }
 
+    void RuleManager::ResetInteractionCounts()
+    {
+        std::unique_lock lock(_ruleMutex);
+        _filterInteractionCounts.clear();
+    }
+
+    void RuleManager::OnSave(SKSE::SerializationInterface* intf)
+    {
+        std::shared_lock lock(_ruleMutex);
+
+        if (!intf->OpenRecord('ICNT', 1))
+            return;
+
+        std::uint32_t size = static_cast<std::uint32_t>(_filterInteractionCounts.size());
+        intf->WriteRecordData(size);
+
+        for (auto& [key, val] : _filterInteractionCounts) {
+            intf->WriteRecordData(key);
+            intf->WriteRecordData(val);
+        }
+    }
+
+    void RuleManager::OnLoad(SKSE::SerializationInterface* intf)
+    {
+        ResetInteractionCounts();
+
+        std::uint32_t type, version, length;
+        while (intf->GetNextRecordInfo(type, version, length)) {
+            if (type != 'ICNT')
+                continue;
+
+            std::uint32_t size;
+            intf->ReadRecordData(size);
+            for (std::uint32_t i = 0; i < size; ++i) {
+                std::uint64_t key; std::uint32_t val;
+                intf->ReadRecordData(key);
+                intf->ReadRecordData(val);
+                _filterInteractionCounts[key] = val;
+            }
+        }
+    }
+
+    void RuleManager::InitSerialization()
+    {
+        if (auto* ser = SKSE::GetSerializationInterface()) {
+            ser->SetUniqueID('OIFL');           // «Object-Impact-Framework Limit»
+
+            ser->SetSaveCallback([](auto* intf) {
+                GetSingleton()->OnSave(intf);
+            });
+            ser->SetLoadCallback([](auto* intf) {
+                GetSingleton()->OnLoad(intf);
+            });
+            ser->SetRevertCallback([](auto*) {
+                GetSingleton()->ResetInteractionCounts();
+            });
+        }
+    }
+
+
     // ------------------ Singleton ------------------
     RuleManager* RuleManager::GetSingleton() {
         static RuleManager inst;
@@ -876,6 +936,8 @@ namespace OIF {
     {
         std::unique_lock lock(_ruleMutex);
 
+        bool stateChanged = false;
+
         struct ProcessedCleaner {
             ~ProcessedCleaner() {
                 OIF::Effects::ClearProcessedItems();
@@ -929,6 +991,7 @@ namespace OIF {
                 if (limitCnt >= r.filter.limit)
                     continue;
                 ++limitCnt;
+                stateChanged = true; 
             }
 
             // Interaction quota ("hit twice before effect")

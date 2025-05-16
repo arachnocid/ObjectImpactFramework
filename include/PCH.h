@@ -132,6 +132,7 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 	InitializeLog();
 	logger::info("Loaded plugin");
 	SKSE::Init(a_skse);
+	RuleManager::GetSingleton()->InitSerialization();
 	SKSE::GetMessagingInterface()->RegisterListener(OnMessage);
 	return true;
 }

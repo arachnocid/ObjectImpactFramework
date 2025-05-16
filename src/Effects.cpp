@@ -259,7 +259,7 @@ namespace OIF::Effects
 
         std::vector<RE::Actor*> targets;
 
-        RE::TES::GetSingleton()->ForEachReferenceInRange(caster, 300.0, [&](RE::TESObjectREFR* a_ref) {
+        RE::TES::GetSingleton()->ForEachReferenceInRange(caster, 350.0, [&](RE::TESObjectREFR* a_ref) {
             auto* actor = a_ref->As<RE::Actor>();
             if (actor && !actor->IsDead() && !actor->IsDisabled()) {
                 targets.push_back(actor);
@@ -268,12 +268,7 @@ namespace OIF::Effects
         });
 
         if (targets.empty()) {
-            auto* srcActor = ctx.source->As<RE::Actor>();
-            if (!srcActor || srcActor->IsDead() || srcActor->IsDisabled()) {
-                logger::warn("SpawnSpell: no valid target at all");
-                return;
-            }
-            targets.push_back(srcActor);
+            return;
         }
 
         for (const auto& spellData : spellsData) {
@@ -665,7 +660,7 @@ namespace OIF::Effects
 
         std::vector<RE::Actor*> targets;
 
-        RE::TES::GetSingleton()->ForEachReferenceInRange(caster, 300.0, [&](RE::TESObjectREFR* a_ref) {
+        RE::TES::GetSingleton()->ForEachReferenceInRange(caster, 350.0, [&](RE::TESObjectREFR* a_ref) {
             auto* actor = a_ref->As<RE::Actor>();
             if (actor && !actor->IsDead() && !actor->IsDisabled()) {
                 targets.push_back(actor);
@@ -674,12 +669,7 @@ namespace OIF::Effects
         });
 
         if (targets.empty()) {
-            auto* srcActor = ctx.source->As<RE::Actor>();
-            if (!srcActor || srcActor->IsDead() || srcActor->IsDisabled()) {
-                logger::warn("SpawnLeveledSpell: no valid target at all");
-                return;
-            }
-            targets.push_back(srcActor);
+            return;
         }
 
         for (const auto& d : spellsData) {

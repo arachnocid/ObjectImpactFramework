@@ -184,6 +184,11 @@ namespace OIF
 
 		void LoadRules();
 		void Trigger(const RuleContext& ctx);
+		
+		void ResetInteractionCounts();
+		void OnSave(SKSE::SerializationInterface* intf);
+		void OnLoad(SKSE::SerializationInterface* intf);
+		void InitSerialization();
 
 	private:
 		RuleManager(const RuleManager&) = delete;
