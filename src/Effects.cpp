@@ -236,8 +236,10 @@ namespace OIF::Effects
             return;
         }
 
-        RE::TESObjectREFR* caster = ctx.target;
-        RE::TESObjectREFR* target = ctx.source; // The spell targets the source (attacker)
+        // Determine caster and target
+        // The target object is the source of the effect
+        auto* caster = ctx.target;
+        auto* target = ctx.source;
 
         if (!target || target->IsDeleted()) {
             logger::warn("SpawnSpell: No valid target to cast the spell");
@@ -255,12 +257,32 @@ namespace OIF::Effects
             return;
         }
 
-        for (const auto& spellData : spellsData) {
-            if (!spellData.spell)
-                continue;
+        std::vector<RE::Actor*> targets;
 
-            for (std::uint32_t i = 0; i < spellData.count; ++i) {
-                mc->CastSpellImmediate(static_cast<RE::MagicItem*>(spellData.spell), false, target ? target : caster, 1.0f, false, 0.0f, ctx.source);
+        RE::TES::GetSingleton()->ForEachReferenceInRange(caster, 300.0, [&](RE::TESObjectREFR* a_ref) {
+            auto* actor = a_ref->As<RE::Actor>();
+            if (actor && !actor->IsDead() && !actor->IsDisabled()) {
+                targets.push_back(actor);
+            }
+            return RE::BSContainer::ForEachResult::kContinue;
+        });
+
+        if (targets.empty()) {
+            auto* srcActor = ctx.source->As<RE::Actor>();
+            if (!srcActor || srcActor->IsDead() || srcActor->IsDisabled()) {
+                logger::warn("SpawnSpell: no valid target at all");
+                return;
+            }
+            targets.push_back(srcActor);
+        }
+
+        for (const auto& spellData : spellsData) {
+            if (!spellData.spell) continue;
+
+            for (auto* tgt : targets) {
+                for (std::uint32_t i = 0; i < spellData.count; ++i) {
+                    mc->CastSpellImmediate(spellData.spell, false, tgt, 1.0f, false, 0.0f, nullptr);
+                }
             }
         }
     }
@@ -296,7 +318,7 @@ namespace OIF::Effects
                 continue;
 
             for (std::uint32_t i = 0; i < spellData.count; ++i) {
-                mc->CastSpellImmediate(static_cast<RE::MagicItem*>(spellData.spell), false, target ? target : caster, 1.0f, false, 0.0f, ctx.source);
+                mc->CastSpellImmediate(spellData.spell, false, target ? target : caster, 1.0f, false, 0.0f, nullptr);
             }
         }
     }
@@ -554,9 +576,9 @@ namespace OIF::Effects
         }
     }
 
-    void SpawnLeveledItem(const RuleContext& ctx, const std::vector<LvlItemSpawnData>& data)
+    void SpawnLeveledItem(const RuleContext& ctx, const std::vector<LvlItemSpawnData>& itemsData)
     {
-        if (!ctx.target || data.empty() || ctx.target->IsDeleted()) {
+        if (!ctx.target || itemsData.empty() || ctx.target->IsDeleted()) {
             logger::error("SpawnLeveledItem: invalid target");
             return;
         }
@@ -574,7 +596,7 @@ namespace OIF::Effects
             };
         }
 
-        for (const auto& d : data) {
+        for (const auto& d : itemsData) {
             if (!d.item) continue;
 
             for (std::uint32_t i = 0; i < d.count; ++i) {
@@ -597,10 +619,10 @@ namespace OIF::Effects
         }
     }
 
-    void SwapLeveledItem(const RuleContext& ctx, const std::vector<LvlItemSpawnData>& data)
+    void SwapLeveledItem(const RuleContext& ctx, const std::vector<LvlItemSpawnData>& itemsData)
     {
         bool spawned = false;
-        SpawnLeveledItem(ctx, data);
+        SpawnLeveledItem(ctx, itemsData);
 
         {
             std::lock_guard lock(processedItemsMutex);
@@ -615,65 +637,95 @@ namespace OIF::Effects
         }
     }
 
-    void SpawnLeveledSpell(const RuleContext& ctx, const std::vector<LvlSpellSpawnData>& data)
+    void SpawnLeveledSpell(const RuleContext& ctx, const std::vector<LvlSpellSpawnData>& spellsData)
     {
-        if (!ctx.source || data.empty()) {
-            logger::error("SpawnLeveledSpell: invalid source");
+        if (!ctx.source || spellsData.empty()) {
+            logger::error("SpawnLeveledSpell: No source or spells to spawn");
             return;
         }
 
-        auto* caster  = ctx.target;
-        auto* target  = ctx.source;
+        auto* caster = ctx.target;
+        auto* target = ctx.source;
 
-        if (!caster || caster->IsDeleted() || !target || target->IsDeleted()) {
-            logger::warn("SpawnLeveledSpell: bad refs");
+        if (!target || target->IsDeleted()) {
+            logger::warn("SpawnLeveledSpell: No valid target to cast the spell");
+            return;
+        }
+
+        if (!caster || caster->IsDeleted()) {
+            logger::warn("SpawnLeveledSpell: No valid source to cast the spell");
             return;
         }
 
         auto* mc = caster->GetMagicCaster(RE::MagicSystem::CastingSource::kInstant);
         if (!mc) {
-            logger::error("SpawnLeveledSpell: caster lacks MagicCaster");
+            logger::error("SpawnLeveledSpell: caster has no MagicCaster");
             return;
         }
 
-        for (const auto& d : data) {
+        std::vector<RE::Actor*> targets;
+
+        RE::TES::GetSingleton()->ForEachReferenceInRange(caster, 300.0, [&](RE::TESObjectREFR* a_ref) {
+            auto* actor = a_ref->As<RE::Actor>();
+            if (actor && !actor->IsDead() && !actor->IsDisabled()) {
+                targets.push_back(actor);
+            }
+            return RE::BSContainer::ForEachResult::kContinue;
+        });
+
+        if (targets.empty()) {
+            auto* srcActor = ctx.source->As<RE::Actor>();
+            if (!srcActor || srcActor->IsDead() || srcActor->IsDisabled()) {
+                logger::warn("SpawnLeveledSpell: no valid target at all");
+                return;
+            }
+            targets.push_back(srcActor);
+        }
+
+        for (const auto& d : spellsData) {
             if (!d.spell) continue;
 
-            for (std::uint32_t i = 0; i < d.count; ++i) {
-                auto* spell = ResolveLeveledSpell(d.spell);
-                if (!spell) {
-                    logger::warn("SpawnLeveledSpell: can't resolve LVLS {:X}",
-                                d.spell->GetFormID());
-                    continue;
+            auto* spell = ResolveLeveledSpell(d.spell);
+            if (!spell) {
+                logger::warn("SpawnLeveledSpell: can't resolve LVLS {:X}", d.spell->GetFormID());
+                continue;
+            }
+
+            for (auto* tgt : targets) {
+                for (std::uint32_t i = 0; i < d.count; ++i) {
+                    mc->CastSpellImmediate(spell, false, tgt, 1.0f, false, 0.0f, nullptr);
                 }
-                mc->CastSpellImmediate(spell, false, target, 1.0f, false, 0.0f, ctx.source);
             }
         }
     }
 
-    void SpawnLeveledSpellOnItem(const RuleContext& ctx,
-                                const std::vector<LvlSpellSpawnData>& data)
+    void SpawnLeveledSpellOnItem(const RuleContext& ctx, const std::vector<LvlSpellSpawnData>& spellsData)
     {
-        if (!ctx.source || data.empty()) {
-            logger::error("SpawnLeveledSpellOnItem: invalid source");
+        if (!ctx.source || spellsData.empty()) {
+            logger::error("SpawnLeveledSpellOnItem: No source or spells to spawn");
             return;
         }
 
         auto* caster = ctx.source;
         auto* target = ctx.target;
 
-        if (!caster || caster->IsDeleted() || !target || target->IsDeleted()) {
-            logger::warn("SpawnLeveledSpellOnItem: bad refs");
+        if (!target || target->IsDeleted()) {
+            logger::warn("SpawnSpell: No valid target to cast the spell");
+            return;
+        }
+
+        if (!caster || caster->IsDeleted()) {
+            logger::warn("SpawnSpell: No valid source to cast the spell");
             return;
         }
 
         auto* mc = caster->GetMagicCaster(RE::MagicSystem::CastingSource::kInstant);
         if (!mc) {
-            logger::error("SpawnLeveledSpellOnItem: caster lacks MagicCaster");
+            logger::error("SpawnLeveledSpellOnItem: caster has no MagicCaster");
             return;
         }
 
-        for (const auto& d : data) {
+        for (const auto& d : spellsData) {
             if (!d.spell) continue;
 
             for (std::uint32_t i = 0; i < d.count; ++i) {
@@ -683,14 +735,14 @@ namespace OIF::Effects
                                 d.spell->GetFormID());
                     continue;
                 }
-                mc->CastSpellImmediate(spell, false, target, 1.0f, false, 0.0f, ctx.source);
+                mc->CastSpellImmediate(spell, false, target, 1.0f, false, 0.0f, nullptr);
             }
         }
     }
 
-    void SpawnLeveledActor(const RuleContext& ctx, const std::vector<LvlActorSpawnData>& data)
+    void SpawnLeveledActor(const RuleContext& ctx, const std::vector<LvlActorSpawnData>& actorsData)
     {
-        if (!ctx.target || data.empty() || ctx.target->IsDeleted()) {
+        if (!ctx.target || actorsData.empty() || ctx.target->IsDeleted()) {
             logger::error("SpawnLeveledActor: invalid target");
             return;
         }
@@ -708,7 +760,7 @@ namespace OIF::Effects
             };
         }
 
-        for (const auto& d : data) {
+        for (const auto& d : actorsData) {
             if (!d.npc) continue;
 
             for (std::uint32_t i = 0; i < d.count; ++i) {
@@ -727,10 +779,10 @@ namespace OIF::Effects
         }
     }
 
-    void SwapLeveledActor(const RuleContext& ctx, const std::vector<LvlActorSpawnData>& data)
+    void SwapLeveledActor(const RuleContext& ctx, const std::vector<LvlActorSpawnData>& actorsData)
     {
         bool spawned = false;
-        SpawnLeveledActor(ctx, data);
+        SpawnLeveledActor(ctx, actorsData);
 
         {
             std::lock_guard lock(processedItemsMutex);
@@ -742,6 +794,98 @@ namespace OIF::Effects
                 ctx.target->Disable();
             else
                 ctx.target->SetDelete(true);
+        }
+    }
+
+    void ApplyIngestible(const RuleContext& ctx)
+    {
+        if (!ctx.target || ctx.target->IsDeleted()) {
+            logger::error("ApplyIngestible: invalid target");
+            return;
+        }
+        if (!ctx.source || ctx.source->IsDeleted()) {
+            logger::error("ApplyIngestible: invalid source");
+            return;
+        }
+    
+        auto* targetRef = ctx.target;
+        auto* casterRef = ctx.source;
+        auto* casterMC  = casterRef->GetMagicCaster(RE::MagicSystem::CastingSource::kInstant);
+        if (!casterMC) {
+            logger::warn("ApplyIngestible: source has no MagicCaster");
+            return;
+        }
+    
+        auto* magicItem = targetRef->GetBaseObject()->As<RE::MagicItem>();
+        if (!magicItem) {
+            logger::warn("ApplyIngestible: target is not a magic item");
+            return;
+        }
+
+        const bool hostile = magicItem->IsPoison();
+
+        RE::TES::GetSingleton()->ForEachReferenceInRange(targetRef, 100.0, [&](RE::TESObjectREFR* a_ref) {
+            auto* actor = a_ref->As<RE::Actor>();
+            if (actor && !actor->IsDisabled() && !actor->IsDeleted() && !actor->IsDead() && !actor->IsGhost()) {
+                casterMC->CastSpellImmediate(magicItem, false, actor, 1.0f, hostile, 0.0f, nullptr);
+            }
+            return RE::BSContainer::ForEachResult::kContinue;
+        });
+    }
+
+    void ApplyOtherIngestible(const RuleContext& ctx, const std::vector<IngestibleApplyData>& ingestiblesData)
+    {
+        if (ingestiblesData.empty()) {
+            logger::error("ApplyOtherIngestible: invalid input");
+            return;
+        }
+
+        if (!ctx.source || ctx.source->IsDeleted()) {
+            logger::error("ApplyOtherIngestible: invalid source");
+            return;
+        }
+        
+        if (!ctx.target || ctx.target->IsDeleted()) {
+            logger::error("ApplyOtherIngestible: invalid target");
+            return;
+        }
+
+        auto* targetRef = ctx.target;
+        auto* casterRef = ctx.source;
+        auto* casterMC  = casterRef->GetMagicCaster(RE::MagicSystem::CastingSource::kInstant);
+        if (!casterMC) {
+            logger::warn("ApplyOtherIngestible: source has no MagicCaster");
+            return;
+        }
+
+        std::vector<RE::Actor*> targets;
+    
+        // Include the caster if it's a valid actor
+        if (auto* casterActor = casterRef->As<RE::Actor>(); casterActor && !casterActor->IsDead() && !casterActor->IsDisabled()) {
+            targets.push_back(casterActor);
+        }
+    
+        RE::TES::GetSingleton()->ForEachReferenceInRange(targetRef, 100.0, [&](RE::TESObjectREFR* a_ref) {
+            if (auto* actor = a_ref->As<RE::Actor>(); actor && !actor->IsDead() && !actor->IsDisabled()) {
+                targets.push_back(actor);
+            }
+            return RE::BSContainer::ForEachResult::kContinue;
+        });
+    
+        if (targets.empty()) {
+            return;
+        }
+    
+        for (const auto& pd : ingestiblesData) {
+            if (!pd.ingestible) continue;
+    
+            const bool hostile = pd.ingestible->IsPoison();
+    
+            for (auto* tgt : targets) {
+                for (std::uint32_t i = 0; i < pd.count; ++i) {
+                    casterMC->CastSpellImmediate(pd.ingestible, false, tgt, 1.0f, hostile, 0.0f, nullptr);
+                }
+            }
         }
     }
 }   

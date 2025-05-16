@@ -445,7 +445,9 @@ namespace OIF {
                 {"spawnleveledspell", EffectType::kSpawnLeveledSpell},
                 {"spawnleveledspellonitem", EffectType::kSpawnLeveledSpellOnItem},
                 {"spawnleveledactor", EffectType::kSpawnLeveledActor},
-                {"swapleveledactor", EffectType::kSwapLeveledActor}
+                {"swapleveledactor", EffectType::kSwapLeveledActor},
+                {"applyingestible", EffectType::kApplyIngestible},
+                {"applyotheringestible", EffectType::kApplyOtherIngestible}
             };
 
             for (const auto& effj : effectArray) {
@@ -463,7 +465,7 @@ namespace OIF {
 
                 eff.chance = effj.value("chance", r.filter.chance);
 
-                if (eff.type != EffectType::kDisposeItem && eff.type != EffectType::kSpillInventory) {
+                if (eff.type != EffectType::kDisposeItem && eff.type != EffectType::kSpillInventory && eff.type != EffectType::kApplyIngestible) {
                     if (effj.contains("items") && effj["items"].is_array()) {
                         for (const auto& itemJson : effj["items"]) {
                             if (!itemJson.is_object() || !itemJson.contains("formid") || !itemJson["formid"].is_string()) continue;
@@ -585,6 +587,10 @@ namespace OIF {
 
                     case EffectType::kSpillInventory:
                         Effects::SpillInventory(newCtx);
+                        break;
+
+                    case EffectType::kApplyIngestible:
+                        Effects::ApplyIngestible(newCtx);
                         break;
 
                     case EffectType::kSpawnItem:
@@ -834,6 +840,22 @@ namespace OIF {
                         }
                         if (!lvlActorsData.empty()) {
                             Effects::SwapLeveledActor(newCtx, lvlActorsData);
+                        }
+                    }
+                    break;
+
+                    case EffectType::kApplyOtherIngestible:
+                    {
+                        std::vector<IngestibleApplyData> ingestibleData;
+                        for (const auto& [form, extData] : effCopy.items) {
+                            if (!form) continue;
+                            float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
+                            if (roll > extData.chance) continue;
+                            if (auto* ingestible = form->As<RE::MagicItem>())
+                                ingestibleData.emplace_back(ingestible, extData.count);
+                        }
+                        if (!ingestibleData.empty()) {
+                            Effects::ApplyOtherIngestible(newCtx, ingestibleData);
                         }
                     }
                     break;

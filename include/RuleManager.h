@@ -29,7 +29,9 @@ namespace OIF
 		kSpawnLeveledSpell,
 		kSpawnLeveledSpellOnItem,
 		kSpawnLeveledActor,
-		kSwapLeveledActor
+		kSwapLeveledActor,
+		kApplyIngestible,
+		kApplyOtherIngestible
 	};
 
 	// ---------------------- Filer ----------------------
@@ -158,6 +160,13 @@ namespace OIF
 		std::uint32_t count;
 		std::uint32_t formID;
 		float chance{ 100.f };
+	};
+
+	struct IngestibleApplyData {
+		RE::MagicItem* ingestible;
+		std::uint32_t count;
+		std::uint32_t formID;
+		float chance{100.f};
 	};
 
 	struct Rule
