@@ -78,6 +78,8 @@ The `filter` part decides which objects the rule applies to. Here are the option
 
 - **interactions** (optional): A number from 0 to 100 which determines how many interactions it will take for the event to fire. If you skip this, it's 1 (every interaction).
 
+- **limit** (optional): A number which determines the maximum number of times this event can be triggered. If omitted, there is no limit.
+
 For `"Hit"` events, you can add these extra filters:
 
 - **weaponsTypes** (optional): Types of weapons that must hit the object. Use an array:
