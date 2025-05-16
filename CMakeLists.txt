@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.21)
 
 project(
 	ObjectImpactFramework
-	VERSION 1.0.0
+	VERSION 1.5.0
 	LANGUAGES CXX
 )
 
