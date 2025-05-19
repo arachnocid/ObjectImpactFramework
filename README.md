@@ -63,7 +63,7 @@ The `filter` object determines which objects and interactions trigger a rule. It
 - **`formTypes`** (optional): An array of strings specifying the types of objects the rule applies to. Possible values:
   - `"activator"`: Standard activators (e.g., levers, buttons).
   - `"talkingactivator"`: Activators that can "speak" (e.g., some quest-related objects).
-  - `"weapon"`: Weapons like swords or bows.
+  - `"weapon"`: Weapons like swords or bows (lying around in the world).
   - `"armor"`: Armor pieces.
   - `"ammo"`: Ammunition (e.g., arrows, bolts).
   - `"ingredient"`: Alchemy ingredients.
@@ -85,7 +85,7 @@ The `filter` object determines which objects and interactions trigger a rule. It
 - **`formIDs`** (optional): An array of strings identifying specific objects by their Form ID in the format `"modName:formID"`. Examples:
   - `"Skyrim.esm:0x123456"` (for esp/esm plugins).
   - `"MyMod.esl:0x456"` (for esl/espfe plugins).
-  - `"Dawnguard.esm:00123456"` (alternate format with leading zeros).
+  - `"Dawnguard.esm:00123456"` (alternate format with leading zeros (esp/esm only)).
 
 - **`formLists`** (optional): An array of objects referencing formlists (lists of forms defined in a mod). Each entry has:
   - **`formID`**: The formlist ID in `"modName:formID"` format (required).
@@ -119,7 +119,7 @@ The `filter` object determines which objects and interactions trigger a rule. It
 
 For rules with the `"Hit"` event, additional filters can refine which attacks trigger the rule:
 
-- **`weaponsTypes`** (optional): An array of weapon or attack types that must be used. Possible values:
+- **`weaponsTypes`** (optional): An array of weapon or spell types that must be used. Possible values:
   - `"onehandsword"`: One-handed swords.
   - `"twohandsword"`: Two-handed swords.
   - `"onehandaxe"`: One-handed axes.
@@ -138,7 +138,7 @@ For rules with the `"Hit"` event, additional filters can refine which attacks tr
   - `"total"`: Matches all weapon types.
   - `"other"`: Miscellaneous types not covered above.
 
-- **`weapons`** (optional): An array of specific weapon Form IDs in `"modName:formID"` format (e.g., `"Skyrim.esm:0x1A2B3C"`).
+- **`weapons`** (optional): An array of specific weapon or spell Form IDs in `"modName:formID"` format (e.g., `"Skyrim.esm:0x1A2B3C"`).
 
 - **`weaponsKeywords`** (optional): An array of keywords the weapon or spell must have, in `"modName:formID"` or `"KeywordName"` format.
 
@@ -170,8 +170,8 @@ Here are all possible `type` values:
 - **`SpawnLeveledItem`**: Spawns random leveled items based on the player’s level.
 - **`SwapItem`**: Replaces the target object with another specific item.
 - **`SwapLeveledItem`**: Replaces the target object with a random leveled item.
-- **`SpawnSpell`**: Casts spells on nearby actors.
-- **`SpawnLeveledSpell`**: Casts random leveled spells on nearby actors.
+- **`SpawnSpell`**: Casts spells on nearby actors (within 350 units).
+- **`SpawnLeveledSpell`**: Casts random leveled spells on nearby actors (within 350 units).
 - **`SpawnSpellOnItem`**: Casts spells on the target object.
 - **`SpawnLeveledSpellOnItem`**: Casts random leveled spells on the target object.
 - **`SpawnActor`**: Spawns specific actors at the object’s location.
@@ -182,9 +182,9 @@ Here are all possible `type` values:
 - **`SpawnExplosion`**: Triggers an explosion at the object’s location.
 - **`PlaySound`**: Plays a sound descriptor.
 - **`SpillInventory`**: Spills the contents of a container.
-- **`ApplyIngestible`**: Applies the target object’s effects (if it’s an ingredient or ingestible) to nearby actors.
-- **`ApplyOtherIngestible`**: Applies effects from specified ingestibles to nearby actors.
-- **`SpawnLight`**: Spawns a light source at the object’s location.
+- **`ApplyIngestible`**: Applies the target object’s effects (if it’s an ingredient or ingestible) to nearby actors (within 150 units).
+- **`ApplyOtherIngestible`**: Applies effects from specified ingestibles to nearby actors (within 150 units). Can be used with any form type (e.g., activator, tree), unlike `"ApplyIngestible"`.
+- **`SpawnLight`**: Spawns a light at the object’s location, will appear in the middle of an object.
 - **`RemoveLight`**: Deletes lights within a specified radius.
 - **`DisableLight`**: Disables lights within a specified radius.
 - **`EnableLight`**: Enables previously disabled lights within a specified radius.
