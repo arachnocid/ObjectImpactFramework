@@ -176,24 +176,26 @@ namespace OIF::Effects
     }
 
     // ------------------ Effects ------------------
-    void DisposeItem(const RuleContext& ctx)
+    void RemoveItem(const RuleContext& ctx)
     {
         if (!ctx.target || ctx.target->IsDeleted()) {
-            logger::error("DisposeItem: No target to dispose");
+            logger::error("RemoveItem: No target to remove");
             return;
         }
 
-        if (!ctx.target->IsDisabled()) {
-            ctx.target->Disable();
-        } else {
-            ctx.target->SetDelete(true);
-        }  
+        if (!ctx.target->IsDisabled()) ctx.target->Disable();
+        ctx.target->SetDelete(true); 
     }
 
     void SpawnItem(const RuleContext& ctx, const std::vector<ItemSpawnData>& itemsData)
     {
-        if (!ctx.target || itemsData.empty() || ctx.target->IsDeleted()) {
+        if (!ctx.target || ctx.target->IsDeleted()) {
             logger::error("SpawnItem: No target to spawn items");
+            return;
+        }
+
+        if (itemsData.empty()) {
+            logger::error("SpawnItem: No items to spawn");
             return;
         }
 
@@ -231,8 +233,13 @@ namespace OIF::Effects
 
     void SpawnSpell(const RuleContext& ctx, const std::vector<SpellSpawnData>& spellsData)
     {
-        if (!ctx.source || spellsData.empty()) {
-            logger::error("SpawnSpell: No source or spells to spawn");
+        if (!ctx.source) {
+            logger::error("SpawnSpell: No source to cast the spell");
+            return;
+        }
+
+        if (spellsData.empty()) {
+            logger::error("SpawnSpell: No spells to spawn");
             return;
         }
 
@@ -284,8 +291,13 @@ namespace OIF::Effects
 
     void SpawnSpellOnItem(const RuleContext& ctx, const std::vector<SpellSpawnData>& spellsData)
     {
-        if (!ctx.source || spellsData.empty()) {
-            logger::error("SpawnSpellOnItem: No source or spells to spawn on");
+        if (!ctx.source) {
+            logger::error("SpawnSpellOnItem: No source to cast the spell");
+            return;
+        }
+
+        if (spellsData.empty()) {
+            logger::error("SpawnSpellOnItem: No spells to spawn");
             return;
         }
 
@@ -320,8 +332,13 @@ namespace OIF::Effects
 
     void SpawnActor(const RuleContext& ctx, const std::vector<ActorSpawnData>& actorsData)
     {
-        if (!ctx.target || actorsData.empty() || ctx.target->IsDeleted()) {
+        if (!ctx.target || ctx.target->IsDeleted()) {
             logger::error("SpawnActor: No target to spawn actors");
+            return;
+        }
+
+        if (actorsData.empty()) {
+            logger::error("SpawnActor: No actors to spawn");
             return;
         }
 
@@ -353,13 +370,19 @@ namespace OIF::Effects
     
     void SpawnImpact(const RuleContext& ctx, const std::vector<ImpactSpawnData>& impactsData)
     {
-        if (!ctx.target || impactsData.empty() || ctx.target->IsDeleted()) {
-            logger::error("SpawnImpact: No target or impacts to spawn");
+        if (!ctx.target || ctx.target->IsDeleted()) {
+            logger::error("SpawnImpact: No target to spawn impacts");
+            return;
+        }
+
+        if (impactsData.empty()) {
+            logger::error("SpawnImpact: No impacts to spawn");
             return;
         }
 
         auto* im = RE::BGSImpactManager::GetSingleton();
         if (!im)
+            logger::error("SpawnImpact: Failed to get impact manager");
             return;
 
         RE::NiPoint3 hitPos = ctx.target->GetPosition();
@@ -396,8 +419,13 @@ namespace OIF::Effects
 
     void SpawnExplosion(const RuleContext& ctx, const std::vector<ExplosionSpawnData>& explosionsData)
     {
-        if (!ctx.target || explosionsData.empty() || ctx.target->IsDeleted()) {
-            logger::error("SpawnExplosion: No target or explosions to spawn");
+        if (!ctx.target || ctx.target->IsDeleted()) {
+            logger::error("SpawnExplosion: No target to spawn explosions");
+            return;
+        }
+
+        if (explosionsData.empty()) {
+            logger::error("SpawnExplosion: No explosions to spawn");
             return;
         }
 
@@ -406,15 +434,20 @@ namespace OIF::Effects
                 continue;
 
             for (std::uint32_t i = 0; i < explosionData.count; ++i) {
-                ctx.target->PlaceObjectAtMe(explosionData.explosion, false);
+                ctx.target->PlaceObjectAtMe(explosionData.explosion, true);
             }
         }
     }
 
     void SwapItem(const RuleContext& ctx, const std::vector<ItemSpawnData>& itemsData)
     {
-        if (!ctx.target || itemsData.empty() || ctx.target->IsDeleted()) {
+        if (!ctx.target || ctx.target->IsDeleted()) {
             logger::error("SwapItem: No target to swap items");
+            return;
+        }
+
+        if (itemsData.empty()) {
+            logger::error("SwapItem: No items to swap with");
             return;
         }
 
@@ -450,22 +483,29 @@ namespace OIF::Effects
             }
 
         if (anyItemSpawned) {
-            if (!ctx.target->IsDisabled()) {
-                ctx.target->Disable();
-            } else {
-                ctx.target->SetDelete(true);
-            }  
+            if (!ctx.target->IsDisabled()) ctx.target->Disable();
+            ctx.target->SetDelete(true); 
         }
     }
 
     void PlaySound(const RuleContext& ctx, const std::vector<SoundSpawnData>& soundsData)
     {
-        if (!ctx.target || soundsData.empty() || ctx.target->IsDeleted()) {
-            logger::error("PlaySound: No target or sounds to play");
+        if (!ctx.target || ctx.target->IsDeleted()) {
+            logger::error("PlaySound: No target to play sound");
             return;
         }
 
-        RE::NiPoint3 pos = ctx.target->GetPosition();
+        if (soundsData.empty()) {
+            logger::error("PlaySound: No sounds to play");
+            return;
+        }
+
+        RE::NiPoint3 pos;
+        if (auto* root = ctx.target->Get3D())
+            pos = root->worldBound.center;
+        else
+            pos = ctx.target->GetPosition();
+
         RE::BSSoundHandle handle;
         auto* audioManager = RE::BSAudioManager::GetSingleton();
 
@@ -480,6 +520,7 @@ namespace OIF::Effects
 
             for (std::uint32_t i = 0; i < soundData.count; ++i) {
                 if (audioManager->BuildSoundDataFromDescriptor(handle, soundData.sound, 1)) {
+                    handle.SetObjectToFollow(ctx.target->Get3D());
                     handle.SetPosition(pos);
                     handle.Play();
                 } else {
@@ -529,8 +570,13 @@ namespace OIF::Effects
 
     void SwapActor(const RuleContext& ctx, const std::vector<ActorSpawnData>& actorsData)
     {
-        if (!ctx.target || actorsData.empty() || ctx.target->IsDeleted()) {
+        if (!ctx.target || ctx.target->IsDeleted()) {
             logger::error("SwapActor: No target to swap actors");
+            return;
+        }
+
+        if (actorsData.empty()) {
+            logger::error("SwapActor: No actors to swap with");
             return;
         }
 
@@ -563,18 +609,20 @@ namespace OIF::Effects
         }
 
         if (anyActorSpawned) {
-            if (!ctx.target->IsDisabled()) {
-                ctx.target->Disable();
-            } else {
-                ctx.target->SetDelete(true);
-            }  
+            if (!ctx.target->IsDisabled()) ctx.target->Disable();
+            ctx.target->SetDelete(true); 
         }
     }
 
     void SpawnLeveledItem(const RuleContext& ctx, const std::vector<LvlItemSpawnData>& itemsData)
     {
-        if (!ctx.target || itemsData.empty() || ctx.target->IsDeleted()) {
-            logger::error("SpawnLeveledItem: invalid target");
+        if (!ctx.target || ctx.target->IsDeleted()) {
+            logger::error("SpawnLeveledItem: No target to spawn/swap leveled items");
+            return;
+        }
+
+        if (itemsData.empty()) {
+            logger::error("SpawnLeveledItem: No leveled items to spawn/swap with");
             return;
         }
 
@@ -625,17 +673,20 @@ namespace OIF::Effects
         }
         
         if (spawned) {
-            if (!ctx.target->IsDisabled())
-                ctx.target->Disable();
-            else
-                ctx.target->SetDelete(true);
+            if (!ctx.target->IsDisabled()) ctx.target->Disable();
+            ctx.target->SetDelete(true); 
         }
     }
 
     void SpawnLeveledSpell(const RuleContext& ctx, const std::vector<LvlSpellSpawnData>& spellsData)
     {
-        if (!ctx.source || spellsData.empty()) {
-            logger::error("SpawnLeveledSpell: No source or spells to spawn");
+        if (!ctx.source) {
+            logger::error("SpawnLeveledSpell: No source to cast the spell");
+            return;
+        }
+
+        if (spellsData.empty()) {
+            logger::error("SpawnLeveledSpell: No spells to spawn");
             return;
         }
 
@@ -654,7 +705,7 @@ namespace OIF::Effects
 
         auto* mc = caster->GetMagicCaster(RE::MagicSystem::CastingSource::kInstant);
         if (!mc) {
-            logger::error("SpawnLeveledSpell: caster has no MagicCaster");
+            logger::error("SpawnLeveledSpell: The caster has no MagicCaster");
             return;
         }
 
@@ -677,7 +728,7 @@ namespace OIF::Effects
 
             auto* spell = ResolveLeveledSpell(d.spell);
             if (!spell) {
-                logger::warn("SpawnLeveledSpell: can't resolve LVLS {:X}", d.spell->GetFormID());
+                logger::warn("SpawnLeveledSpell: Can't resolve LVLS {:X}", d.spell->GetFormID());
                 continue;
             }
 
@@ -691,8 +742,13 @@ namespace OIF::Effects
 
     void SpawnLeveledSpellOnItem(const RuleContext& ctx, const std::vector<LvlSpellSpawnData>& spellsData)
     {
-        if (!ctx.source || spellsData.empty()) {
-            logger::error("SpawnLeveledSpellOnItem: No source or spells to spawn");
+        if (!ctx.source) {
+            logger::error("SpawnLeveledSpellOnItem: No source to cast the spell");
+            return;
+        }
+
+        if (spellsData.empty()) {
+            logger::error("SpawnLeveledSpellOnItem: No spells to spawn");
             return;
         }
 
@@ -700,18 +756,18 @@ namespace OIF::Effects
         auto* target = ctx.target;
 
         if (!target || target->IsDeleted()) {
-            logger::warn("SpawnSpell: No valid target to cast the spell");
+            logger::warn("SpawnLeveledSpellOnItem: No valid target to cast the spell");
             return;
         }
 
         if (!caster || caster->IsDeleted()) {
-            logger::warn("SpawnSpell: No valid source to cast the spell");
+            logger::warn("SpawnLeveledSpellOnItem: No valid source to cast the spell");
             return;
         }
 
         auto* mc = caster->GetMagicCaster(RE::MagicSystem::CastingSource::kInstant);
         if (!mc) {
-            logger::error("SpawnLeveledSpellOnItem: caster has no MagicCaster");
+            logger::error("SpawnLeveledSpellOnItem: The caster has no MagicCaster");
             return;
         }
 
@@ -721,7 +777,7 @@ namespace OIF::Effects
             for (std::uint32_t i = 0; i < d.count; ++i) {
                 auto* spell = ResolveLeveledSpell(d.spell);
                 if (!spell) {
-                    logger::warn("SpawnLeveledSpellOnItem: can't resolve LVLS {:X}",
+                    logger::warn("SpawnLeveledSpellOnItem: Can't resolve LVLS {:X}",
                                 d.spell->GetFormID());
                     continue;
                 }
@@ -732,8 +788,13 @@ namespace OIF::Effects
 
     void SpawnLeveledActor(const RuleContext& ctx, const std::vector<LvlActorSpawnData>& actorsData)
     {
-        if (!ctx.target || actorsData.empty() || ctx.target->IsDeleted()) {
-            logger::error("SpawnLeveledActor: invalid target");
+        if (!ctx.target || ctx.target->IsDeleted()) {
+            logger::error("SpawnLeveledActor: No target to spawn actors");
+            return;
+        }
+
+        if (actorsData.empty()) {
+            logger::error("SpawnLeveledActor: No actors to spawn");
             return;
         }
 
@@ -756,7 +817,7 @@ namespace OIF::Effects
             for (std::uint32_t i = 0; i < d.count; ++i) {
                 auto* npcBase = ResolveLeveledNPC(d.npc);
                 if (!npcBase) {
-                    logger::warn("SpawnLeveledActor: can't resolve LVLC {:X}",
+                    logger::warn("SpawnLeveledActor: Can't resolve LVLC {:X}",
                                 d.npc->GetFormID());
                     continue;
                 }
@@ -780,21 +841,19 @@ namespace OIF::Effects
         }
 
         if (spawned) {
-            if (!ctx.target->IsDisabled())
-                ctx.target->Disable();
-            else
-                ctx.target->SetDelete(true);
+            if (!ctx.target->IsDisabled()) ctx.target->Disable();
+            ctx.target->SetDelete(true); 
         }
     }
 
     void ApplyIngestible(const RuleContext& ctx)
     {
         if (!ctx.target || ctx.target->IsDeleted()) {
-            logger::error("ApplyIngestible: invalid target");
+            logger::error("ApplyIngestible: No target to apply ingestible");
             return;
         }
         if (!ctx.source || ctx.source->IsDeleted()) {
-            logger::error("ApplyIngestible: invalid source");
+            logger::error("ApplyIngestible: No source to apply ingestible");
             return;
         }
     
@@ -802,19 +861,19 @@ namespace OIF::Effects
         auto* casterRef = ctx.source;
         auto* casterMC  = casterRef->GetMagicCaster(RE::MagicSystem::CastingSource::kInstant);
         if (!casterMC) {
-            logger::warn("ApplyIngestible: source has no MagicCaster");
+            logger::warn("ApplyIngestible: The source has no MagicCaster");
             return;
         }
     
         auto* magicItem = targetRef->GetBaseObject()->As<RE::MagicItem>();
         if (!magicItem) {
-            logger::warn("ApplyIngestible: target is not a magic item");
+            logger::warn("ApplyIngestible: The target is not a MagicItem");
             return;
         }
 
         const bool hostile = magicItem->IsPoison();
 
-        RE::TES::GetSingleton()->ForEachReferenceInRange(targetRef, 100.0, [&](RE::TESObjectREFR* a_ref) {
+        RE::TES::GetSingleton()->ForEachReferenceInRange(targetRef, 150.0, [&](RE::TESObjectREFR* a_ref) {
             auto* actor = a_ref->As<RE::Actor>();
             if (actor && !actor->IsDisabled() && !actor->IsDeleted() && !actor->IsDead() && !actor->IsGhost()) {
                 casterMC->CastSpellImmediate(magicItem, false, actor, 1.0f, hostile, 0.0f, nullptr);
@@ -826,17 +885,17 @@ namespace OIF::Effects
     void ApplyOtherIngestible(const RuleContext& ctx, const std::vector<IngestibleApplyData>& ingestiblesData)
     {
         if (ingestiblesData.empty()) {
-            logger::error("ApplyOtherIngestible: invalid input");
+            logger::error("ApplyOtherIngestible: No ingestibles to apply");
             return;
         }
 
         if (!ctx.source || ctx.source->IsDeleted()) {
-            logger::error("ApplyOtherIngestible: invalid source");
+            logger::error("ApplyOtherIngestible: No source to apply ingestible");
             return;
         }
         
         if (!ctx.target || ctx.target->IsDeleted()) {
-            logger::error("ApplyOtherIngestible: invalid target");
+            logger::error("ApplyOtherIngestible: No target to apply ingestible");
             return;
         }
 
@@ -844,7 +903,7 @@ namespace OIF::Effects
         auto* casterRef = ctx.source;
         auto* casterMC  = casterRef->GetMagicCaster(RE::MagicSystem::CastingSource::kInstant);
         if (!casterMC) {
-            logger::warn("ApplyOtherIngestible: source has no MagicCaster");
+            logger::warn("ApplyOtherIngestible: The source has no MagicCaster");
             return;
         }
 
@@ -855,7 +914,7 @@ namespace OIF::Effects
             targets.push_back(casterActor);
         }
     
-        RE::TES::GetSingleton()->ForEachReferenceInRange(targetRef, 100.0, [&](RE::TESObjectREFR* a_ref) {
+        RE::TES::GetSingleton()->ForEachReferenceInRange(targetRef, 150.0, [&](RE::TESObjectREFR* a_ref) {
             if (auto* actor = a_ref->As<RE::Actor>(); actor && !actor->IsDead() && !actor->IsDisabled()) {
                 targets.push_back(actor);
             }
@@ -878,4 +937,146 @@ namespace OIF::Effects
             }
         }
     }
-}   
+
+    void SpawnLight(const RuleContext& ctx, const std::vector<LightSpawnData>& lightsData)
+    {
+        if (!ctx.target || ctx.target->IsDeleted()) {
+            logger::error("SpawnLight: No target to spawn lights");
+            return;
+        }
+
+        if (lightsData.empty()) {
+            logger::error("SpawnLight: No lights to spawn");
+            return;
+        }
+
+        NiPoint3 pos;
+        if (auto* root = ctx.target->Get3D()) {
+            pos = root->worldBound.center;
+        } else {
+            const auto& bmin = ctx.target->GetBoundMin();
+            const auto& bmax = ctx.target->GetBoundMax();
+            pos = NiPoint3{
+                (bmin.x + bmax.x) * 0.5f,
+                (bmin.y + bmax.y) * 0.5f,
+                (bmin.z + bmax.z) * 0.5f
+            };
+        }
+
+        for (const auto& lightData : lightsData) {
+            if (!lightData.light)
+                continue;
+
+            for (std::uint32_t i = 0; i < lightData.count; ++i) {
+                RE::NiPointer<RE::TESObjectREFR> ref = ctx.target->PlaceObjectAtMe(lightData.light, true);
+                if (ref) {
+                    ref->SetPosition(pos);
+                    ref->Enable(false);
+                }
+            }
+        }
+    }
+
+    void RemoveLight(const RuleContext& ctx, const std::vector<LightRemoveData>& lightsData)
+    {
+        if (!ctx.target || ctx.target->IsDeleted()) {
+            logger::error("RemoveLight: No target to remove light around");
+            return;
+        }
+
+        if (lightsData.empty()) {
+            logger::warn("RemoveLight: No lights to remove");
+            return;
+        }
+
+        auto* tes = RE::TES::GetSingleton();
+        if (!tes)
+            return;
+
+        for (const auto& data : lightsData) {
+            if (data.radius <= 0)
+                continue;
+
+            tes->ForEachReferenceInRange(ctx.target, static_cast<float>(data.radius), [&](RE::TESObjectREFR* ref) {
+                    if (!ref || ref->IsDisabled() || ref->IsDeleted())
+                        return RE::BSContainer::ForEachResult::kContinue;
+    
+                    auto* baseObj = ref->GetBaseObject();
+                    if (baseObj && baseObj->Is(RE::FormType::Light)) {
+                        if (!ref->IsDisabled()) ref->Disable();
+                        ref->SetDelete(true); 
+                    }
+                    return RE::BSContainer::ForEachResult::kContinue;
+                }
+            );
+        }
+    }
+
+    void EnableLight(const RuleContext& ctx, const std::vector<LightRemoveData>& lightsData)
+    {
+        if (!ctx.target || ctx.target->IsDeleted()) {
+            logger::error("EnableLight: No target to enable light around");
+            return;
+        }
+
+        if (lightsData.empty()) {
+            logger::warn("EnableLight: No lights to enable");
+            return;
+        }
+
+        auto* tes = RE::TES::GetSingleton();
+        if (!tes)
+            return;
+
+        for (const auto& data : lightsData) {
+            if (data.radius <= 0)
+                continue;
+
+            tes->ForEachReferenceInRange(ctx.target, static_cast<float>(data.radius), [&](RE::TESObjectREFR* ref) {
+                    if (!ref || ref->IsDisabled() || ref->IsDeleted())
+                        return RE::BSContainer::ForEachResult::kContinue;
+    
+                    auto* baseObj = ref->GetBaseObject();
+                    if (baseObj && baseObj->Is(RE::FormType::Light)) {
+                        if (ref->IsDisabled()) ref->Enable(false);
+                    }
+                    return RE::BSContainer::ForEachResult::kContinue;
+                }
+            );
+        }
+    }
+
+    void DisableLight(const RuleContext& ctx, const std::vector<LightRemoveData>& lightsData)
+    {
+        if (!ctx.target || ctx.target->IsDeleted()) {
+            logger::error("DisableLight: No target to disable light around");
+            return;
+        }
+
+        if (lightsData.empty()) {
+            logger::warn("DisableLight: No lights to disable");
+            return;
+        }
+
+        auto* tes = RE::TES::GetSingleton();
+        if (!tes)
+            return;
+
+        for (const auto& data : lightsData) {
+            if (data.radius <= 0)
+                continue;
+
+            tes->ForEachReferenceInRange(ctx.target, static_cast<float>(data.radius), [&](RE::TESObjectREFR* ref) {
+                    if (!ref || ref->IsDisabled() || ref->IsDeleted())
+                        return RE::BSContainer::ForEachResult::kContinue;
+    
+                    auto* baseObj = ref->GetBaseObject();
+                    if (baseObj && baseObj->Is(RE::FormType::Light)) {
+                        if (!ref->IsDisabled()) ref->Disable();
+                    }
+                    return RE::BSContainer::ForEachResult::kContinue;
+                }
+            );
+        }
+    }
+}

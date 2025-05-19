@@ -13,7 +13,7 @@ namespace OIF
 	};
 
 	enum class EffectType { 
-		kDisposeItem, 
+		kRemoveItem, 
 		kSpawnItem, 
 		kSpawnSpell, 
 		kSpawnSpellOnItem, 
@@ -31,47 +31,64 @@ namespace OIF
 		kSpawnLeveledActor,
 		kSwapLeveledActor,
 		kApplyIngestible,
-		kApplyOtherIngestible
+		kApplyOtherIngestible,
+		kSpawnLight,
+		kRemoveLight,
+		kEnableLight,
+		kDisableLight
 	};
 
 	// ---------------------- Filer ----------------------
+	struct FormListEntry {
+		std::uint32_t formID = 0; 											// id of the form of the formlist
+		int index = -1;           											// -1 -use the entire list
+	};
+
 	struct Filter
 	{
 		// General filters
-		std::unordered_set<RE::FormType> formTypes;           	 	// filter by base form type
-		std::unordered_set<std::uint32_t> formIDs;           	  	// full FormIDs to match
-		std::unordered_set<RE::BGSKeyword*> keywords;        	  	// must have ANY of these keywords
-		float chance{ 100.f };         							   	// the chance of 0‑100 %
-		std::uint32_t interactions{1};								// number of interactions required to satisfy filter
-		std::uint32_t limit = 0; 									// number of interactions to stop the effect (BETA)
+		std::unordered_set<RE::FormType> formTypes;           	 			// filter by base form type
+		std::unordered_set<std::uint32_t> formIDs;           	  			// full FormIDs to match
+		std::vector<FormListEntry> formLists; 								// formlists contents to match
+		std::unordered_set<RE::BGSKeyword*> keywords;        	  			// must have ANY of these keywords
+		std::unordered_set<RE::BGSKeyword*> keywordsNot;      				// must NOT have ANY of these keywords
+		float chance{ 100.f };         							   			// the chance of 0‑100 %
+		std::uint32_t interactions{1};										// number of interactions required to satisfy filter
+		std::uint32_t limit = 0; 											// number of interactions to stop the effect (BETA)
 		
 		// New hit-specific filters
-		std::unordered_set<std::string> weaponTypes;          	 	// weapon type categories
-		std::unordered_set<RE::BGSKeyword*> weaponsKeywords;	   	// specific weapon keywords
-		std::unordered_set<RE::TESObjectWEAP*> weapons;       	 	// specific weapons
-		std::unordered_set<RE::BGSProjectile*> projectiles;  	  	// specific projectiles
-		std::unordered_set<std::string> attackTypes;           		// attack types
-        
+		std::unordered_set<std::string> weaponTypes;          	 			// weapon type categories
+		std::unordered_set<RE::BGSKeyword*> weaponsKeywords;	   			// specific weapon keywords
+		std::unordered_set<RE::BGSKeyword*> weaponsKeywordsNot;				// specific weapon keywords to avoid
+		std::unordered_set<RE::TESObjectWEAP*> weapons;       	 			// specific weapons
+		std::unordered_set<RE::BGSProjectile*> projectiles;  	  			// specific projectiles
+		std::unordered_set<std::string> attackTypes;           				// attack types
+
+		// Other filters
+		std::set<std::string> requiredPlugins; 								// required plugins
+		std::set<std::string> requiredPluginsNot; 							// plugins to avoid
+		std::set<std::string> requiredDLLs; 								// required DLLs
+		std::set<std::string> requiredDLLsNot; 								// DLLs to avoid									// cell IDs
 	};
 
 	// ---------------------- Effect ----------------------
 	struct EffectExtendedData
 	{
 		RE::TESForm* form{ nullptr };  							   			// the thing to spawn/cast/play
+		std::vector<FormListEntry> formLists; 								// formlists contents to spawn/cast/play
 		std::uint32_t count{ 1 };      							   			// the amount of items to spawn/cast/play
 		float chance{ 100.f };         							   			// the chance of 0‑100 %
-		float duration{ -1.f };												// the duration for effect shaders
-		RE::NiAVObject* attachNode{ nullptr };								// the node to attach
+		std::uint32_t radius{ 100 };												// the radius of the DetachNearbyLight effect
+
+		bool isFormList = false;											// true if the form is a BGSListForm
+		int index = -1;														// index of the form in the list
 	};
 
 	struct Effect
 	{
-		EffectType type{ EffectType::kSpawnItem };
-		RE::TESForm* form{ nullptr };  							   			// the thing to spawn/cast/play
-		std::uint32_t count{ 1 };      							   			// the amount of items to spawn/cast/play
-		float chance{ 100.f };         							   			// the chance of 0‑100 %
+		EffectType type{ EffectType::kSpawnItem }; 							// the type of effect
 		std::vector<std::pair<RE::TESForm*, EffectExtendedData>> items;		// the vector of items to utilize
-		std::uint32_t interactions{1};										// number of interactions required to satisfy filter
+		float chance{ 100.f }; 												// the chance of 0‑100% (private, uses filter's value)
 	};
 
 	struct RuleContext
@@ -165,6 +182,20 @@ namespace OIF
 	struct IngestibleApplyData {
 		RE::MagicItem* ingestible;
 		std::uint32_t count;
+		std::uint32_t formID;
+		float chance{100.f};
+	};
+
+	struct LightSpawnData {
+		RE::TESObjectLIGH* light;
+		std::uint32_t count;
+		std::uint32_t formID;
+		float chance{100.f};
+	};
+
+	struct LightRemoveData {
+		RE::TESObjectLIGH* light;
+		std::uint32_t radius;
 		std::uint32_t formID;
 		float chance{100.f};
 	};

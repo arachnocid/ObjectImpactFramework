@@ -9,7 +9,7 @@ namespace OIF::Effects
     void ClearProcessedItems();
 
     // ------------------ Effects ------------------
-    void DisposeItem(const RuleContext& ctx);
+    void RemoveItem(const RuleContext& ctx);
     void SpawnItem(const RuleContext& ctx, const std::vector<ItemSpawnData>& itemsData);
     void SpawnSpell(const RuleContext& ctx, const std::vector<SpellSpawnData>& spellsData);
     void SpawnSpellOnItem(const RuleContext& ctx, const std::vector<SpellSpawnData>& spellsData);
@@ -28,4 +28,8 @@ namespace OIF::Effects
     void SwapLeveledActor(const RuleContext& ctx, const std::vector<LvlActorSpawnData>& actorsData);
     void ApplyIngestible(const RuleContext& ctx);
     void ApplyOtherIngestible(const RuleContext& ctx, const std::vector<IngestibleApplyData>& ingestiblesData);
+    void SpawnLight(const RuleContext& ctx, const std::vector<LightSpawnData>& lightsData);
+    void RemoveLight(const RuleContext& ctx, const std::vector<LightRemoveData>& lightsData);
+    void EnableLight(const RuleContext& ctx, const std::vector<LightRemoveData>& lightsData);
+    void DisableLight(const RuleContext& ctx, const std::vector<LightRemoveData>& lightsData);
 }
