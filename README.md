@@ -132,10 +132,10 @@ For rules with the `"Hit"` event, additional filters can refine which attacks tr
   - `"handtohand"`: Unarmed attacks.
   - `"spell"`: Spells.
   - `"shout"`: Shouts.
-  - `"ability"`: Racial or innate abilities.
+  - `"ability"`: Racial or other abilities.
   - `"power"`: Greater powers.
   - `"lesserpower"`: Lesser powers.
-  - `"total"`: Matches all weapon types.
+  - `"total"`: Yet to discover. Supposedly matches all weapon types.
   - `"other"`: Miscellaneous types not covered above.
 
 - **`weapons`** (optional): An array of specific weapon or spell Form IDs in `"modName:formID"` format (e.g., `"Skyrim.esm:0x1A2B3C"`).
@@ -204,7 +204,7 @@ For most effect types (except `RemoveItem`, `SpillInventory`, and `ApplyIngestib
     ]
     ```
 - **`count`** (optional): An integer specifying how many instances to spawn or swap. Defaults to 1. For `RemoveLight`, `DisableLight`, and `EnableLight`, this is replaced by:
-  - **`radius`**: The radius (in game units) within which lights are affected. Defaults to 100.
+    - **`radius`**: The radius (in game units) within which lights are affected. Defaults to 100.
 - **`chance`** (optional): A number between 0 and 100 for the percentage chance this item is used. Defaults to 100.
 
 **Notes:**
