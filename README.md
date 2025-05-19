@@ -70,17 +70,17 @@ The `filter` object determines which objects and interactions trigger a rule. It
   - `"misc"`: Miscellaneous items (e.g., clutter, tools).
   - `"key"`: Keys.
   - `"book"`: Books and journals.
-  - `"note"`: Notes (a subset of books).
+  - `"note"`: Notes.
   - `"scroll"`: Magical scrolls.
   - `"soulgem"`: Soul gems.
   - `"potion"`: Includes potions, poisons, food, and drinks.
   - `"furniture"`: Furniture like chairs or beds.
   - `"door"`: Doors and gates.
-  - `"flora"`: Harvestable plants.
+  - `"flora"`: Harvestable plants and hanging animals.
   - `"container"`: Containers like chests or barrels.
   - `"static"`: Non-movable world objects (e.g., statues).
-  - `"moveablestatic"`: Movable static objects (e.g., barrels that can be pushed).
-  - `"tree"`: Trees in the game world.
+  - `"moveablestatic"`: Movable static objects.
+  - `"tree"`: Trees.
 
 - **`formIDs`** (optional): An array of strings identifying specific objects by their Form ID in the format `"modName:formID"`. Examples:
   - `"Skyrim.esm:0x123456"` (for esp/esm plugins).
