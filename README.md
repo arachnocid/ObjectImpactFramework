@@ -2,7 +2,7 @@
 
 Object Impact Framework (OIF) is a SKSE plugin that lets you add custom effects to items when they are activated, grabbed, released, thrown, or hit. You can make things happen like spawning items, impact data sets, actors, casting spells, creating explosions, playing sounds, and swapping objects - all controlled with JSON files. Compatible with everything.
 
-This guide explains how to set up those JSON files so you can customize the mod however you like. Examples are given in the more detailed documentation below.
+This guide explains how to set up those JSON files so you can customize the mod however you like. Examples are given below.
 
 ## Users Info
 
