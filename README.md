@@ -90,6 +90,7 @@ The `filter` object determines which objects and interactions trigger a rule. It
 - **`formLists`** (optional): An array of objects referencing formlists (lists of forms defined in a mod). Each entry has:
   - **`formID`**: The formlist ID in `"modName:formID"` format (required).
   - **`index`** (optional): An integer specifying which item in the formlist to use. Use `-1` or omit to include all items. Example:
+ 
     ```json
     "formLists": [
         {"formID": "Skyrim.esm:0x123456", "index": 0},
