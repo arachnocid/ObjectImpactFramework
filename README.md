@@ -89,7 +89,7 @@ The `filter` object determines which objects and interactions trigger a rule. It
 
 - **`formLists`** (optional): An array of objects referencing formlists (lists of forms defined in a mod). Each entry has:
   - **`formID`**: The formlist ID in `"modName:formID"` format (required).
-  - **`index`** (optional): An integer specifying which item in the formlist to use. Use `-1` or omit to include all items. Example:
+  - **`index`** (optional): An integer specifying which item in the formlist to use. Example:
  
     ```json
     "formLists": [
@@ -97,6 +97,8 @@ The `filter` object determines which objects and interactions trigger a rule. It
         {"formID": "MyMod.esp:0x789ABC"}
     ]
     ```
+    - **Index `-1`** is default, means that all the items at once will be used. 
+    - **Index `-2`** defines the parrallel relationship for mirrored formlists: matching positions between filter and items formlists correspond directly, allowing ordered transformations (raw meat at position 0 in formlist 1 becomes cooked meat at position 0 in formlist 2).
 
 - **`keywords`** (optional): An array of keywords that the object must have. Format can be `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`) or a keyword name (e.g., `"VendorItemFood"`). Ignored for containers, doors, statics, movable statics, and trees.
 
