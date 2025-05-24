@@ -344,25 +344,34 @@ namespace OIF {
                 const auto& jf = jr["filter"];
 
                 if (jf.contains("chance") && jf["chance"].is_number()) {
-                    r.filter.chance = jf["chance"].get<float>();
+                    try {
+                        r.filter.chance = jf["chance"].get<float>();
+                    } catch (const std::exception& e) {
+                        logger::warn("Invalid chance value in filter of {}: {}", path.string(), e.what());
+                    }
                 } 
 
                 if (jf.contains("interactions") && jf["interactions"].is_number_unsigned()) {
-                    r.filter.interactions = jf["interactions"].get<std::uint32_t>();
+                    try {
+                        r.filter.interactions = jf["interactions"].get<std::uint32_t>();
+                    } catch (const std::exception& e) {
+                        logger::warn("Invalid interactions value in filter of {}: {}", path.string(), e.what());
+                    }
                 }
 
                 if (jf.contains("limit") && jf["limit"].is_number_unsigned()) {
-                    r.filter.limit = jf["limit"].get<std::uint32_t>();
+                    try {
+                        r.filter.limit = jf["limit"].get<std::uint32_t>();
+                    } catch (const std::exception& e) {
+                        logger::warn("Invalid limit value in filter of {}: {}", path.string(), e.what());
+                    }
                 }
 
                 if (jf.contains("formtypes") && jf["formtypes"].is_array()) {
                     for (auto const& ft : jf["formtypes"]) {
-                        if (ft.is_string())
-                            r.filter.formTypes.insert(MapStringToFormType(tolower_str(ft.get<std::string>())));
+                        if (ft.is_string()) r.filter.formTypes.insert(MapStringToFormType(tolower_str(ft.get<std::string>())));
                     }
-                    if (!r.filter.formTypes.empty()) {
-                        hasObjectIdentifier = true;
-                    }
+                    if (!r.filter.formTypes.empty()) hasObjectIdentifier = true;
                 }
 
                 if (jf.contains("formids") && jf["formids"].is_array()) {
@@ -540,6 +549,8 @@ namespace OIF {
                         if (wf.is_string()) {
                             if (auto* weapon = GetFormFromIdentifier<RE::TESObjectWEAP>(wf.get<std::string>())) {
                                 r.filter.weapons.insert(weapon);
+                            } else if (auto* spell = GetFormFromIdentifier<RE::SpellItem>(wf.get<std::string>())) {
+                                r.filter.weapons.insert(spell);
                             } else {
                                 logger::warn("Invalid weapon formID '{}' in filter of {}", wf.get<std::string>(), path.string());
                             }
@@ -693,7 +704,7 @@ namespace OIF {
     }
 
     // ------------------ Match ------------------
-    bool RuleManager::MatchFilter(const Filter& f, const RuleContext& ctx) const {
+    bool RuleManager::MatchFilter(const Filter& f, const RuleContext& ctx, Rule& currentRule) const {
 
         if (!ctx.baseObj) return false;
 
@@ -704,8 +715,22 @@ namespace OIF {
             for (const auto& entry : f.formLists) {
                 auto* list = RE::TESForm::LookupByID<RE::BGSListForm>(entry.formID);
                 if (!list) continue;
-        
-                if (entry.index >= 0) {
+
+                if (entry.index == -2) {
+                    // Find the object index in a formlist
+                    int foundIdx = -1;
+                    for (int i = 0; i < static_cast<int>(list->forms.size()); ++i) {
+                        if (list->forms[i] && list->forms[i]->GetFormID() == ctx.baseObj->GetFormID()) {
+                            foundIdx = i;
+                            break;
+                        }
+                    }
+                    if (foundIdx != -1) {
+                        // Save the current rule in dynamicIndex
+                        currentRule.dynamicIndex = foundIdx;
+                        matched = true;
+                    }
+                } else if (entry.index >= 0) {
                     // Check only one element in the list (according to the index)
                     if (entry.index < static_cast<int>(list->forms.size())) {
                         auto* el = list->forms[entry.index];
@@ -791,13 +816,13 @@ namespace OIF {
 
         if (ctx.isHitEvent) {
             if (!f.weaponTypes.empty() && f.weaponTypes.find(ctx.weaponType) == f.weaponTypes.end()) return false;
-            if (!f.weapons.empty() && (!ctx.weapon || f.weapons.find(ctx.weapon) == f.weapons.end())) return false;
+            if (!f.weapons.empty() && (!ctx.attackSource || f.weapons.find(ctx.attackSource) == f.weapons.end())) return false;
             if (!f.projectiles.empty() && (!ctx.projectile || f.projectiles.find(ctx.projectile) == f.projectiles.end())) return false;
             if (!f.attackTypes.empty() && f.attackTypes.find(ctx.attackType) == f.attackTypes.end()) return false;
             if (!f.weaponsKeywords.empty()) {
-                if (!ctx.weapon) return false; 
+                if (!ctx.attackSource) return false; 
 
-                auto* kwf = ctx.weapon->As<RE::BGSKeywordForm>();
+                auto* kwf = ctx.attackSource->As<RE::BGSKeywordForm>();
                 if (!kwf) return false;
 
                 bool hasAny = false;
@@ -811,9 +836,9 @@ namespace OIF {
             }
 
             if (!f.weaponsKeywordsNot.empty()) {
-                if (!ctx.weapon) return false; 
+                if (!ctx.attackSource) return false; 
 
-                auto* kwf = ctx.weapon->As<RE::BGSKeywordForm>();
+                auto* kwf = ctx.attackSource->As<RE::BGSKeywordForm>();
                 if (!kwf) return false;
 
                 for (auto* kw : f.weaponsKeywordsNot) {
@@ -826,17 +851,18 @@ namespace OIF {
     }
 
     // ------------------ Apply ------------------
-    void RuleManager::ApplyEffect(const Effect& eff, const RuleContext& ctx) const {
+    void RuleManager::ApplyEffect(const Effect& eff, const RuleContext& ctx, Rule& currentRule) const {
         if (!ctx.target || !ctx.target->GetBaseObject()) return;
         if (!ctx.source || !ctx.source->GetBaseObject()) return;
 
-        RE::FormID targetFormID = ctx.target->GetFormID();
-        RE::FormID sourceFormID = ctx.source->GetFormID();
+        RE::TESObjectREFR* target = ctx.target->As<RE::TESObjectREFR>();
+        RE::TESObjectREFR* source = ctx.source->As<RE::TESObjectREFR>();
+        RE::FormID targetFormID = target->GetFormID();
+        RE::FormID sourceFormID = source->GetFormID();
         Effect effCopy = eff;
         EventType eventType = ctx.event;
 
-
-        SKSE::GetTaskInterface()->AddTask([effCopy, targetFormID, sourceFormID, eventType]() {
+        SKSE::GetTaskInterface()->AddTask([effCopy, targetFormID, sourceFormID, eventType, currentRule]() {
             auto* target = RE::TESForm::LookupByID<RE::TESObjectREFR>(targetFormID);
             auto* source = sourceFormID ? RE::TESForm::LookupByID<RE::Actor>(sourceFormID) : nullptr;
             
@@ -882,16 +908,23 @@ namespace OIF {
                                 auto* list = form->As<RE::BGSListForm>();
                                 if (!list) continue;
 
-                                // Index set: take only this element
-                                if (extData.index >= 0) {
-                                        if (extData.index < static_cast<int>(list->forms.size())) {
-                                            auto* el = list->forms[extData.index];
-                                            if (el) {
-                                                if (auto* item = el->As<RE::TESBoundObject>())
-                                                    itemsData.emplace_back(item, extData.count);
-                                            }
-                                        }
+                                int idx = extData.index;
+                                if (idx == -2) {
+                                    idx = currentRule.dynamicIndex;
+                                    if (idx == -1) {
+                                        logger::warn("Dynamic index not found for rule");
+                                        continue;
                                     }
+                                }
+
+                                // Use index to select a specific element
+                                if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
+                                    auto* el = list->forms[idx];
+                                    if (el) {
+                                        if (auto* item = el->As<RE::TESBoundObject>())
+                                            itemsData.emplace_back(item, extData.count);
+                                    }
+                                }
                                 // The index is not set: sort out all the elements of the list
                                 else {
                                     for (auto* el : list->forms) {
@@ -923,16 +956,21 @@ namespace OIF {
                                 auto* list = form->As<RE::BGSListForm>();
                                 if (!list) continue;
 
-                                if (extData.index >= 0) {
-                                    if (extData.index < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[extData.index];
-                                        if (el) {
-                                            if (auto* spell = el->As<RE::SpellItem>())
-                                                spellsData.emplace_back(spell, extData.count);
-                                        }
+                                int idx = extData.index;
+                                if (idx == -2) {
+                                    idx = currentRule.dynamicIndex;
+                                    if (idx == -1) {
+                                        logger::warn("Dynamic index not found for rule");
+                                        continue;
                                     }
                                 }
-                                else {
+                                if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
+                                    auto* el = list->forms[idx];
+                                    if (el) {
+                                        if (auto* spell = el->As<RE::SpellItem>())
+                                            spellsData.emplace_back(spell, extData.count);
+                                    }
+                                } else {
                                     for (auto* el : list->forms) {
                                         if (!el) continue;
                                         if (auto* spell = el->As<RE::SpellItem>())
@@ -962,16 +1000,21 @@ namespace OIF {
                                 auto* list = form->As<RE::BGSListForm>();
                                 if (!list) continue;
 
-                                if (extData.index >= 0) {
-                                    if (extData.index < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[extData.index];
-                                        if (el) {
-                                            if (auto* spell = el->As<RE::SpellItem>())
-                                                spellsData.emplace_back(spell, extData.count);
-                                        }
+                                int idx = extData.index;
+                                if (idx == -2) {
+                                    idx = currentRule.dynamicIndex;
+                                    if (idx == -1) {
+                                        logger::warn("Dynamic index not found for rule");
+                                        continue;
                                     }
                                 }
-                                else {
+                                if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
+                                    auto* el = list->forms[idx];
+                                    if (el) {
+                                        if (auto* spell = el->As<RE::SpellItem>())
+                                            spellsData.emplace_back(spell, extData.count);
+                                    }
+                                } else {
                                     for (auto* el : list->forms) {
                                         if (!el) continue;
                                         if (auto* spell = el->As<RE::SpellItem>())
@@ -1001,16 +1044,21 @@ namespace OIF {
                                 auto* list = form->As<RE::BGSListForm>();
                                 if (!list) continue;
 
-                                if (extData.index >= 0) {
-                                    if (extData.index < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[extData.index];
-                                        if (el) {
-                                            if (auto* actor = el->As<RE::TESNPC>())
-                                                actorsData.emplace_back(actor, extData.count);
-                                        }
+                                int idx = extData.index;
+                                if (idx == -2) {
+                                    idx = currentRule.dynamicIndex;
+                                    if (idx == -1) {
+                                        logger::warn("Dynamic index not found for rule");
+                                        continue;
                                     }
                                 }
-                                else {
+                                if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
+                                    auto* el = list->forms[idx];
+                                    if (el) {
+                                        if (auto* actor = el->As<RE::TESNPC>())
+                                            actorsData.emplace_back(actor, extData.count);
+                                    }
+                                } else {
                                     for (auto* el : list->forms) {
                                         if (!el) continue;
                                         if (auto* actor = el->As<RE::TESNPC>())
@@ -1040,16 +1088,21 @@ namespace OIF {
                                 auto* list = form->As<RE::BGSListForm>();
                                 if (!list) continue;
 
-                                if (extData.index >= 0) {
-                                    if (extData.index < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[extData.index];
-                                        if (el) {
-                                            if (auto* impact = el->As<RE::BGSImpactDataSet>())
-                                                impactsData.emplace_back(impact, extData.count);
-                                        }
+                                int idx = extData.index;
+                                if (idx == -2) {
+                                    idx = currentRule.dynamicIndex;
+                                    if (idx == -1) {
+                                        logger::warn("Dynamic index not found for rule");
+                                        continue;
                                     }
                                 }
-                                else {
+                                if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
+                                    auto* el = list->forms[idx];
+                                    if (el) {
+                                        if (auto* impact = el->As<RE::BGSImpactDataSet>())
+                                            impactsData.emplace_back(impact, extData.count);
+                                    }
+                                } else {
                                     for (auto* el : list->forms) {
                                         if (!el) continue;
                                         if (auto* impact = el->As<RE::BGSImpactDataSet>())
@@ -1079,16 +1132,21 @@ namespace OIF {
                                 auto* list = form->As<RE::BGSListForm>();
                                 if (!list) continue;
 
-                                if (extData.index >= 0) {
-                                    if (extData.index < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[extData.index];
-                                        if (el) {
-                                            if (auto* explosion = el->As<RE::BGSExplosion>())
-                                                explosionsData.emplace_back(explosion, extData.count);
-                                        }
+                                int idx = extData.index;
+                                if (idx == -2) {
+                                    idx = currentRule.dynamicIndex;
+                                    if (idx == -1) {
+                                        logger::warn("Dynamic index not found for rule");
+                                        continue;
                                     }
                                 }
-                                else {
+                                if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
+                                    auto* el = list->forms[idx];
+                                    if (el) {
+                                        if (auto* explosion = el->As<RE::BGSExplosion>())
+                                            explosionsData.emplace_back(explosion, extData.count);
+                                    }
+                                } else {
                                     for (auto* el : list->forms) {
                                         if (!el) continue;
                                         if (auto* explosion = el->As<RE::BGSExplosion>())
@@ -1118,16 +1176,21 @@ namespace OIF {
                                 auto* list = form->As<RE::BGSListForm>();
                                 if (!list) continue;
 
-                                if (extData.index >= 0) {
-                                    if (extData.index < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[extData.index];
-                                        if (el) {
-                                            if (auto* item = el->As<RE::TESBoundObject>())
-                                                itemsData.emplace_back(item, extData.count);
-                                        }
+                                int idx = extData.index;
+                                if (idx == -2) {
+                                    idx = currentRule.dynamicIndex;
+                                    if (idx == -1) {
+                                        logger::warn("Dynamic index not found for rule");
+                                        continue;
                                     }
                                 }
-                                else {
+                                if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
+                                    auto* el = list->forms[idx];
+                                    if (el) {
+                                        if (auto* item = el->As<RE::TESBoundObject>())
+                                            itemsData.emplace_back(item, extData.count);
+                                    }
+                                } else {
                                     for (auto* el : list->forms) {
                                         if (!el) continue;
                                         if (auto* item = el->As<RE::TESBoundObject>())
@@ -1157,16 +1220,21 @@ namespace OIF {
                                 auto* list = form->As<RE::BGSListForm>();
                                 if (!list) continue;
 
-                                if (extData.index >= 0) {
-                                    if (extData.index < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[extData.index];
-                                        if (el) {
-                                            if (auto* sound = el->As<RE::BGSSoundDescriptorForm>())
-                                                soundsData.emplace_back(sound, extData.count);
-                                        }
+                                int idx = extData.index;
+                                if (idx == -2) {
+                                    idx = currentRule.dynamicIndex;
+                                    if (idx == -1) {
+                                        logger::warn("Dynamic index not found for rule");
+                                        continue;
                                     }
                                 }
-                                else {
+                                if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
+                                    auto* el = list->forms[idx];
+                                    if (el) {
+                                        if (auto* sound = el->As<RE::BGSSoundDescriptorForm>())
+                                            soundsData.emplace_back(sound, extData.count);
+                                    }
+                                } else {
                                     for (auto* el : list->forms) {
                                         if (!el) continue;
                                         if (auto* sound = el->As<RE::BGSSoundDescriptorForm>())
@@ -1196,16 +1264,21 @@ namespace OIF {
                                 auto* list = form->As<RE::BGSListForm>();
                                 if (!list) continue;
 
-                                if (extData.index >= 0) {
-                                    if (extData.index < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[extData.index];
-                                        if (el) {
-                                            if (auto* actor = el->As<RE::TESNPC>())
-                                                actorsData.emplace_back(actor, extData.count);
-                                        }
+                                int idx = extData.index;
+                                if (idx == -2) {
+                                    idx = currentRule.dynamicIndex;
+                                    if (idx == -1) {
+                                        logger::warn("Dynamic index not found for rule");
+                                        continue;
                                     }
                                 }
-                                else {
+                                if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
+                                    auto* el = list->forms[idx];
+                                    if (el) {
+                                        if (auto* actor = el->As<RE::TESNPC>())
+                                            actorsData.emplace_back(actor, extData.count);
+                                    }
+                                } else {
                                     for (auto* el : list->forms) {
                                         if (!el) continue;
                                         if (auto* actor = el->As<RE::TESNPC>())
@@ -1243,8 +1316,7 @@ namespace OIF {
                                                 lvlItemsData.emplace_back(lvli, ext.count);
                                         }
                                     }
-                                }
-                                else {
+                                } else {
                                     for (auto* el : list->forms) {
                                         if (!el) continue;
                                         if (auto* lvli = el->As<RE::TESLevItem>())
@@ -1281,8 +1353,7 @@ namespace OIF {
                                                 lvlItemsData.emplace_back(lvli, ext.count);
                                         }
                                     }
-                                }
-                                else {
+                                } else {
                                     for (auto* el : list->forms) {
                                         if (!el) continue;
                                         if (auto* lvli = el->As<RE::TESLevItem>())
@@ -1319,8 +1390,7 @@ namespace OIF {
                                                 lvlSpellsData.emplace_back(lvls, ext.count);
                                         }
                                     }
-                                }
-                                else {
+                                } else {
                                     for (auto* el : list->forms) {
                                         if (!el) continue;
                                         if (auto* lvls = el->As<RE::TESLevSpell>())
@@ -1357,8 +1427,7 @@ namespace OIF {
                                                 lvlSpellsData.emplace_back(lvls, ext.count);
                                         }
                                     }
-                                }
-                                else {
+                                } else {
                                     for (auto* el : list->forms) {
                                         if (!el) continue;
                                         if (auto* lvls = el->As<RE::TESLevSpell>())
@@ -1395,8 +1464,7 @@ namespace OIF {
                                                 lvlActorsData.emplace_back(lvlc, ext.count);
                                         }
                                     }
-                                }
-                                else {
+                                } else {
                                     for (auto* el : list->forms) {
                                         if (!el) continue;
                                         if (auto* lvlc = el->As<RE::TESLevCharacter>())
@@ -1434,8 +1502,7 @@ namespace OIF {
                                                 lvlActorsData.emplace_back(lvlc, ext.count);
                                         }
                                     }
-                                }
-                                else {
+                                } else {
                                     for (auto* el : list->forms) {
                                         if (!el) continue;
                                         if (auto* lvlc = el->As<RE::TESLevCharacter>())
@@ -1464,16 +1531,21 @@ namespace OIF {
                                 auto* list = form->As<RE::BGSListForm>();
                                 if (!list) continue;
 
-                                if (extData.index >= 0) {
-                                    if (extData.index < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[extData.index];
-                                        if (el) {
-                                            if (auto* ingestible = el->As<RE::MagicItem>())
-                                                ingestibleData.emplace_back(ingestible, extData.count);
-                                        }
+                                int idx = extData.index;
+                                if (idx == -2) {
+                                    idx = currentRule.dynamicIndex;
+                                    if (idx == -1) {
+                                        logger::warn("Dynamic index not found for rule");
+                                        continue;
                                     }
                                 }
-                                else {
+                                if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
+                                    auto* el = list->forms[idx];
+                                    if (el) {
+                                        if (auto* ingestible = el->As<RE::MagicItem>())
+                                            ingestibleData.emplace_back(ingestible, extData.count);
+                                    }
+                                } else {
                                     for (auto* el : list->forms) {
                                         if (!el) continue;
                                         if (auto* ingestible = el->As<RE::MagicItem>())
@@ -1503,16 +1575,21 @@ namespace OIF {
                                 auto* list = form->As<RE::BGSListForm>();
                                 if (!list) continue;
 
-                                if (extData.index >= 0) {
-                                    if (extData.index < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[extData.index];
-                                        if (el) {
-                                            if (auto* light = el->As<RE::TESObjectLIGH>())
-                                                lightsData.emplace_back(light, extData.count);
-                                        }
+                                int idx = extData.index;
+                                if (idx == -2) {
+                                    idx = currentRule.dynamicIndex;
+                                    if (idx == -1) {
+                                        logger::warn("Dynamic index not found for rule");
+                                        continue;
                                     }
                                 }
-                                else {
+                                if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
+                                    auto* el = list->forms[idx];
+                                    if (el) {
+                                        if (auto* light = el->As<RE::TESObjectLIGH>())
+                                            lightsData.emplace_back(light, extData.count);
+                                    }
+                                } else {
                                     for (auto* el : list->forms) {
                                         if (!el) continue;
                                         if (auto* light = el->As<RE::TESObjectLIGH>())
@@ -1541,13 +1618,19 @@ namespace OIF {
                                 auto* list = form ? form->As<RE::BGSListForm>() : nullptr;
                                 if (!list) continue;
                     
-                                if (extData.index >= 0) {
-                                    if (extData.index < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[extData.index];
-                                        if (el) {
-                                            if (auto* light = el->As<RE::TESObjectLIGH>())
-                                                lightsData.emplace_back(light, extData.radius, light->GetFormID(), extData.chance);
-                                        }
+                                int idx = extData.index;
+                                if (idx == -2) {
+                                    idx = currentRule.dynamicIndex;
+                                    if (idx == -1) {
+                                        logger::warn("Dynamic index not found for rule");
+                                        continue;
+                                    }
+                                }
+                                if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
+                                    auto* el = list->forms[idx];
+                                    if (el) {
+                                        if (auto* light = el->As<RE::TESObjectLIGH>())
+                                            lightsData.emplace_back(light, extData.radius, light->GetFormID(), extData.chance);
                                     }
                                 } else {
                                     for (auto* el : list->forms) {
@@ -1582,13 +1665,19 @@ namespace OIF {
                                 auto* list = form ? form->As<RE::BGSListForm>() : nullptr;
                                 if (!list) continue;
 
-                                if (extData.index >= 0) {
-                                    if (extData.index < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[extData.index];
-                                        if (el) {
-                                            if (auto* light = el->As<RE::TESObjectLIGH>())
-                                                lightsData.emplace_back(light, extData.radius, light->GetFormID(), extData.chance);
-                                        }
+                                int idx = extData.index;
+                                if (idx == -2) {
+                                    idx = currentRule.dynamicIndex;
+                                    if (idx == -1) {
+                                        logger::warn("Dynamic index not found for rule");
+                                        continue;
+                                    }
+                                }
+                                if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
+                                    auto* el = list->forms[idx];
+                                    if (el) {
+                                        if (auto* light = el->As<RE::TESObjectLIGH>())
+                                            lightsData.emplace_back(light, extData.radius, light->GetFormID(), extData.chance);
                                     }
                                 } else {
                                     for (auto* el : list->forms) {
@@ -1623,13 +1712,19 @@ namespace OIF {
                                 auto* list = form ? form->As<RE::BGSListForm>() : nullptr;
                                 if (!list) continue;
 
-                                if (extData.index >= 0) {
-                                    if (extData.index < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[extData.index];
-                                        if (el) {
-                                            if (auto* light = el->As<RE::TESObjectLIGH>())
-                                                lightsData.emplace_back(light, extData.radius, light->GetFormID(), extData.chance);
-                                        }
+                                int idx = extData.index;
+                                if (idx == -2) {
+                                    idx = currentRule.dynamicIndex;
+                                    if (idx == -1) {
+                                        logger::warn("Dynamic index not found for rule");
+                                        continue;
+                                    }
+                                }
+                                if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
+                                    auto* el = list->forms[idx];
+                                    if (el) {
+                                        if (auto* light = el->As<RE::TESObjectLIGH>())
+                                            lightsData.emplace_back(light, extData.radius, light->GetFormID(), extData.chance);
                                     }
                                 } else {
                                     for (auto* el : list->forms) {
@@ -1700,14 +1795,16 @@ namespace OIF {
 
         // Walk through every rule and apply those whose filters match
         for (std::size_t ruleIdx = 0; ruleIdx < _rules.size(); ++ruleIdx) {
-            const Rule& r = _rules[ruleIdx];
+            Rule& r = _rules[ruleIdx];
 
             // Event type must be listed in the rule
             if (std::find(r.events.begin(), r.events.end(), ctx.event) == r.events.end())
                 continue;
 
+            r.dynamicIndex = 0;
+
             // Custom filter check
-            if (!MatchFilter(r.filter, ctx))
+            if (!MatchFilter(r.filter, ctx, r))
                 continue;
 
             // Unique key for interaction counters
@@ -1734,7 +1831,7 @@ namespace OIF {
 
             // Apply every effect bound to this rule
             for (const auto& eff : r.effects) {
-                ApplyEffect(eff, ctx);
+                ApplyEffect(eff, ctx, r);
             }
         }
 

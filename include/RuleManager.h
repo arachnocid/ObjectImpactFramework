@@ -58,9 +58,9 @@ namespace OIF
 		
 		// New hit-specific filters
 		std::unordered_set<std::string> weaponTypes;          	 			// weapon type categories
-		std::unordered_set<RE::BGSKeyword*> weaponsKeywords;	   			// specific weapon keywords
-		std::unordered_set<RE::BGSKeyword*> weaponsKeywordsNot;				// specific weapon keywords to avoid
-		std::unordered_set<RE::TESObjectWEAP*> weapons;       	 			// specific weapons
+		std::unordered_set<RE::BGSKeyword*> weaponsKeywords;	   			// specific weapons' or spells' keywords
+		std::unordered_set<RE::BGSKeyword*> weaponsKeywordsNot;				// specific weapons' or spells' keywords to avoid
+		std::unordered_set<RE::TESForm*> weapons;       	 				// specific weapons or spells
 		std::unordered_set<RE::BGSProjectile*> projectiles;  	  			// specific projectiles
 		std::unordered_set<std::string> attackTypes;           				// attack types
 
@@ -100,7 +100,7 @@ namespace OIF
 		RE::TESForm* baseObj{ nullptr };
 		
 		// Hit-specific context
-		RE::TESObjectWEAP* weapon{ nullptr };
+		RE::TESForm* attackSource{ nullptr };
 		RE::BGSProjectile* projectile{ nullptr };
 		std::string weaponType;
 		std::string attackType;
@@ -205,6 +205,7 @@ namespace OIF
 		std::vector<EventType> events;
 		Filter  filter;
 		std::vector<Effect> effects;
+		int dynamicIndex{ 0 };
 	};
 
 	// ---------------------- Manager ----------------------
@@ -228,8 +229,8 @@ namespace OIF
 		RuleManager() = default;
 
 		void ParseJSON(const std::filesystem::path& path);
-		bool MatchFilter(const Filter& f, const RuleContext& ctx) const;
-		void ApplyEffect(const Effect& eff, const RuleContext& ctx) const;
+		bool MatchFilter(const Filter& f, const RuleContext& ctx, Rule& currentRule) const;
+		void ApplyEffect(const Effect& eff, const RuleContext& ctx, Rule& currentRule) const;
 
 		template <class T = RE::TESForm>
 		static T* GetFormFromIdentifier(const std::string& identifier);

@@ -180,7 +180,7 @@ namespace OIF
         if (source->formFlags & RE::TESForm::RecordFlags::kDeleted || source->IsDisabled())
             return RE::BSEventNotifyControl::kContinue;
 
-        RE::TESObjectWEAP* weapon = nullptr;
+        RE::TESForm* attackSource = nullptr;
         RE::BGSProjectile* projectile = nullptr;
         WeaponType weaponType = WeaponType::Other;
         AttackType attackType = AttackType::Regular;
@@ -210,15 +210,15 @@ namespace OIF
             bool rightHandAttack = hitSourceForm && rightObj && (hitSourceForm == rightObj);
 
             if (leftHandAttack) {
-                weapon = leftObj ? leftObj->As<RE::TESObjectWEAP>() : nullptr;
+                attackSource = leftObj;
             } else if (rightHandAttack) {
-                weapon = rightObj ? rightObj->As<RE::TESObjectWEAP>() : nullptr;
+                attackSource = rightObj;
             }
 
-            if (weapon) {
-                weaponType = GetWeaponType(weapon);
-            } else if (hitSourceForm) {
-                if (auto* spell = hitSourceForm->As<RE::SpellItem>()) {
+            if (attackSource) {
+                if (auto* weapon = attackSource->As<RE::TESObjectWEAP>()) {
+                    weaponType = GetWeaponType(weapon);
+                } else if (auto* spell = hitSourceForm->As<RE::SpellItem>()) {
                     switch (spell->GetSpellType()) {
                         case RE::MagicSystem::SpellType::kSpell:        weaponType = WeaponType::Spell;        break;
                         case RE::MagicSystem::SpellType::kVoicePower:   weaponType = WeaponType::Shout;        break;
@@ -288,7 +288,7 @@ namespace OIF
             source,
             targetRef, 
             baseObj,
-            weapon,
+            attackSource,
             projectile,
             weaponTypeStr,
             attackTypeStr,

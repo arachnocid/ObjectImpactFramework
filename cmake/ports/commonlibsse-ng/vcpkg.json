@@ -3,7 +3,7 @@
   "name": "commonlibsse-ng",
   "version-semver": "3.7.0",
   "port-version": 0,
-  "description": "A fork of CommonLibSSE with advanced features for modern SKSE development.",
+  "description": "A reverse engineered resource for developing SKSE plugins, supporting portable plugins that work across AE, SE, and VR.",
   "homepage": "https://github.com/CharmedBaryon/CommonLibSSE",
   "license": "MIT",
   "supports": "windows & x64",

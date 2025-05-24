@@ -48,6 +48,29 @@ namespace OIF::Effects
         }
     }
 
+    // CommonlibSSE-NG doesn't have a SetScale function, that's a workaround
+    void SetObjectScale(RE::TESObjectREFR* ref, float scale) {
+        if (!ref) return;
+        
+        std::string command = std::format("{:08X}.setscale {:.6f}", ref->GetFormID(), scale);
+        
+        const auto scriptFactory = RE::IFormFactory::GetConcreteFormFactoryByType<RE::Script>();
+        const auto script = scriptFactory ? scriptFactory->Create() : nullptr;
+        if (script) {
+            script->SetCommand(command);
+            
+            using func_t = void(RE::Script*, RE::ScriptCompiler*, RE::COMPILER_NAME, RE::TESObjectREFR*);
+            REL::Relocation<func_t> compileAndRun{ 
+                RELOCATION_ID(21416, REL::Module::get().version().patch() < 1130 ? 21890 : 441582) // taken from the ConsoleUtil NG
+            };
+            
+            RE::ScriptCompiler compiler;
+            compileAndRun(script, &compiler, RE::COMPILER_NAME::kSystemWindowCompiler, nullptr);
+            
+            delete script;
+        }
+    }
+
     // Resolve leveled items, spells, and NPCs
     static RE::TESBoundObject* ResolveLeveledItem(RE::TESLevItem* lvli)
     {
@@ -451,20 +474,9 @@ namespace OIF::Effects
             return;
         }
 
-        NiPoint3 dropPos;
-        if (auto* root = ctx.target->Get3D()) { 
-            dropPos = root->worldBound.center;     
-        } else {                                    
-            const auto& bmin = ctx.target->GetBoundMin();
-            const auto& bmax = ctx.target->GetBoundMax();
-            dropPos = NiPoint3{
-                (bmin.x + bmax.x) * 0.5f,
-                (bmin.y + bmax.y) * 0.5f,
-                (bmin.z + bmax.z) * 0.5f
-            };
-        }
-
         bool anyItemSpawned = false;
+
+        std::unordered_set<RE::TESObjectREFR*> items;
 
         for (const auto& itemData : itemsData) {
             if (!itemData.item)
@@ -474,8 +486,9 @@ namespace OIF::Effects
                 RE::NiPointer<RE::TESObjectREFR> item = (ctx.target->PlaceObjectAtMe(itemData.item, true));
                     if (item) {
                         anyItemSpawned = true;
-                        item->SetPosition(dropPos);
+                        items.insert(item.get());
                         CopyOwnership(ctx.target, item.get());
+                        SetObjectScale(item.get(), ctx.target->GetScale());
                     } else {
                         logger::warn("SwapItem: Failed to swap with item {}", itemData.item->GetFormID());
                     }
@@ -484,7 +497,7 @@ namespace OIF::Effects
 
         if (anyItemSpawned) {
             if (!ctx.target->IsDisabled()) ctx.target->Disable();
-            ctx.target->SetDelete(true); 
+            ctx.target->SetDelete(true);
         }
     }
 
@@ -664,12 +677,38 @@ namespace OIF::Effects
 
     void SwapLeveledItem(const RuleContext& ctx, const std::vector<LvlItemSpawnData>& itemsData)
     {
+        if (!ctx.target || ctx.target->IsDeleted()) {
+            logger::error("SwapLeveledItem: No target to spawn/swap leveled items");
+            return;
+        }
+
+        if (itemsData.empty()) {
+            logger::error("SwapLeveledItem: No leveled items to spawn/swap with");
+            return;
+        }
+
         bool spawned = false;
+
         SpawnLeveledItem(ctx, itemsData);
 
-        {
-            std::lock_guard lock(processedItemsMutex);
-            spawned = !processedItems.empty();
+        for (const auto& d : itemsData) {
+            if (!d.item) continue;
+
+            for (std::uint32_t i = 0; i < d.count; ++i) {
+                auto* obj = ResolveLeveledItem(d.item);
+                if (!obj) {
+                    logger::warn("SwapLeveledItem: can't resolve LVLI {:X}", d.item->GetFormID());
+                    continue;
+                }
+
+                auto ref = ctx.target->PlaceObjectAtMe(obj, true);
+                if (ref) {
+                    CopyOwnership(ctx.target, ref.get());
+                    SetObjectScale(ref.get(), ctx.target->GetScale());
+                } else {
+                    logger::warn("SwapLeveledItem: place failed for {:X}", obj->GetFormID());
+                }
+            }
         }
         
         if (spawned) {
