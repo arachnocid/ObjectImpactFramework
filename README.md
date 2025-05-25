@@ -27,6 +27,7 @@ Each rule in your JSON file defines a specific behavior for the mod. Rules are w
   - `"Hit"`: Triggered when an object is hit by a weapon, spell, or projectile.
   - `"Grab"`: Triggered when an object is picked up by the player.
   - `"Release"`: Triggered when a grabbed object is dropped.
+  - `"Telekinesis"`: Triggered when an object the player was holding with telekinesis lands.
   - `"Throw"`: Triggered when a grabbed object is thrown (requires the **Grab And Throw** mod by powerofthree).
   
 - **`filter`**: Defines the conditions under which the rule applies. This is an object that specifies which objects or interactions the rule targets. At least one of `formTypes`, `formIDs`, `formLists`, or `keywords` must be provided to identify target objects.
