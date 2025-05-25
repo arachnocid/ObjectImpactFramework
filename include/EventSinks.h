@@ -45,5 +45,21 @@ namespace OIF
             RE::BSTEventSource<RE::TESGrabReleaseEvent>*) override;
     };
 
+    class TelekinesisLandingSink : public RE::hkpContactListener
+    {
+    public:
+        static TelekinesisLandingSink* GetSingleton()
+        {
+            static TelekinesisLandingSink sink;
+            return &sink;
+        }
+
+        void ContactPointCallback(const RE::hkpContactPointEvent& evn) override;
+
+    private:
+        std::unordered_set<std::uint32_t> processedObjects;
+        std::vector<RE::hkpRigidBody*> bodiesToCleanup;
+    };
+
     void RegisterSinks();
 }

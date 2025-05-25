@@ -329,6 +329,7 @@ namespace OIF {
                 else if (evLower == "grab") r.events.push_back(EventType::kGrab);
                 else if (evLower == "release") r.events.push_back(EventType::kRelease);
                 else if (evLower == "throw") r.events.push_back(EventType::kThrow);
+                else if (evLower == "telekinesis") r.events.push_back(EventType::kTelekinesis);
                 else logger::warn("Unknown event '{}' in {}", ev, path.string());
             }
 
@@ -754,41 +755,25 @@ namespace OIF {
         }
 
         if (!f.keywords.empty()) {
-            bool skipKeywordCheck = (ctx.baseObj->GetFormType() == RE::FormType::Container ||
-                                     ctx.baseObj->GetFormType() == RE::FormType::Static ||
-                                     ctx.baseObj->GetFormType() == RE::FormType::MovableStatic ||
-                                     ctx.baseObj->GetFormType() == RE::FormType::Tree ||
-                                     ctx.baseObj->GetFormType() == RE::FormType::Door);
-
-            if (!skipKeywordCheck) {
-                auto* kwf = ctx.baseObj->As<RE::BGSKeywordForm>();
-                if (!kwf) return false;
-                
-                bool hasAny = false;
-                for (auto* kw : f.keywords) {
-                    if (kw && kwf->HasKeyword(kw)) {
-                        hasAny = true;
-                        break;
-                    }
+            auto* kwf = ctx.baseObj->As<RE::BGSKeywordForm>();
+            if (!kwf) return false;
+            
+            bool hasAny = false;
+            for (auto* kw : f.keywords) {
+                if (kw && kwf->HasKeyword(kw)) {
+                    hasAny = true;
+                    break;
                 }
-                if (!hasAny) return false;
             }
+            if (!hasAny) return false;
         }
 
         if (!f.keywordsNot.empty()) {
-            bool skipKeywordCheck = (ctx.baseObj->GetFormType() == RE::FormType::Container ||
-                                     ctx.baseObj->GetFormType() == RE::FormType::Static ||
-                                     ctx.baseObj->GetFormType() == RE::FormType::MovableStatic ||
-                                     ctx.baseObj->GetFormType() == RE::FormType::Tree ||
-                                     ctx.baseObj->GetFormType() == RE::FormType::Door);
+            auto* kwf = ctx.baseObj->As<RE::BGSKeywordForm>();
+            if (!kwf) return false;
 
-            if (!skipKeywordCheck) {
-                auto* kwf = ctx.baseObj->As<RE::BGSKeywordForm>();
-                if (!kwf) return false;
-
-                for (auto* kw : f.keywordsNot) {
-                    if (kw && kwf->HasKeyword(kw)) return false;
-                }
+            for (auto* kw : f.keywordsNot) {
+                if (kw && kwf->HasKeyword(kw)) return false;
             }
         }
 

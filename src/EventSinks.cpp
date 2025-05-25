@@ -342,19 +342,115 @@ namespace OIF
             RuleManager::GetSingleton()->Trigger(ctx);
         } else {
             float now = duration_cast<duration<float>>(steady_clock::now() - startTime).count();
-            releasedObjects.insert({ evn->ref->GetFormID(), now});
-            grabbedObjects.erase(evn->ref->GetFormID());
-            RuleContext ctx{
-                EventType::kRelease,
-                source,
-                targetRef,
-                baseObj
-            };
-            RuleManager::GetSingleton()->Trigger(ctx);
-            CleanupExpiredReleased();
+            
+            bool isTelekinesis = false;
+
+            RE::TESForm* leftSpell = source->GetEquippedObject(true);
+            RE::TESForm* rightSpell = source->GetEquippedObject(false);
+            
+            RE::MagicItem* leftMagicItem = leftSpell ? leftSpell->As<RE::MagicItem>() : nullptr;
+            RE::MagicItem* rightMagicItem = rightSpell ? rightSpell->As<RE::MagicItem>() : nullptr;
+            
+            if ((leftSpell || rightSpell) && (leftMagicItem || rightMagicItem)) {
+                bool hasGrabEffect = false;
+                for (auto* spell : { leftMagicItem, rightMagicItem }) {
+                    if (spell) {
+                        for (auto* effect : spell->effects) {
+                            if (effect && effect->baseEffect) {
+                                if (effect->baseEffect->data.archetype == RE::EffectArchetypes::ArchetypeID::kTelekinesis ||
+                                    effect->baseEffect->data.archetype == RE::EffectArchetypes::ArchetypeID::kGrabActor) {
+                                    hasGrabEffect = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (hasGrabEffect) break;
+                }
+                isTelekinesis = hasGrabEffect;
+            }
+            if (isTelekinesis) {
+                if (auto threedimObj = targetRef->Get3D()) {
+                    if (auto collisionObj = threedimObj->GetCollisionObject()) {
+                        if (auto bhkBody = collisionObj->GetRigidBody()) {
+                            if (auto hkpBody = bhkBody->GetRigidBody()) {
+                                hkpBody->SetProperty(314159, now);
+                                hkpBody->AddContactListener(TelekinesisLandingSink::GetSingleton());
+                            }
+                        }
+                    }
+                }        
+            } else {
+                releasedObjects.insert({ evn->ref->GetFormID(), now});
+                grabbedObjects.erase(evn->ref->GetFormID());
+                RuleContext ctx{
+                    EventType::kRelease,
+                    source,
+                    targetRef,
+                    baseObj
+                };
+                RuleManager::GetSingleton()->Trigger(ctx);
+                CleanupExpiredReleased();
+            }
         }
 
         return RE::BSEventNotifyControl::kContinue;
+    }
+
+    void TelekinesisLandingSink::ContactPointCallback(const RE::hkpContactPointEvent& a_event) 
+    {
+        if (!a_event.contactPoint || !a_event.firstCallbackForFullManifold) {
+            return;
+        }
+
+        auto bodyA = a_event.bodies[0];
+        auto bodyB = a_event.bodies[1];
+        
+        RE::hkpRigidBody* telekinesisBody = nullptr;
+        if (bodyA && bodyA->HasProperty(314159)) {
+            telekinesisBody = bodyA;
+        } else if (bodyB && bodyB->HasProperty(314159)) {
+            telekinesisBody = bodyB;
+        }
+        
+        if (telekinesisBody) {
+            // Protection against repeated and buggy calls
+            auto refr = telekinesisBody->GetUserData();
+            if (!refr) return;
+            
+            std::uint32_t objectID = refr->GetFormID();
+
+            if (processedObjects.find(objectID) != processedObjects.end()) {
+                return;
+            }
+
+            processedObjects.insert(objectID);
+            bodiesToCleanup.push_back(telekinesisBody);
+
+            SKSE::GetTaskInterface()->AddTask([refr, objectID, this]() {
+                RuleContext ctx{
+                    EventType::kTelekinesis,
+                    RE::PlayerCharacter::GetSingleton()->As<RE::Actor>(),
+                    refr,
+                    refr->GetBaseObject()
+                };
+                RuleManager::GetSingleton()->Trigger(ctx);
+                
+                SKSE::GetTaskInterface()->AddTask([this, objectID]() {
+                    processedObjects.erase(objectID);
+                });
+            });
+
+            SKSE::GetTaskInterface()->AddTask([this]() {
+                for (auto* body : bodiesToCleanup) {
+                    if (body && body->HasProperty(314159)) {
+                        body->RemoveProperty(314159);
+                        body->RemoveContactListener(this);
+                    }
+                }
+                bodiesToCleanup.clear();
+            });
+        }
     }
 
     void RegisterSinks()

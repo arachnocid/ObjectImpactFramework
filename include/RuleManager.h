@@ -9,7 +9,8 @@ namespace OIF
 		kHit,
 		kGrab,
 		kRelease,
-		kThrow
+		kThrow,
+		kTelekinesis
 	};
 
 	enum class EffectType { 
