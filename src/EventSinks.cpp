@@ -1,7 +1,6 @@
 #include "EventSinks.h"
 #include "RE/Skyrim.h"
 #include "SKSE/SKSE.h"
-#include "TESDestructionStageChangedEvent.h"
 
 using namespace std::chrono;
 
