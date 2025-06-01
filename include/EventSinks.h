@@ -118,18 +118,4 @@ namespace OIF
     };
 
     void RegisterSinks();
-
-    class AnimationEventSink : public RE::BSTEventSink<RE::hkaAnimationControlListener>
-    {
-    public:
-        static AnimationEventSink* GetSingleton()
-        {
-            static AnimationEventSink sink;
-            return &sink;
-        }
-
-        RE::BSEventNotifyControl ProcessEvent(
-            const RE::hkaAnimationControlListener* evn,
-            RE::BSTEventSource<RE::hkaAnimationControlListener>*) override;
-    };
 }
