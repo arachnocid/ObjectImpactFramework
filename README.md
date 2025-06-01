@@ -7,14 +7,14 @@ This guide explains how to set up those JSON files so you can customize the mod 
 ## Users Info
 
 - Place your JSON files in: `Data/SKSE/Plugins/ObjectImpactFramework/`
-- **Check the Log**: If something doesn’t work, look at the mod’s log file for error messages. The log can be found in `Documents/My Games/Skyrim Special Edition/SKSE/ObjectImpactFramework.log`
+- **Check the Log**: If something doesn't work, look at the mod's log file for error messages. The log can be found in `Documents/My Games/Skyrim Special Edition/SKSE/ObjectImpactFramework.log`
 
 ## Mod Authors Info
 
 - **Filter Note**: An object must be defined by at least one of the three parameters - `formIDs`, `formLists`, `formTypes`, `keywords` - for the event to work.
 - **Form IDs Must Match**: Make sure the `formID` fits the effect (e.g., a spell ID for `"SpawnSpell"`, an item ID for `"SpawnItem"`).
-- **Keywords Note**: For containers, doors, statics, movable statics, and trees, the `keywords` filter is ignored since they don’t use keywords.
-- **Priority Note**: Place effects with `"Remove"` and `"Swap"` prefixes at the very end of the event, otherwise the removed object may not have time to call other effects on itself.
+- **Keywords Note**: For containers, doors, statics, movable statics, and trees, the `keywords` filter is ignored since they don't use keywords.
+- **Priority Note**: Place effects with `"Remove"` and `"Swap"` (unless used with `"nonDeletable": 1` flag) prefixes at the very end of the event, otherwise the removed object may not have time to call other effects on itself.
 - You can modify existing JSON files without quitting the game, edit the file and reload the save.
 
 ---
@@ -30,12 +30,15 @@ Each rule in your JSON file defines a specific behavior for the mod. Rules are w
   - `"Release"`: Triggered when a grabbed object is dropped.
   - `"Telekinesis"`: Triggered when an object the player was holding with telekinesis lands.
   - `"Throw"`: Triggered when a grabbed object is thrown (requires the **Grab And Throw** mod by powerofthree).
+  - `"ObjectLoaded"`: Triggered when an object's 3D is loaded and ready.
+  - `"CellAttach"`: Triggered when an object is attached to a cell.
+  - `"CellDetach"`: Triggered when an object is detached from a cell.
   
 - **`filter`**: Defines the conditions under which the rule applies. This is an object that specifies which objects or interactions the rule targets. At least one of `formTypes`, `formIDs`, `formLists`, or `keywords` must be provided to identify target objects.
 
 - **`effect`**: Describes what happens when the rule is triggered. This can be a single effect (an object) or multiple effects (an array of objects). Each effect has a `type` and, for most types, an optional `items` array specifying what to spawn, swap, or apply.
 
-Here’s a basic example of a rule:
+Here's a basic example of a rule:
 
 ```json
 [
@@ -58,7 +61,7 @@ This rule triggers when an activator (e.g., a lever) is activated or hit, spawni
 
 ## Filters: Choosing Which Objects to Affect and How
 
-The `filter` object determines which objects and interactions trigger a rule. It’s highly customizable, allowing precise control over when effects occur. Below are all possible filter parameters:
+The `filter` object determines which objects and interactions trigger a rule. It's highly customizable, allowing precise control over when effects occur. Below are all possible filter parameters:
 
 ### General Filters
 
@@ -87,7 +90,10 @@ The `filter` object determines which objects and interactions trigger a rule. It
 - **`formIDs`** (optional): An array of strings identifying specific objects by their Form ID in the format `"modName:formID"`. Examples:
   - `"Skyrim.esm:0x123456"` (for esp/esm plugins).
   - `"MyMod.esl:0x456"` (for esl/espfe plugins).
-  - `"Dawnguard.esm:00123456"` (alternate format with leading zeros (esp/esm only)).
+  - `"Dawnguard.esm:00123456"` (alternate format with leading zeros (esp/esm)).
+  - `"MyMod.esp:FE000800"` (alternate format with leading FE prefix (esl/espfe)).
+
+- **`formIDsNot`** (optional): An array of strings identifying specific objects that the rule should *not* apply to, in the same format as `formIDs`.
 
 - **`formLists`** (optional): An array of objects referencing formlists (lists of forms defined in a mod). Each entry has:
   - **`formID`**: The formlist ID in `"modName:formID"` format (required).
@@ -102,9 +108,28 @@ The `filter` object determines which objects and interactions trigger a rule. It
     - **Index `-1`** is default, means that all the items at once will be used. 
     - **Index `-2`** defines the parrallel relationship for mirrored formlists: matching positions between filter and items formlists correspond directly, allowing ordered transformations (raw meat at position 0 in formlist 1 becomes cooked meat at position 0 in formlist 2).
 
+- **`formListsNot`** (optional): An array of formlist objects that the rule should *not* apply to, in the same format as `formLists`.
+
 - **`keywords`** (optional): An array of keywords that the object must have. Format can be `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`) or a keyword name (e.g., `"VendorItemFood"`). Ignored for containers, doors, statics, movable statics, and trees.
 
 - **`keywordsNot`** (optional): An array of keywords the object must *not* have, in the same format as `keywords`.
+
+- **`questItemStatus`** (optional): An integer specifying quest item status requirements. Only works with ACTIVE player quests:
+  - `0`: Object must not be a quest item.
+  - `1`: Object must be a quest alias only.
+  - `2`: Object must be a full-fledged quest item.
+
+- **`locations`** (optional): An array of Form IDs or formlist Form IDs referencing cells, locations, or worldspaces where the rule should apply. Format: `"modName:formID"`.
+
+- **`locationsNot`** (optional): An array of Form IDs or formlist Form IDs referencing cells, locations, or worldspaces where the rule should not apply. Same format as `locations`.
+
+- **`weathers`** (optional): An array of weather Form IDs or formlist Form IDs containing weathers that must be active for the rule to apply. Format: `"modName:formID"`.
+
+- **`weathersNot`** (optional): An array of weather Form IDs or formlist Form IDs that must *not* be active, in the same format as `weathers`.
+
+- **`perks`** (optional): An array of perk Form IDs that the event source actor must have. Format: `"modName:formID"`.
+
+- **`perksNot`** (optional): An array of perk Form IDs that the event source actor must *not* have, in the same format as `perks`.
 
 - **`isPluginInstalled`** (optional): An array of plugin names (e.g., `"MyMod.esp"`, `"Skyrim.esm"`) that must be loaded for the rule to apply.
 
@@ -116,9 +141,9 @@ The `filter` object determines which objects and interactions trigger a rule. It
 
 - **`chance`** (optional): A number between 0 and 100 representing the percentage chance the rule triggers. Defaults to 100 if omitted.
 
-- **`interactions`** (optional): An integer specifying how many interactions (e.g., hits or activations) are required before the effect triggers. Defaults to 1.
+- **`interactions`** (optional): An integer specifying how many interactions (e.g., hits or activations) are required before the effect triggers. Defaults to 1. Now works with all event types.
 
-- **`limit`** (optional): An integer setting the maximum number of times the rule can trigger per object. No limit if omitted.
+- **`limit`** (optional): An integer setting the maximum number of times the rule can trigger per object. No limit if omitted. Now works with all event types.
 
 ### Hit-Specific Filters
 
@@ -145,6 +170,8 @@ For rules with the `"Hit"` event, additional filters can refine which attacks tr
 
 - **`weapons`** (optional): An array of specific weapon or spell Form IDs in `"modName:formID"` format (e.g., `"Skyrim.esm:0x1A2B3C"`).
 
+- **`weaponsNot`** (optional): An array of specific weapon or spell Form IDs that must *not* be used, in the same format as `weapons`.
+
 - **`weaponsKeywords`** (optional): An array of keywords the weapon or spell must have, in `"modName:formID"` or `"KeywordName"` format.
 
 - **`weaponsKeywordsNot`** (optional): An array of keywords the weapon or spell must *not* have.
@@ -158,7 +185,11 @@ For rules with the `"Hit"` event, additional filters can refine which attacks tr
   - `"rotating"`: Continuous spinning attacks.
   - `"continuous"`: Sustained attacks (e.g., spell streams).
 
+- **`attacksNot`** (optional): An array of attack types that must *not* be used, in the same format as `attacks`.
+
 - **`projectiles`** (optional): An array of specific projectile Form IDs in `"modName:formID"` format (e.g., `"Skyrim.esm:0xDEF123"`).
+
+- **`projectilesNot`** (optional): An array of specific projectile Form IDs that must *not* be used, in the same format as `projectiles`.
 
 ---
 
@@ -171,35 +202,40 @@ The `effect` field defines the outcome when a rule is triggered. It can be a sin
 Here are all possible `type` values:
 
 - **`RemoveItem`**: Deletes the target object.
-- **`SpawnItem`**: Spawns specific items at the object’s location.
-- **`SpawnLeveledItem`**: Spawns random leveled items based on the player’s level.
-- **`SwapItem`**: Replaces the target object with another specific item.
-- **`SwapLeveledItem`**: Replaces the target object with a random leveled item.
-- **`SpawnSpell`**: Casts spells on nearby actors (within 350 units).
-- **`SpawnLeveledSpell`**: Casts random leveled spells on nearby actors (within 350 units).
+- **`EnableItem`**: Enables the target object.
+- **`DisableItem`**: Disables the target object.
+- **`SpawnItem`**: Spawns specific items at the object's location.
+- **`SpawnLeveledItem`**: Spawns random leveled items based on the player's level.
+- **`SwapItem`**: Replaces the target object with another specific item (the `"nonDeletable"` field is customizable in `"items"`).
+- **`SwapLeveledItem`**: Replaces the target object with a random leveled item (the `"nonDeletable"` field is customizable in `"items"`).
+- **`SpawnSpell`**: Casts spells on nearby actors (the `"radius"` is customizable in `"items"`).
+- **`SpawnLeveledSpell`**: Casts random leveled spells on nearby actors (the `"radius"` is customizable in `"items"`).
 - **`SpawnSpellOnItem`**: Casts spells on the target object.
 - **`SpawnLeveledSpellOnItem`**: Casts random leveled spells on the target object.
-- **`SpawnActor`**: Spawns specific actors at the object’s location.
+- **`SpawnActor`**: Spawns specific actors at the object's location.
 - **`SpawnLeveledActor`**: Spawns random leveled actors.
-- **`SwapActor`**: Replaces the target object with specific actors.
-- **`SwapLeveledActor`**: Replaces the target object with random leveled actors.
+- **`SwapActor`**: Replaces the target object with specific actors (the `"nonDeletable"` field is customizable in `"items"`).
+- **`SwapLeveledActor`**: Replaces the target object with random leveled actors (the `"nonDeletable"` field is customizable in `"items"`).
 - **`SpawnImpact`**: Plays an Impact Data Set (e.g., visual effects like sparks).
-- **`SpawnExplosion`**: Triggers an explosion at the object’s location.
+- **`SpawnExplosion`**: Triggers an explosion at the object's location.
+- **`SpawnEffectShader`**: Spawns effect shaders on nearby actors (the `"radius"` is customizable in `"items"`).
+- **`SpawnEffectShaderOnItem`**: Spawns effect shaders on the target object.
 - **`PlaySound`**: Plays a sound descriptor.
+- **`PlayIdle`**: Plays an animation on the target object.
 - **`SpillInventory`**: Spills the contents of a container.
-- **`ApplyIngestible`**: Applies the target object’s effects (if it’s an ingredient or ingestible) to nearby actors (within 150 units).
-- **`ApplyOtherIngestible`**: Applies effects from specified ingestibles to nearby actors (within 150 units). Can be used with any form type (e.g., activator, tree), unlike `"ApplyIngestible"`.
-- **`SpawnLight`**: Spawns a light at the object’s location, will appear in the middle of an object.
-- **`RemoveLight`**: Deletes lights within a specified radius.
-- **`DisableLight`**: Disables lights within a specified radius.
-- **`EnableLight`**: Enables previously disabled lights within a specified radius.
+- **`ApplyIngestible`**: Applies the target object's effects (if it's an ingredient or ingestible) to nearby actors (the `"radius"` is customizable in `"items"`).
+- **`ApplyOtherIngestible`**: Applies effects from specified ingestibles to nearby actors (the `"radius"` is customizable in `"items"`). Can be used with any form type (e.g., activator, tree), unlike `"ApplyIngestible"`.
+- **`SpawnLight`**: Spawns a light at the object's location, will appear in the middle of an object.
+- **`RemoveLight`**: Deletes lights (the `"radius"` is customizable in `"items"`).
+- **`DisableLight`**: Disables lights (the `"radius"` is customizable in `"items"`).
+- **`EnableLight`**: Enables previously disabled lights (the `"radius"` is customizable in `"items"`).
 
 ### Configuring Effects with `items`
 
-For most effect types (except `RemoveItem`, `SpillInventory`, and `ApplyIngestible`), you can specify an `items` array to define what to spawn, swap, or apply. Each item in the array can include:
+For most effect types (except `RemoveItem`, `EnableItem`, `DisableItem`, `SpillInventory`, and `ApplyIngestible`), you can specify an `items` array to define what to spawn, swap, or apply. Each item in the array can include:
 
-- **`formID`** (optional): A specific Form ID in `"modName:formID"` format (e.g., `"Skyrim.esm:0xF"` for a gold coin). Can be used alone or with `formList`.
-- **`formList`** (optional): An array of formlist entries, each with:
+- **`formID`** (optional): A specific Form ID in `"modName:formID"` format (e.g., `"Skyrim.esm:0xF"` for a gold coin). Can be used alone or with `formList`. **NOT** used for `DisableLight`, `EnableLight`, and `PlayIdle`.
+- **`formList`** (optional): An array of formlist entries. **NOT** used for `DisableLight`, `EnableLight`, and `PlayIdle`.
   - **`formID`**: The formlist ID in `"modName:formID"` format.
   - **`index`** (optional): An integer specifying which item in the formlist to use. Use `-1` or omit for all items. Example:
     ```json
@@ -208,13 +244,15 @@ For most effect types (except `RemoveItem`, `SpillInventory`, and `ApplyIngestib
         {"formID": "MyMod.esp:0x789ABC"}
     ]
     ```
-- **`count`** (optional): An integer specifying how many instances to spawn or swap. Defaults to 1. For `RemoveLight`, `DisableLight`, and `EnableLight`, this is replaced by:
-    - **`radius`**: The radius (in game units) within which lights are affected. Defaults to 100.
 - **`chance`** (optional): A number between 0 and 100 for the percentage chance this item is used. Defaults to 100.
+- **`count`** (optional): An integer specifying how many instances to spawn or swap. Defaults to 1. **NOT** used for `RemoveLight`, `DisableLight`, `EnableLight`, and `PlayIdle`.
+- **`radius`** (optional): Specifies the radius in game units for effect application. Defaults vary by effect type. Used for `SpawnSpell`, `SpawnEffectShader`, `ApplyIngestible`, `ApplyOtherIngestible`, `RemoveLight`, `DisableLight`, and `EnableLight` effects.
+- **`duration`** (optional): Used for `PlayIdle`, `SpawnEffectShader`, and `SpawnEffectShaderOnItem` effects. For `PlayIdle`, defaults to 1.0 (lower values make animation faster). For effect shaders, specifies how long the effect lasts.
+- **`string`** (optional): Used for `PlayIdle` effect to specify animation name (e.g., `"AnimationName"`).
+- **`nonDeletable`** (optional): An integer with default value 0. Used for `SwapItem`, `SwapLeveledItem`, `SwapActor`, `SwapLeveledActor`.
 
 **Notes:**
-- Effects like `RemoveItem`, `SpillInventory`, and `ApplyIngestible` don’t require an `items` array.
-- You can mix `formID` and `formList` in the same `items` array for flexibility.
+- Effects `RemoveItem`, `EnableItem`, `DisableItem`, `SpillInventory`, and `ApplyIngestible` don't require an `items` array.
 
 ### Examples
 
@@ -313,4 +351,112 @@ For most effect types (except `RemoveItem`, `SpillInventory`, and `ApplyIngestib
    ]
    ```
    - Activating a container spawns an item from the formlist at index 2 in `MyMod.esp:0x789ABC` or any item from `Skyrim.esm:0x123456`.
-  
+
+6. **Play Animation on Hit**
+   ```json
+   [
+       {
+           "event": ["Hit"],
+           "filter": {
+               "formTypes": ["activator"]
+           },
+           "effect": {
+               "type": "PlayIdle",
+               "items": [{"string": "IdleStop", "duration": 0.5}]
+           }
+       }
+   ]
+   ```
+   - Hitting an activator plays the "IdleStop" animation at 0.5x speed.
+
+7. **Spawn Effect Shader with Custom Duration**
+   ```json
+   [
+       {
+           "event": ["Activate"],
+           "filter": {
+               "formTypes": ["static"]
+           },
+           "effect": {
+               "type": "SpawnEffectShaderOnItem",
+               "items": [
+                   {
+                       "formID": "Skyrim.esm:0x123456",
+                       "duration": 5.0
+                   }
+               ]
+           }
+       }
+   ]
+   ```
+   - Activating a static object spawns an effect shader on it for 5 seconds.
+
+8. **Item Respawn Using New Events**
+   ```json
+   [
+       {
+           "event": ["ObjectLoaded"],
+           "filter": {
+               "formTypes": ["container"],
+               "limit": 1
+           },
+           "effect": [
+               {
+                   "type": "DisableItem"
+               },
+               {
+                   "type": "SpawnItem",
+                   "items": [
+                       {
+                           "formID": "Skyrim.esm:0xF",
+                           "count": 10,
+                           "nonDeletable": 1
+                       }
+                   ]
+               }
+           ]
+       }
+   ]
+   ```
+   - When a container is loaded, disable it and spawn 10 non-deletable gold coins once.
+
+9. **Weather-Dependent Effects**
+   ```json
+   [
+       {
+           "event": ["Hit"],
+           "filter": {
+               "formTypes": ["tree"],
+               "weathers": ["Skyrim.esm:0x123456"]
+           },
+           "effect": {
+               "type": "SpawnSpell",
+               "items": [
+                   {
+                       "formID": "Skyrim.esm:0x789ABC",
+                       "radius": 500
+                   }
+               ]
+           }
+       }
+   ]
+   ```
+   - Hitting a tree during specific weather casts a spell on actors within 500 units.
+
+10. **Quest Item Filtering**
+    ```json
+    [
+        {
+            "event": ["Grab"],
+            "filter": {
+                "formTypes": ["misc"],
+                "questItemStatus": 2
+            },
+            "effect": {
+                "type": "PlaySound",
+                "items": [{"formID": "Skyrim.esm:0x456789"}]
+            }
+        }
+    ]
+    ```
+    - Grabbing a full-fledged quest item plays a specific sound.
