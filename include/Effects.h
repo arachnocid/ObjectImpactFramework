@@ -10,6 +10,8 @@ namespace OIF::Effects
 
     // ------------------ Effects ------------------
     void RemoveItem(const RuleContext& ctx);
+    void DisableItem(const RuleContext& ctx);
+    void EnableItem(const RuleContext& ctx);
     void SpawnItem(const RuleContext& ctx, const std::vector<ItemSpawnData>& itemsData);
     void SpawnSpell(const RuleContext& ctx, const std::vector<SpellSpawnData>& spellsData);
     void SpawnSpellOnItem(const RuleContext& ctx, const std::vector<SpellSpawnData>& spellsData);
@@ -32,4 +34,8 @@ namespace OIF::Effects
     void RemoveLight(const RuleContext& ctx, const std::vector<LightRemoveData>& lightsData);
     void EnableLight(const RuleContext& ctx, const std::vector<LightRemoveData>& lightsData);
     void DisableLight(const RuleContext& ctx, const std::vector<LightRemoveData>& lightsData);
+    void PlayIdle(const RuleContext& ctx, const std::vector<PlayIdleData>& idleData);
+    // void SetCrime(const RuleContext& ctx, const std::vector<CrimeData>& crimeData);
+    void SpawnEffectShader(const RuleContext& ctx, const std::vector<EffectShaderSpawnData>& effectShadersData);
+    void SpawnEffectShaderOnItem(const RuleContext& ctx, const std::vector<EffectShaderSpawnData>& effectShadersData);
 }

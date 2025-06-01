@@ -45,12 +45,12 @@ namespace OIF
             RE::BSTEventSource<RE::TESGrabReleaseEvent>*) override;
     };
 
-    class TelekinesisLandingSink : public RE::hkpContactListener
+    class LandingSink : public RE::hkpContactListener
     {
     public:
-        static TelekinesisLandingSink* GetSingleton()
+        static LandingSink* GetSingleton()
         {
-            static TelekinesisLandingSink sink;
+            static LandingSink sink;
             return &sink;
         }
 
@@ -59,7 +59,77 @@ namespace OIF
     private:
         std::unordered_set<std::uint32_t> processedObjects;
         std::vector<RE::hkpRigidBody*> bodiesToCleanup;
+        static constexpr std::uint32_t HK_PROPERTY_TELEKINESIS{ 314159 };
+        static constexpr std::uint32_t HK_PROPERTY_GRABTHROWNOBJECT{ 628318 };
+    };
+
+    class InputHandler : public RE::BSTEventSink<RE::InputEvent*>
+    {
+    public:
+        static InputHandler* GetSingleton()
+        {
+            static InputHandler handler;
+            return &handler;
+        }
+
+        virtual RE::BSEventNotifyControl ProcessEvent(RE::InputEvent* const* a_event, RE::BSTEventSource<RE::InputEvent*>* a_eventSource) override;
+        
+        void Register();
+        void Unregister();
+        
+        bool WasKeyJustReleased() const { return KeyJustReleased; }
+        void ResetKeyState() { 
+            KeyJustReleased = false; 
+        }
+
+    private:
+        bool KeyWasPressed = false;
+        bool KeyJustReleased = false;
+        
+        static constexpr std::uint32_t R_KEY_CODE = 19;
+    };
+
+    class ObjectLoadedSink : public RE::BSTEventSink<RE::TESObjectLoadedEvent>
+    {
+    public:
+        static ObjectLoadedSink* GetSingleton()
+        {
+            static ObjectLoadedSink sink;
+            return &sink;
+        }
+
+        RE::BSEventNotifyControl ProcessEvent(
+            const RE::TESObjectLoadedEvent* evn,
+            RE::BSTEventSource<RE::TESObjectLoadedEvent>*) override;
+    };
+
+    class CellAttachDetachSink : public RE::BSTEventSink<RE::TESCellAttachDetachEvent>
+    {
+    public:
+        static CellAttachDetachSink* GetSingleton()
+        {
+            static CellAttachDetachSink sink;
+            return &sink;
+        }
+
+        RE::BSEventNotifyControl ProcessEvent(
+            const RE::TESCellAttachDetachEvent* evn,
+            RE::BSTEventSource<RE::TESCellAttachDetachEvent>*) override;
     };
 
     void RegisterSinks();
+
+    class AnimationEventSink : public RE::BSTEventSink<RE::hkaAnimationControlListener>
+    {
+    public:
+        static AnimationEventSink* GetSingleton()
+        {
+            static AnimationEventSink sink;
+            return &sink;
+        }
+
+        RE::BSEventNotifyControl ProcessEvent(
+            const RE::hkaAnimationControlListener* evn,
+            RE::BSTEventSource<RE::hkaAnimationControlListener>*) override;
+    };
 }
