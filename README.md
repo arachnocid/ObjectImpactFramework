@@ -221,7 +221,7 @@ Here are all possible `type` values:
 - **`SpawnEffectShader`**: Spawns effect shaders on nearby actors (the `"radius"` is customizable in `"items"`).
 - **`SpawnEffectShaderOnItem`**: Spawns effect shaders on the target object.
 - **`PlaySound`**: Plays a sound descriptor.
-- **`PlayIdle`**: Plays an animation on the target object.
+- **`PlayIdle`**: Plays an animation on an actor who interacted with the object.
 - **`SpillInventory`**: Spills the contents of a container.
 - **`ApplyIngestible`**: Applies the target object's effects (if it's an ingredient or ingestible) to nearby actors (the `"radius"` is customizable in `"items"`).
 - **`ApplyOtherIngestible`**: Applies effects from specified ingestibles to nearby actors (the `"radius"` is customizable in `"items"`). Can be used with any form type (e.g., activator, tree), unlike `"ApplyIngestible"`.
@@ -253,6 +253,7 @@ For most effect types (except `RemoveItem`, `EnableItem`, `DisableItem`, `SpillI
 
 **Notes:**
 - Effects `RemoveItem`, `EnableItem`, `DisableItem`, `SpillInventory`, and `ApplyIngestible` don't require an `items` array.
+- The `PlayIdle` effect can take only one entry ("items": [{"string": "IdleStop", "duration": 1.0}], the rest will be ignored. The array has been left for consistency, to be less confusing.
 
 ### Examples
 
