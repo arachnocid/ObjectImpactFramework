@@ -248,8 +248,8 @@ For most effect types (except `RemoveItem`, `EnableItem`, `DisableItem`, `SpillI
 - **`count`** (optional): An integer specifying how many instances to spawn or swap. Defaults to 1. **NOT** used for `RemoveLight`, `DisableLight`, `EnableLight`, and `PlayIdle`.
 - **`radius`** (optional): Specifies the radius in game units for effect application. Defaults vary by effect type. Used for `SpawnSpell`, `SpawnEffectShader`, `ApplyIngestible`, `ApplyOtherIngestible`, `RemoveLight`, `DisableLight`, and `EnableLight` effects.
 - **`duration`** (optional): Used for `PlayIdle`, `SpawnEffectShader`, and `SpawnEffectShaderOnItem` effects. For `PlayIdle`, defaults to 1.0 (lower values make animation faster). For effect shaders, specifies how long the effect lasts.
-- **`string`** (optional): Used for `PlayIdle` effect to specify animation name (e.g., `"AnimationName"`).
-- **`nonDeletable`** (optional): An integer with default value 0. Used for `SwapItem`, `SwapLeveledItem`, `SwapActor`, `SwapLeveledActor`.
+- **`string`** (optional): Used for `PlayIdle` effect to specify animation name (e.g., `"AnimationName"`). List of all available animation names -> https://forums.nexusmods.com/topic/11007808-le-list-of-animation-events-for-debugsendanimationevent/?do=findComment&comment=105617168
+- **`nonDeletable`** (optional): An integer with default value 0. Used for `SwapItem`, `SwapLeveledItem`, `SwapActor`, `SwapLeveledActor`. During swap, the original object is deactivated and a new one appears in its place. This value determines whether the original object is deleted or only deactivated.
 
 **Notes:**
 - Effects `RemoveItem`, `EnableItem`, `DisableItem`, `SpillInventory`, and `ApplyIngestible` don't require an `items` array.
@@ -327,7 +327,7 @@ For most effect types (except `RemoveItem`, `EnableItem`, `DisableItem`, `SpillI
    ```
    - Hitting a tree triggers an explosion.
 
-5. **Use FormLists for Random Spawns**
+5. **Use FormLists for Spawns**
    ```json
    [
        {
@@ -351,7 +351,7 @@ For most effect types (except `RemoveItem`, `EnableItem`, `DisableItem`, `SpillI
        }
    ]
    ```
-   - Activating a container spawns an item from the formlist at index 2 in `MyMod.esp:0x789ABC` or any item from `Skyrim.esm:0x123456`.
+   - Activating a container spawns an item from the formlist at index 2 in `MyMod.esp:0x789ABC` and all items from `Skyrim.esm:0x123456`.
 
 6. **Play Animation on Hit**
    ```json
@@ -363,12 +363,12 @@ For most effect types (except `RemoveItem`, `EnableItem`, `DisableItem`, `SpillI
            },
            "effect": {
                "type": "PlayIdle",
-               "items": [{"string": "IdleStop", "duration": 0.5}]
+               "items": [{"string": "IdleName", "duration": 0.5}]
            }
        }
    ]
    ```
-   - Hitting an activator plays the "IdleStop" animation at 0.5x speed.
+   - Hitting an activator plays the "IdleName" animation at 0.5x speed.
 
 7. **Spawn Effect Shader with Custom Duration**
    ```json
@@ -392,36 +392,7 @@ For most effect types (except `RemoveItem`, `EnableItem`, `DisableItem`, `SpillI
    ```
    - Activating a static object spawns an effect shader on it for 5 seconds.
 
-8. **Item Respawn Using New Events**
-   ```json
-   [
-       {
-           "event": ["ObjectLoaded"],
-           "filter": {
-               "formTypes": ["container"],
-               "limit": 1
-           },
-           "effect": [
-               {
-                   "type": "DisableItem"
-               },
-               {
-                   "type": "SpawnItem",
-                   "items": [
-                       {
-                           "formID": "Skyrim.esm:0xF",
-                           "count": 10,
-                           "nonDeletable": 1
-                       }
-                   ]
-               }
-           ]
-       }
-   ]
-   ```
-   - When a container is loaded, disable it and spawn 10 non-deletable gold coins once.
-
-9. **Weather-Dependent Effects**
+8. **Weather-Dependent Effects**
    ```json
    [
        {
@@ -444,7 +415,7 @@ For most effect types (except `RemoveItem`, `EnableItem`, `DisableItem`, `SpillI
    ```
    - Hitting a tree during specific weather casts a spell on actors within 500 units.
 
-10. **Quest Item Filtering**
+9. **Quest Item Filtering**
     ```json
     [
         {
