@@ -114,7 +114,7 @@ The `filter` object determines which objects and interactions trigger a rule. It
 
 - **`keywordsNot`** (optional): An array of keywords the object must *not* have, in the same format as `keywords`.
 
-- **`questItemStatus`** (optional): An integer specifying quest item status requirements. Only works with ACTIVE player quests:
+- **`questItemStatus`** (optional): An integer specifying quest item status requirements. Only works with **ACTIVE** player quests:
   - `0`: Object must not be a quest item.
   - `1`: Object must be a quest alias only.
   - `2`: Object must be a full-fledged quest item.
