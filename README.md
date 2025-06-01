@@ -31,7 +31,7 @@ Each rule in your JSON file defines a specific behavior for the mod. Rules are w
   - `"Telekinesis"`: Triggered when an object the player was holding with telekinesis lands.
   - `"Throw"`: Triggered when a grabbed object is thrown (requires the **Grab And Throw** mod by powerofthree).
   - `"ObjectLoaded"`: Triggered when an object's 3D is loaded and ready.
-  - `"CellAttach"`: Triggered when an object is attached to a cell.
+  - `"CellAttach"`: Triggered when an object is attached to a cell (works on location re-enter as well).
   - `"CellDetach"`: Triggered when an object is detached from a cell.
   
 - **`filter`**: Defines the conditions under which the rule applies. This is an object that specifies which objects or interactions the rule targets. At least one of `formTypes`, `formIDs`, `formLists`, or `keywords` must be provided to identify target objects.
