@@ -14,7 +14,7 @@ This guide explains how to set up those JSON files so you can customize the mod 
 - **Filter Note**: An object must be defined by at least one of the three parameters - `formIDs`, `formLists`, `formTypes`, `keywords` - for the event to work.
 - **Form IDs Must Match**: Make sure the `formID` fits the effect (e.g., a spell ID for `"SpawnSpell"`, an item ID for `"SpawnItem"`).
 - **Keywords Note**: For containers, doors, statics, movable statics, and trees, the `keywords` filter is ignored since they don't use keywords.
-- **Priority Note**: Place effects with `"Remove"` and `"Swap"` (unless used with `"nonDeletable": 1` flag) prefixes at the very end of the event, otherwise the removed object may not have time to call other effects on itself.
+- **Priority Note**: Place effects with `"Remove"` and `"Swap"` (unless used with `"nonDeletable": 1` flag) prefixes at the very end of the event, otherwise the removed object may not have time to call other effects on itself before gets deleted.
 - You can modify existing JSON files without quitting the game, edit the file and reload the save.
 
 ---
@@ -30,7 +30,6 @@ Each rule in your JSON file defines a specific behavior for the mod. Rules are w
   - `"Release"`: Triggered when a grabbed object is dropped.
   - `"Telekinesis"`: Triggered when an object the player was holding with telekinesis lands.
   - `"Throw"`: Triggered when a grabbed object is thrown (requires the **Grab And Throw** mod by powerofthree).
-  - `"ObjectLoaded"`: Triggered when an object's 3D is loaded and ready.
   - `"CellAttach"`: Triggered when an object is attached to a cell (works on location re-enter as well).
   - `"CellDetach"`: Triggered when an object is detached from a cell.
   
@@ -115,9 +114,10 @@ The `filter` object determines which objects and interactions trigger a rule. It
 - **`keywordsNot`** (optional): An array of keywords the object must *not* have, in the same format as `keywords`.
 
 - **`questItemStatus`** (optional): An integer specifying quest item status requirements. Only works with **ACTIVE** player quests:
-  - `0`: Object must not be a quest item.
+  - `0`: Object must not be a quest item (default).
   - `1`: Object must be a quest alias only.
   - `2`: Object must be a full-fledged quest item.
+  - `3`: All objects allowed.
 
 - **`locations`** (optional): An array of Form IDs or formlist Form IDs referencing cells, locations, or worldspaces where the rule should apply. Format: `"modName:formID"`.
 
@@ -130,6 +130,18 @@ The `filter` object determines which objects and interactions trigger a rule. It
 - **`perks`** (optional): An array of perk Form IDs that the event source actor must have. Format: `"modName:formID"`.
 
 - **`perksNot`** (optional): An array of perk Form IDs that the event source actor must *not* have, in the same format as `perks`.
+
+- **`actorValues`** (optional): An array of actor value conditions that the event source actor must meet. Format: `["Health >= 10", "Aggression = 0"]`.
+
+- **`actorValuesNot`** (optional): An array of actor value conditions that the event source actor must *not* meet, in the same format as `actorValues`.
+
+- **`level`** (optional): An array of level conditions that the event source actor must meet. Format: `[">= 10", "= 20"]`.
+
+- **`levelNot`** (optional): An array of level conditions that the event source actor must *not* meet, in the same format as `level`.
+
+- **`hasItem`** (optional): An array of item Form IDs that the event source actor must have in their inventory. Format: `"modName:formID"`.
+
+- **`hasItemNot`** (optional): An array of item Form IDs that the event source actor must *not* have, in the same format as `hasItem`.
 
 - **`isPluginInstalled`** (optional): An array of plugin names (e.g., `"MyMod.esp"`, `"Skyrim.esm"`) that must be loaded for the rule to apply.
 
@@ -167,10 +179,16 @@ For rules with the `"Hit"` event, additional filters can refine which attacks tr
   - `"lesserpower"`: Lesser powers.
   - `"total"`: Yet to discover. Supposedly matches all weapon types.
   - `"other"`: Miscellaneous types not covered above.
+ 
+- **`weaponsTypesNot`** (optional): An array of weapon or spell types that must *not* be used, in the same format as `weaponsTypes`.
 
 - **`weapons`** (optional): An array of specific weapon or spell Form IDs in `"modName:formID"` format (e.g., `"Skyrim.esm:0x1A2B3C"`).
 
 - **`weaponsNot`** (optional): An array of specific weapon or spell Form IDs that must *not* be used, in the same format as `weapons`.
+
+- **`weaponsFormLists`** (optional): An array of formlist Form IDs, containing specific weapons or spells in `"modName:formID"` format (e.g., `"Skyrim.esm:0x1A2B3C"`).
+
+- **`weaponsFormListsNot`** (optional): An array of formlist Form IDs, containing specific weapons or spells that must *not* be used, in the same format as `weaponsFormLists`.
 
 - **`weaponsKeywords`** (optional): An array of keywords the weapon or spell must have, in `"modName:formID"` or `"KeywordName"` format.
 
@@ -199,61 +217,142 @@ The `effect` field defines the outcome when a rule is triggered. It can be a sin
 
 ### Effect Types
 
-Here are all possible `type` values:
+Here are all possible `type` values and their supported fields:
 
 - **`RemoveItem`**: Deletes the target object.
+  - No `items` array required.
+
 - **`EnableItem`**: Enables the target object.
+  - No `items` array required.
+
 - **`DisableItem`**: Disables the target object.
-- **`SpawnItem`**: Spawns specific items at the object's location.
-- **`SpawnLeveledItem`**: Spawns random leveled items based on the player's level.
-- **`SwapItem`**: Replaces the target object with another specific item (the `"nonDeletable"` field is customizable in `"items"`).
-- **`SwapLeveledItem`**: Replaces the target object with a random leveled item (the `"nonDeletable"` field is customizable in `"items"`).
-- **`SpawnSpell`**: Casts spells on nearby actors (the `"radius"` is customizable in `"items"`).
-- **`SpawnLeveledSpell`**: Casts random leveled spells on nearby actors (the `"radius"` is customizable in `"items"`).
-- **`SpawnSpellOnItem`**: Casts spells on the target object.
-- **`SpawnLeveledSpellOnItem`**: Casts random leveled spells on the target object.
-- **`SpawnActor`**: Spawns specific actors at the object's location.
-- **`SpawnLeveledActor`**: Spawns random leveled actors.
-- **`SwapActor`**: Replaces the target object with specific actors (the `"nonDeletable"` field is customizable in `"items"`).
-- **`SwapLeveledActor`**: Replaces the target object with random leveled actors (the `"nonDeletable"` field is customizable in `"items"`).
-- **`SpawnImpact`**: Plays an Impact Data Set (e.g., visual effects like sparks).
-- **`SpawnExplosion`**: Triggers an explosion at the object's location.
-- **`SpawnEffectShader`**: Spawns effect shaders on nearby actors (the `"radius"` is customizable in `"items"`).
-- **`SpawnEffectShaderOnItem`**: Spawns effect shaders on the target object.
-- **`PlaySound`**: Plays a sound descriptor.
-- **`PlayIdle`**: Plays an animation on an actor who interacted with the object.
+  - No `items` array required.
+ 
 - **`SpillInventory`**: Spills the contents of a container.
-- **`ApplyIngestible`**: Applies the target object's effects (if it's an ingredient or ingestible) to nearby actors (the `"radius"` is customizable in `"items"`).
-- **`ApplyOtherIngestible`**: Applies effects from specified ingestibles to nearby actors (the `"radius"` is customizable in `"items"`). Can be used with any form type (e.g., activator, tree), unlike `"ApplyIngestible"`.
-- **`SpawnLight`**: Spawns a light at the object's location, will appear in the middle of an object.
-- **`RemoveLight`**: Deletes lights (the `"radius"` is customizable in `"items"`).
-- **`DisableLight`**: Disables lights (the `"radius"` is customizable in `"items"`).
-- **`EnableLight`**: Enables previously disabled lights (the `"radius"` is customizable in `"items"`).
+  - No `items` array required.
+
+- **`SpawnItem`**: Spawns specific items at the object's location.
+  - Supported fields: `formID`, `formList`, `chance`, `count`, `scale`, `fade`, `spawnType`.
+
+- **`SpawnLeveledItem`**: Spawns random leveled items based on the player's level.
+  - Supported fields: `formID`, `chance`, `count`, `scale`, `fade`, `spawnType`.
+
+- **`SwapItem`**: Replaces the target object with another specific item.
+  - Supported fields: `formID`, `formList`, `chance`, `count`, `nonDeletable`, `scale`, `fade`, `spawnType`.
+
+- **`SwapLeveledItem`**: Replaces the target object with a random leveled item.
+  - Supported fields: `formID`, `chance`, `count`, `nonDeletable`, `scale`, `fade`, `spawnType`.
+
+- **`SpawnSpell`**: Casts spells on nearby actors.
+  - Supported fields: `formID`, `formList`, `chance`, `radius`.
+
+- **`SpawnLeveledSpell`**: Casts random leveled spells on nearby actors.
+  - Supported fields: `formID`, `chance`, `radius`.
+
+- **`SpawnSpellOnItem`**: Casts spells on the target object.
+  - Supported fields: `formID`, `formList`, `chance`.
+
+- **`SpawnLeveledSpellOnItem`**: Casts random leveled spells on the target object.
+  - Supported fields: `formID`, `chance`.
+
+- **`SpawnActor`**: Spawns specific actors at the object's location.
+  - Supported fields: `formID`, `formList`, `chance`, `count`, `scale`, `fade`, `spawnType`.
+
+- **`SpawnLeveledActor`**: Spawns random leveled actors.
+  - Supported fields: `formID`, `chance`, `count`, `scale`, `fade`, `spawnType`.
+
+- **`SwapActor`**: Replaces the target object with specific actors.
+  - Supported fields: `formID`, `formList`, `chance`, `count`, `nonDeletable`, `scale`, `fade`, `spawnType`.
+
+- **`SwapLeveledActor`**: Replaces the target object with random leveled actors.
+  - Supported fields: `formID`, `chance`, `count`, `nonDeletable`, `scale`, `fade`, `spawnType`.
+
+- **`SpawnImpact`**: Plays an Impact Data Set (e.g., visual effects like sparks).
+  - Supported fields: `formID`, `formList`, `chance`.
+
+- **`SpawnExplosion`**: Triggers an explosion at the object's location.
+  - Supported fields: `formID`, `formList`, `chance`, `fade`, `spawnType`.
+
+- **`SpawnEffectShader`**: Spawns effect shaders on nearby actors.
+  - Supported fields: `formID`, `formList`, `chance`, `radius`, `duration`.
+
+- **`SpawnEffectShaderOnItem`**: Spawns effect shaders on the target object.
+  - Supported fields: `formID`, `formList`, `chance`, `duration`.
+
+- **`PlaySound`**: Plays a sound descriptor.
+  - Supported fields: `formID`, `formList`, `chance`.
+
+- **`PlayIdle`**: Plays an animation on an actor who interacted with the object.
+  - Supported fields: `string`, `duration`.
+
+- **`ApplyIngestible`**: Applies the target object's effects (if it's an ingredient or ingestible) to nearby actors.
+  - Supported fields: `chance`, `radius`.
+
+- **`ApplyOtherIngestible`**: Applies effects from specified ingestibles to nearby actors. Can be used with any form type.
+  - Supported fields: `formID`, `formList`, `chance`, `radius`.
+
+- **`SpawnLight`**: Spawns a light at the object's location.
+  - Supported fields: `formID`, `formList`, `chance`, `fade`, `spawnType`.
+
+- **`RemoveLight`**: Deletes lights.
+  - Supported fields: `formID`, `formList`, `chance`, `radius`.
+
+- **`DisableLight`**: Disables lights.
+  - Supported fields: `formID`, `formList`, `chance`, `radius`.
+
+- **`EnableLight`**: Enables previously disabled lights.
+  - Supported fields: `formID`, `formList`, `chance`, `radius`.
 
 ### Configuring Effects with `items`
 
-For most effect types (except `RemoveItem`, `EnableItem`, `DisableItem`, `SpillInventory`, and `ApplyIngestible`), you can specify an `items` array to define what to spawn, swap, or apply. Each item in the array can include:
+For effect types that support an `items` array, you can specify detailed configurations. Each item in the array can include:
 
-- **`formID`** (optional): A specific Form ID in `"modName:formID"` format (e.g., `"Skyrim.esm:0xF"` for a gold coin). Can be used alone or with `formList`. **NOT** used for `DisableLight`, `EnableLight`, and `PlayIdle`.
-- **`formList`** (optional): An array of formlist entries. **NOT** used for `DisableLight`, `EnableLight`, and `PlayIdle`.
+- **`formID`** (optional): A specific Form ID in `"modName:formID"` format (e.g., `"Skyrim.esm:0xF"` for a gold coin). Can be used alone or with `formList`. Not used for `ApplyIngestible`, `DisableLight`, `EnableLight`, and `PlayIdle`.
+
+- **`formList`** (optional): An array of formlist entries. Not used for `ApplyIngestible`, `DisableLight`, `EnableLight`, and `PlayIdle`.
   - **`formID`**: The formlist ID in `"modName:formID"` format.
-  - **`index`** (optional): An integer specifying which item in the formlist to use. Use `-1` or omit for all items. Example:
+  - **`index`** (optional): An integer specifying which item in the formlist to use:
+    - `-1` (default): All items at once.
+    - `-2`: Parallel relationship for mirrored formlists.
+    - `-3`: Select one random object from the list.
+    - Other values: Specific index in the formlist.
+    
+    Example:
     ```json
     "formList": [
         {"formID": "Skyrim.esm:0x123456", "index": 0},
-        {"formID": "MyMod.esp:0x789ABC"}
+        {"formID": "MyMod.esp:0x789ABC", "index": -3}
     ]
     ```
-- **`chance`** (optional): A number between 0 and 100 for the percentage chance this item is used. Defaults to 100.
-- **`count`** (optional): An integer specifying how many instances to spawn or swap. Defaults to 1. **NOT** used for `RemoveLight`, `DisableLight`, `EnableLight`, and `PlayIdle`.
-- **`radius`** (optional): Specifies the radius in game units for effect application. Defaults vary by effect type. Used for `SpawnSpell`, `SpawnEffectShader`, `ApplyIngestible`, `ApplyOtherIngestible`, `RemoveLight`, `DisableLight`, and `EnableLight` effects.
-- **`duration`** (optional): Used for `PlayIdle`, `SpawnEffectShader`, and `SpawnEffectShaderOnItem` effects. For `PlayIdle`, defaults to 1.0 (lower values make animation faster). For effect shaders, specifies how long the effect lasts.
-- **`string`** (optional): Used for `PlayIdle` effect to specify animation name (e.g., `"AnimationName"`). List of all available animation names -> https://forums.nexusmods.com/topic/11007808-le-list-of-animation-events-for-debugsendanimationevent/?do=findComment&comment=105617168
-- **`nonDeletable`** (optional): An integer with default value 0. Used for `SwapItem`, `SwapLeveledItem`, `SwapActor`, `SwapLeveledActor`. During swap, the original object is deactivated and a new one appears in its place. This value determines whether the original object is deleted or only deactivated.
 
-**Notes:**
-- Effects `RemoveItem`, `EnableItem`, `DisableItem`, `SpillInventory`, and `ApplyIngestible` don't require an `items` array.
-- The `PlayIdle` effect can take only one entry ("items": [{"string": "IdleStop", "duration": 1.0}], the rest will be ignored. The array has been left for consistency, to be less confusing.
+- **`chance`** (optional): A number between 0 and 100 for the percentage chance this item is used. Defaults to 100.
+
+- **`count`** (optional): An integer specifying how many instances to spawn or swap. Defaults to 1. Not used for `ApplyIngestible`, `RemoveLight`, `DisableLight`, `EnableLight`, and `PlayIdle`.
+
+- **`radius`** (optional): Specifies the radius in game units for effect application. Defaults vary by effect type.
+
+- **`duration`** (optional): Used for `PlayIdle`, `SpawnEffectShader`, and `SpawnEffectShaderOnItem` effects. For `PlayIdle`, defaults to 1.0 (lower values make animation faster). For effect shaders, specifies how long the effect lasts.
+
+- **`string`** (optional): Used for `PlayIdle` effect to specify animation name (e.g., `"AnimationName"`). [List of available animation names](https://forums.nexusmods.com/topic/11007808-le-list-of-animation-events-for-debugsendanimationevent/?do=findComment&comment=105617168).
+
+- **`nonDeletable`** (optional): Used for **swap** functions only. During swap, the original object is deactivated and a new one appears in its place. This value determines whether the original object is deleted (`0`) or only disabled (`1`).
+
+- **`scale`** (optional): Used for **spawn/swap** functions only. Allows you to select the scale of the spawned item. By default, it is copied from the target object.
+
+- **`fade`** (optional): Used for **spawn/swap** functions only. Determines whether the object will have a fade effect upon creation:
+  - `0` (default): Without fade effect.
+  - `1`: With fade effect.
+
+- **`spawnType`** (optional): Used for **spawn/swap** functions only. Allows you to select the type of how the object should be spawned. Options:
+  - `0`: Common PlaceAtMe().
+  - `1`: PlaceAtMe() spawning the object at the center of the original.
+  - `2`: PlaceAtMe() spawning at the top of the original.
+  - `3`: PlaceAtMe() spawning at the bottom of the original.
+  - `4` (default): Common PlaceAtMe() with buggy engine physics bypassing (e.g., when used with `Throw`/`Grab`/`Release`, the object will be spawned exactly to the landing point without position glitches).
+  - `5`: Bypass with spawning the object at the center of the original.
+  - `6`: Bypass with spawning at the top of the original.
+  - `7`: Bypass with spawning at the bottom of the original.
+  - `8`: Pin to the ground regardless of the landing location (e.g., when used with `Throw`, an object that lands on the wall will spawn a new one directly beneath it on the floor).
 
 ### Examples
 
@@ -290,7 +389,7 @@ For most effect types (except `RemoveItem`, `EnableItem`, `DisableItem`, `SpillI
    ```
    - Hitting a static object removes it.
 
-3. **Spawn Items with Chances**
+3. **Spawn Items with Chances and Custom Scale**
    ```json
    [
        {
@@ -301,14 +400,14 @@ For most effect types (except `RemoveItem`, `EnableItem`, `DisableItem`, `SpillI
            "effect": {
                "type": "SpawnItem",
                "items": [
-                   {"formID": "Skyrim.esm:0xF", "count": 5, "chance": 50},
-                   {"formID": "Skyrim.esm:0xA", "count": 2, "chance": 30}
+                   {"formID": "Skyrim.esm:0xF", "count": 5, "chance": 50, "scale": 1.5},
+                   {"formID": "Skyrim.esm:0xA", "count": 2, "chance": 30, "fade": 1}
                ]
            }
        }
    ]
    ```
-   - Hitting a container has a 50% chance to spawn 5 gold coins and a 30% chance to spawn 2 lockpicks.
+   - Hitting a container has a 50% chance to spawn 5 gold coins at 1.5x scale and a 30% chance to spawn 2 lockpicks with fade effect.
 
 4. **Explode Trees on Hit**
    ```json
@@ -327,7 +426,7 @@ For most effect types (except `RemoveItem`, `EnableItem`, `DisableItem`, `SpillI
    ```
    - Hitting a tree triggers an explosion.
 
-5. **Use FormLists for Spawns**
+5. **Use FormLists with Random Selection**
    ```json
    [
        {
@@ -341,7 +440,7 @@ For most effect types (except `RemoveItem`, `EnableItem`, `DisableItem`, `SpillI
                    {
                        "formList": [
                            {"formID": "MyMod.esp:0x789ABC", "index": 2},
-                           {"formID": "Skyrim.esm:0x123456"}
+                           {"formID": "Skyrim.esm:0x123456", "index": -3}
                        ],
                        "count": 1,
                        "chance": 100
@@ -351,7 +450,7 @@ For most effect types (except `RemoveItem`, `EnableItem`, `DisableItem`, `SpillI
        }
    ]
    ```
-   - Activating a container spawns an item from the formlist at index 2 in `MyMod.esp:0x789ABC` and all items from `Skyrim.esm:0x123456`.
+   - Activating a container spawns an item from the formlist at index 2 in `MyMod.esp:0x789ABC` and one random item from `Skyrim.esm:0x123456`.
 
 6. **Play Animation on Hit**
    ```json
@@ -392,14 +491,16 @@ For most effect types (except `RemoveItem`, `EnableItem`, `DisableItem`, `SpillI
    ```
    - Activating a static object spawns an effect shader on it for 5 seconds.
 
-8. **Weather-Dependent Effects**
+8. **Weather and Actor Value Dependent Effects**
    ```json
    [
        {
            "event": ["Hit"],
            "filter": {
                "formTypes": ["tree"],
-               "weathers": ["Skyrim.esm:0x123456"]
+               "weathers": ["Skyrim.esm:0x123456"],
+               "actorValues": ["Health >= 50"],
+               "level": [">= 10"]
            },
            "effect": {
                "type": "SpawnSpell",
@@ -413,16 +514,17 @@ For most effect types (except `RemoveItem`, `EnableItem`, `DisableItem`, `SpillI
        }
    ]
    ```
-   - Hitting a tree during specific weather casts a spell on actors within 500 units.
+   - Hitting a tree during specific weather by an actor with at least 50 health and level 10+ casts a spell on actors within 500 units.
 
-9. **Quest Item Filtering**
+9. **Quest Item Filtering with Inventory Check**
     ```json
     [
         {
             "event": ["Grab"],
             "filter": {
                 "formTypes": ["misc"],
-                "questItemStatus": 2
+                "questItemStatus": 2,
+                "hasItem": ["Skyrim.esm:0x123456"]
             },
             "effect": {
                 "type": "PlaySound",
@@ -431,4 +533,21 @@ For most effect types (except `RemoveItem`, `EnableItem`, `DisableItem`, `SpillI
         }
     ]
     ```
-    - Grabbing a full-fledged quest item plays a specific sound.
+    - Grabbing a full-fledged quest item by an actor who has a specific item plays a sound.
+
+10. **Apply Ingestible with Custom Radius**
+    ```json
+    [
+        {
+            "event": ["Activate"],
+            "filter": {
+                "formTypes": ["ingredient"]
+            },
+            "effect": {
+                "type": "ApplyIngestible",
+                "items": [{"radius": 300, "chance": 75}]
+            }
+        }
+    ]
+    ```
+    - Activating an ingredient applies its effects to actors within 300 units with 75% chance.
