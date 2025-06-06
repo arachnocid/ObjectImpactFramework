@@ -244,16 +244,16 @@ Here are all possible `type` values and their supported fields:
   - Supported fields: `formID`, `chance`, `count`, `nonDeletable`, `scale`, `fade`, `spawnType`.
 
 - **`SpawnSpell`**: Casts spells on nearby actors.
-  - Supported fields: `formID`, `formList`, `chance`, `radius`.
+  - Supported fields: `formID`, `formList`, `chance`, `count`, `radius`.
 
 - **`SpawnLeveledSpell`**: Casts random leveled spells on nearby actors.
-  - Supported fields: `formID`, `chance`, `radius`.
+  - Supported fields: `formID`, `chance`, `count`, `radius`.
 
 - **`SpawnSpellOnItem`**: Casts spells on the target object.
-  - Supported fields: `formID`, `formList`, `chance`.
+  - Supported fields: `formID`, `formList`, `count`, `chance`.
 
 - **`SpawnLeveledSpellOnItem`**: Casts random leveled spells on the target object.
-  - Supported fields: `formID`, `chance`.
+  - Supported fields: `formID`, `chance`, `count`.
 
 - **`SpawnActor`**: Spawns specific actors at the object's location.
   - Supported fields: `formID`, `formList`, `chance`, `count`, `scale`, `fade`, `spawnType`.
@@ -268,19 +268,19 @@ Here are all possible `type` values and their supported fields:
   - Supported fields: `formID`, `chance`, `count`, `nonDeletable`, `scale`, `fade`, `spawnType`.
 
 - **`SpawnImpact`**: Plays an Impact Data Set (e.g., visual effects like sparks).
-  - Supported fields: `formID`, `formList`, `chance`.
+  - Supported fields: `formID`, `formList`, `chance`, `count`.
 
 - **`SpawnExplosion`**: Triggers an explosion at the object's location.
-  - Supported fields: `formID`, `formList`, `chance`, `fade`, `spawnType`.
+  - Supported fields: `formID`, `formList`, `chance`, `count`, `fade`, `spawnType`.
 
 - **`SpawnEffectShader`**: Spawns effect shaders on nearby actors.
-  - Supported fields: `formID`, `formList`, `chance`, `radius`, `duration`.
+  - Supported fields: `formID`, `formList`, `chance`, `count`, `radius`, `duration`.
 
 - **`SpawnEffectShaderOnItem`**: Spawns effect shaders on the target object.
-  - Supported fields: `formID`, `formList`, `chance`, `duration`.
+  - Supported fields: `formID`, `formList`, `chance`, `count`, `duration`.
 
 - **`PlaySound`**: Plays a sound descriptor.
-  - Supported fields: `formID`, `formList`, `chance`.
+  - Supported fields: `formID`, `formList`, `chance`, `count`.
 
 - **`PlayIdle`**: Plays an animation on an actor who interacted with the object.
   - Supported fields: `string`, `duration`.
@@ -292,7 +292,7 @@ Here are all possible `type` values and their supported fields:
   - Supported fields: `formID`, `formList`, `chance`, `radius`.
 
 - **`SpawnLight`**: Spawns a light at the object's location.
-  - Supported fields: `formID`, `formList`, `chance`, `fade`, `spawnType`.
+  - Supported fields: `formID`, `formList`, `chance`, `count`, `fade`, `spawnType`.
 
 - **`RemoveLight`**: Deletes lights.
   - Supported fields: `formID`, `formList`, `chance`, `radius`.
