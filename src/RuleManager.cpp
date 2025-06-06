@@ -90,6 +90,167 @@ namespace OIF {
         {"other", "Other"}
     };
 
+    RE::ActorValue GetActorValueFromString(const std::string& avName) {
+        std::string lowerName = tolower_str(avName);
+        
+        if (lowerName == "absorbchance") return RE::ActorValue::kAbsorbChance;
+        if (lowerName == "aggression") return RE::ActorValue::kAggression;
+        if (lowerName == "alchemy") return RE::ActorValue::kAlchemy;
+        if (lowerName == "alchemymodifier") return RE::ActorValue::kAlchemyModifier;
+        if (lowerName == "alchemypowermodifier") return RE::ActorValue::kAlchemyPowerModifier;
+        if (lowerName == "alchemyskilladvance") return RE::ActorValue::kAlchemySkillAdvance;
+        if (lowerName == "alteration") return RE::ActorValue::kAlteration;
+        if (lowerName == "alterationmodifier") return RE::ActorValue::kAlterationModifier;
+        if (lowerName == "alterationpowermodifier") return RE::ActorValue::kAlterationPowerModifier;
+        if (lowerName == "alterationskilladvance") return RE::ActorValue::kAlterationSkillAdvance;
+        if (lowerName == "archery") return RE::ActorValue::kArchery;
+        if (lowerName == "armorperks") return RE::ActorValue::kArmorPerks;
+        if (lowerName == "assistance") return RE::ActorValue::kAssistance;
+        if (lowerName == "attackdamagemult") return RE::ActorValue::kAttackDamageMult;
+        if (lowerName == "blindness") return RE::ActorValue::kBlindness;
+        if (lowerName == "block") return RE::ActorValue::kBlock;
+        if (lowerName == "blockmodifier") return RE::ActorValue::kBlockModifier;
+        if (lowerName == "blockpowermodifier") return RE::ActorValue::kBlockPowerModifier;
+        if (lowerName == "blockskilladvance") return RE::ActorValue::kBlockSkillAdvance;
+        if (lowerName == "bowspeedbonus") return RE::ActorValue::kBowSpeedBonus;
+        if (lowerName == "bowstaggerbonus") return RE::ActorValue::kBowStaggerBonus;
+        if (lowerName == "braincondition") return RE::ActorValue::kBrainCondition;
+        if (lowerName == "bypassvendorkeywordcheck") return RE::ActorValue::kBypassVendorKeywordCheck;
+        if (lowerName == "bypassvendorstolencheck") return RE::ActorValue::kBypassVendorStolenCheck;
+        if (lowerName == "carryweight") return RE::ActorValue::kCarryWeight;
+        if (lowerName == "combathealthregenmultiply") return RE::ActorValue::kCombatHealthRegenMultiply;
+        if (lowerName == "confidence") return RE::ActorValue::kConfidence;
+        if (lowerName == "conjuration") return RE::ActorValue::kConjuration;
+        if (lowerName == "conjurationmodifier") return RE::ActorValue::kConjurationModifier;
+        if (lowerName == "conjurationpowermodifier") return RE::ActorValue::kConjurationPowerModifier;
+        if (lowerName == "conjurationskilladvance") return RE::ActorValue::kConjurationSkillAdvance;
+        if (lowerName == "criticalchance") return RE::ActorValue::kCriticalChance;
+        if (lowerName == "damageresist") return RE::ActorValue::kDamageResist;
+        if (lowerName == "deprecated05") return RE::ActorValue::kDEPRECATED05;
+        if (lowerName == "destruction") return RE::ActorValue::kDestruction;
+        if (lowerName == "destructionmodifier") return RE::ActorValue::kDestructionModifier;
+        if (lowerName == "destructionpowermodifier") return RE::ActorValue::kDestructionPowerModifier;
+        if (lowerName == "destructionskilladvance") return RE::ActorValue::kDestructionSkillAdvance;
+        if (lowerName == "detectliferange") return RE::ActorValue::kDetectLifeRange;
+        if (lowerName == "dragonrend") return RE::ActorValue::kDragonRend;
+        if (lowerName == "dragonsouls") return RE::ActorValue::kDragonSouls;
+        if (lowerName == "enchanting") return RE::ActorValue::kEnchanting;
+        if (lowerName == "enchantingmodifier") return RE::ActorValue::kEnchantingModifier;
+        if (lowerName == "enchantingpowermodifier") return RE::ActorValue::kEnchantingPowerModifier;
+        if (lowerName == "enchantingskilladvance") return RE::ActorValue::kEnchantingSkillAdvance;
+        if (lowerName == "endurancecondition") return RE::ActorValue::kEnduranceCondition;
+        if (lowerName == "energy") return RE::ActorValue::kEnergy;
+        if (lowerName == "fame") return RE::ActorValue::kFame;
+        if (lowerName == "favoractive") return RE::ActorValue::kFavorActive;
+        if (lowerName == "favorpointsbonus") return RE::ActorValue::kFavorPointsBonus;
+        if (lowerName == "favorsperday") return RE::ActorValue::kFavorsPerDay;
+        if (lowerName == "favorsperdaytimer") return RE::ActorValue::kFavorsPerDayTimer;
+        if (lowerName == "grabactoroffset") return RE::ActorValue::kGrabActorOffset;
+        if (lowerName == "grabbed") return RE::ActorValue::kGrabbed;
+        if (lowerName == "healrate") return RE::ActorValue::kHealRate;
+        if (lowerName == "healratemult") return RE::ActorValue::kHealRateMult;
+        if (lowerName == "health") return RE::ActorValue::kHealth;
+        if (lowerName == "heavyarmor") return RE::ActorValue::kHeavyArmor;
+        if (lowerName == "heavyarmormodifier") return RE::ActorValue::kHeavyArmorModifier;
+        if (lowerName == "heavyarmorpowermodifier") return RE::ActorValue::kHeavyArmorPowerModifier;
+        if (lowerName == "heavyarmorskilladvance") return RE::ActorValue::kHeavyArmorSkillAdvance;
+        if (lowerName == "ignorecripplledlimbs") return RE::ActorValue::kIgnoreCrippledLimbs;
+        if (lowerName == "illusion") return RE::ActorValue::kIllusion;
+        if (lowerName == "illusionmodifier") return RE::ActorValue::kIllusionModifier;
+        if (lowerName == "illusionpowermodifier") return RE::ActorValue::kIllusionPowerModifier;
+        if (lowerName == "illusionskilladvance") return RE::ActorValue::kIllusionSkillAdvance;
+        if (lowerName == "infamy") return RE::ActorValue::kInfamy;
+        if (lowerName == "inventoryweight") return RE::ActorValue::kInventoryWeight;
+        if (lowerName == "invisibility") return RE::ActorValue::kInvisibility;
+        if (lowerName == "jumpingbonus") return RE::ActorValue::kJumpingBonus;
+        if (lowerName == "lastbribedintimidated") return RE::ActorValue::kLastBribedIntimidated;
+        if (lowerName == "lastflattered") return RE::ActorValue::kLastFlattered;
+        if (lowerName == "leftattackcondition") return RE::ActorValue::kLeftAttackCondition;
+        if (lowerName == "leftitemcharge") return RE::ActorValue::kLeftItemCharge;
+        if (lowerName == "leftmobilitycondition") return RE::ActorValue::kLeftMobilityCondition;
+        if (lowerName == "leftweaponspeedmultiply") return RE::ActorValue::kLeftWeaponSpeedMultiply;
+        if (lowerName == "lightarmor") return RE::ActorValue::kLightArmor;
+        if (lowerName == "lightarmormodifier") return RE::ActorValue::kLightArmorModifier;
+        if (lowerName == "lightarmorpowermodifier") return RE::ActorValue::kLightArmorPowerModifier;
+        if (lowerName == "lightarmorskilladvance") return RE::ActorValue::kLightArmorSkillAdvance;
+        if (lowerName == "lockpicking") return RE::ActorValue::kLockpicking;
+        if (lowerName == "lockpickingmodifier") return RE::ActorValue::kLockpickingModifier;
+        if (lowerName == "lockpickingpowermodifier") return RE::ActorValue::kLockpickingPowerModifier;
+        if (lowerName == "lockpickingskilladvance") return RE::ActorValue::kLockpickingSkillAdvance;
+        if (lowerName == "magicka") return RE::ActorValue::kMagicka;
+        if (lowerName == "magickarate") return RE::ActorValue::kMagickaRate;
+        if (lowerName == "magickaratemult") return RE::ActorValue::kMagickaRateMult;
+        if (lowerName == "marksmanmodifier") return RE::ActorValue::kMarksmanModifier;
+        if (lowerName == "marksmanpowermodifier") return RE::ActorValue::kMarksmanPowerModifier;
+        if (lowerName == "marksmanskilladvance") return RE::ActorValue::kMarksmanSkillAdvance;
+        if (lowerName == "mass") return RE::ActorValue::kMass;
+        if (lowerName == "meleedamage") return RE::ActorValue::kMeleeDamage;
+        if (lowerName == "mood") return RE::ActorValue::kMood;
+        if (lowerName == "morality") return RE::ActorValue::kMorality;
+        if (lowerName == "movementnoisemult") return RE::ActorValue::kMovementNoiseMult;
+        if (lowerName == "nighteye") return RE::ActorValue::kNightEye;
+        if (lowerName == "onehanded") return RE::ActorValue::kOneHanded;
+        if (lowerName == "onehandedmodifier") return RE::ActorValue::kOneHandedModifier;
+        if (lowerName == "onehandedpowermodifier") return RE::ActorValue::kOneHandedPowerModifier;
+        if (lowerName == "onehandedskilladvance") return RE::ActorValue::kOneHandedSkillAdvance;
+        if (lowerName == "paralysis") return RE::ActorValue::kParalysis;
+        if (lowerName == "perceptioncondition") return RE::ActorValue::kPerceptionCondition;
+        if (lowerName == "pickpocket") return RE::ActorValue::kPickpocket;
+        if (lowerName == "pickpocketmodifier") return RE::ActorValue::kPickpocketModifier;
+        if (lowerName == "pickpocketpowermodifier") return RE::ActorValue::kPickpocketPowerModifier;
+        if (lowerName == "pickpocketskilladvance") return RE::ActorValue::kPickpocketSkillAdvance;
+        if (lowerName == "poisonresist") return RE::ActorValue::kPoisonResist;
+        if (lowerName == "reflectdamage") return RE::ActorValue::kReflectDamage;
+        if (lowerName == "resistdisease") return RE::ActorValue::kResistDisease;
+        if (lowerName == "resistfire") return RE::ActorValue::kResistFire;
+        if (lowerName == "resistfrost") return RE::ActorValue::kResistFrost;
+        if (lowerName == "resistmagic") return RE::ActorValue::kResistMagic;
+        if (lowerName == "resistshock") return RE::ActorValue::kResistShock;
+        if (lowerName == "restoration") return RE::ActorValue::kRestoration;
+        if (lowerName == "restorationmodifier") return RE::ActorValue::kRestorationModifier;
+        if (lowerName == "restorationpowermodifier") return RE::ActorValue::kRestorationPowerModifier;
+        if (lowerName == "restorationskilladvance") return RE::ActorValue::kRestorationSkillAdvance;
+        if (lowerName == "rightattackcondition") return RE::ActorValue::kRightAttackCondition;
+        if (lowerName == "rightitemcharge") return RE::ActorValue::kRightItemCharge;
+        if (lowerName == "rightmobilitycondition") return RE::ActorValue::kRightMobilityCondition;
+        if (lowerName == "shieldperks") return RE::ActorValue::kShieldPerks;
+        if (lowerName == "shoutrecoverymult") return RE::ActorValue::kShoutRecoveryMult;
+        if (lowerName == "smithing") return RE::ActorValue::kSmithing;
+        if (lowerName == "smithingmodifier") return RE::ActorValue::kSmithingModifier;
+        if (lowerName == "smithingpowermodifier") return RE::ActorValue::kSmithingPowerModifier;
+        if (lowerName == "smithingskilladvance") return RE::ActorValue::kSmithingSkillAdvance;
+        if (lowerName == "sneak") return RE::ActorValue::kSneak;
+        if (lowerName == "sneakingmodifier") return RE::ActorValue::kSneakingModifier;
+        if (lowerName == "sneakingpowermodifier") return RE::ActorValue::kSneakingPowerModifier;
+        if (lowerName == "sneakingskilladvance") return RE::ActorValue::kSneakingSkillAdvance;
+        if (lowerName == "speech") return RE::ActorValue::kSpeech;
+        if (lowerName == "speechcraftmodifier") return RE::ActorValue::kSpeechcraftModifier;
+        if (lowerName == "speechcraftpowermodifier") return RE::ActorValue::kSpeechcraftPowerModifier;
+        if (lowerName == "speechcraftskilladvance") return RE::ActorValue::kSpeechcraftSkillAdvance;
+        if (lowerName == "speedmult") return RE::ActorValue::kSpeedMult;
+        if (lowerName == "stamina") return RE::ActorValue::kStamina;
+        if (lowerName == "staminarate") return RE::ActorValue::kStaminaRate;
+        if (lowerName == "staminaratemult") return RE::ActorValue::kStaminaRateMult;
+        if (lowerName == "telekinesis") return RE::ActorValue::kTelekinesis;
+        if (lowerName == "twohanded") return RE::ActorValue::kTwoHanded;
+        if (lowerName == "twohandedmodifier") return RE::ActorValue::kTwoHandedModifier;
+        if (lowerName == "twohandedpowermodifier") return RE::ActorValue::kTwoHandedPowerModifier;
+        if (lowerName == "twohandedskilladvance") return RE::ActorValue::kTwoHandedSkillAdvance;
+        if (lowerName == "unarmeddamage") return RE::ActorValue::kUnarmedDamage;
+        if (lowerName == "vampireperks") return RE::ActorValue::kVampirePerks;
+        if (lowerName == "voicepoints") return RE::ActorValue::kVoicePoints;
+        if (lowerName == "voicerate") return RE::ActorValue::kVoiceRate;
+        if (lowerName == "waitingforplayer") return RE::ActorValue::kWaitingForPlayer;
+        if (lowerName == "warddeflection") return RE::ActorValue::kWardDeflection;
+        if (lowerName == "wardpower") return RE::ActorValue::kWardPower;
+        if (lowerName == "waterbreathing") return RE::ActorValue::kWaterBreathing;
+        if (lowerName == "waterwalking") return RE::ActorValue::kWaterWalking;
+        if (lowerName == "weaponspeedmult") return RE::ActorValue::kWeaponSpeedMult;
+        if (lowerName == "werewolfperks") return RE::ActorValue::kWerewolfPerks;
+        
+        return RE::ActorValue::kNone;
+    }   
+
     static RE::FormType MapStringToFormType(std::string_view s) {
         auto it = formTypeMap.find(tolower_str(s));
         return it != formTypeMap.end() ? it->second : RE::FormType::None;
@@ -194,22 +355,74 @@ namespace OIF {
     
         return typedForm;
     }
+
+    template<typename T>
+    bool CompareValues(const std::string& op, T current, T target) {
+        if (op == ">=") return current >= target;
+        if (op == "<=") return current <= target;
+        if (op == ">") return current > target;
+        if (op == "<") return current < target;
+        if (op == "=") return current == target;
+        if (op == "!=") return current != target;
+        return false;
+    }
+
+    // Specialization for float, taking into account the error
+    template<>
+    bool CompareValues<float>(const std::string& op, float current, float target) {
+        if (op == ">=") return current >= target;
+        if (op == "<=") return current <= target;
+        if (op == ">") return current > target;
+        if (op == "<") return current < target;
+        if (op == "=") return std::abs(current - target) < 0.001f;
+        if (op == "!=") return std::abs(current - target) >= 0.001f;
+        return false;
+    }
+
+    bool CheckLevelCondition(const LevelCondition& condition, int currentLevel) {
+        return CompareValues(condition.operator_type, currentLevel, condition.value);
+    }
+
+    bool CheckActorValueCondition(const ActorValueCondition& condition, RE::Actor* actor) {
+        RE::ActorValue av = GetActorValueFromString(condition.actorValue);
+        if (av == RE::ActorValue::kNone) return false;
+        
+        auto* npc = actor->As<RE::TESNPC>();
+        if (!npc) return false;
+        
+        float currentValue = npc->GetActorValue(av);
+        
+        return CompareValues(condition.operator_type, currentValue, condition.value);
+    }
+
+    bool HasItem(RE::Actor* actor, RE::FormID formID) {
+        if (!actor) return false;
+        auto inventory = actor->GetInventory();
+        if (!inventory.empty()) {
+            for (const auto& [item, invData] : inventory) {
+                if (item && item->GetFormID() == formID && invData.first > 0) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
     
-    QuestItemStatus GetQuestItemStatus(RE::TESObjectREFR* ref) {
-        if (!ref) return QuestItemStatus::NotQuestItem;
+    std::uint32_t GetQuestItemStatus(RE::TESObjectREFR* ref) {
+        if (!ref) return 0;
 
         if (ref->HasQuestObject()) {
-            return QuestItemStatus::IsQuestItem;
+            return 2;
         }
         
         if (const auto xAliases = ref->extraList.GetByType<RE::ExtraAliasInstanceArray>(); xAliases) { // the line is taken from the PO3 Papyrus Extender
-            RE::BSReadLockGuard locker(xAliases->lock);
+            if (xAliases) RE::BSReadLockGuard locker(xAliases->lock);
             if (!xAliases->aliases.empty()) {
-                return QuestItemStatus::HasAlias;
+                return 1;
             }
         }
         
-        return QuestItemStatus::NotQuestItem;
+        return 0;
     }
 
     bool CheckLocationFilter(const Filter& f, const RuleContext& ctx, Rule& currentRule) {
@@ -244,13 +457,18 @@ namespace OIF {
     
         // Get the current locations of the player
         std::set<RE::FormID> currentLocationIDs;
+        std::set<RE::FormID> visitedParents;
         if (auto* player = RE::PlayerCharacter::GetSingleton()) {
             if (auto* currentLocation = player->GetCurrentLocation()) {
                 currentLocationIDs.insert(currentLocation->GetFormID());
-
                 auto* parentLoc = currentLocation;
                 while (parentLoc && parentLoc->parentLoc) {
                     parentLoc = parentLoc->parentLoc;
+                    if (visitedParents.contains(parentLoc->GetFormID())) {
+                        logger::warn("Circular reference detected in location hierarchy");
+                        break;
+                    }
+                    visitedParents.insert(parentLoc->GetFormID());
                     currentLocationIDs.insert(parentLoc->GetFormID());
                 }
             }
@@ -437,17 +655,6 @@ namespace OIF {
             intf->WriteRecordData(&key, sizeof(key));
             intf->WriteRecordData(&val, sizeof(val));
         }
-    
-        if (!intf->OpenRecord('ICNT', 2))
-            return;
-    
-        std::uint32_t interactionsSize = static_cast<std::uint32_t>(_interactionsCounts.size());
-        intf->WriteRecordData(interactionsSize);
-    
-        for (auto& [key, val] : _interactionsCounts) {
-            intf->WriteRecordData(&key, sizeof(key));
-            intf->WriteRecordData(&val, sizeof(val));
-        }
     }
     
     void RuleManager::OnLoad(SKSE::SerializationInterface* intf)
@@ -464,16 +671,6 @@ namespace OIF {
                     intf->ReadRecordData(&key, sizeof(key));
                     intf->ReadRecordData(&val, sizeof(val));
                     _limitCounts[key] = val;
-                }
-            }
-            else if (type == 'ICNT') {  // interactions
-                std::uint32_t size;
-                intf->ReadRecordData(size);
-                for (std::uint32_t i = 0; i < size; ++i) {
-                    Key key; std::uint32_t val;
-                    intf->ReadRecordData(&key, sizeof(key));
-                    intf->ReadRecordData(&val, sizeof(val));
-                    _interactionsCounts[key] = val;
                 }
             }
         }
@@ -521,10 +718,14 @@ namespace OIF {
             return;
         }
 
-        for (auto const& entry : fs::recursive_directory_iterator{ dir }) {
-            if (entry.is_regular_file() && entry.path().extension() == ".json") {
-                ParseJSON(entry.path());
+        try {
+            for (auto const& entry : fs::recursive_directory_iterator{ dir }) {
+                if (entry.is_regular_file() && entry.path().extension() == ".json") {
+                    ParseJSON(entry.path());
+                }
             }
+        } catch (const fs::filesystem_error& e) {
+            logger::error("Filesystem error while loading rules: {}", e.what());
         }
 
         logger::info("Total rules loaded: {}", _rules.size());
@@ -583,7 +784,6 @@ namespace OIF {
                 else if (evLower == "release") r.events.push_back(EventType::kRelease);
                 else if (evLower == "throw") r.events.push_back(EventType::kThrow);
                 else if (evLower == "telekinesis") r.events.push_back(EventType::kTelekinesis);
-                else if (evLower == "objectloaded") r.events.push_back(EventType::kObjectLoaded);
                 else if (evLower == "cellattach") r.events.push_back(EventType::kCellAttach);
                 else if (evLower == "celldetach") r.events.push_back(EventType::kCellDetach);
                 else logger::warn("Unknown event '{}' in {}", ev, path.string());
@@ -756,7 +956,7 @@ namespace OIF {
 
                 if (jf.contains("questitemstatus") && jf["questitemstatus"].is_number_unsigned()) {
                     try {
-                        r.filter.questItemStatus = static_cast<QuestItemStatus>(jf["questitemstatus"].get<std::uint32_t>());
+                        r.filter.questItemStatus = jf["questitemstatus"].get<std::uint32_t>();
                     } catch (const std::exception& e) {
                         logger::warn("Invalid QuestItemStatus value in filter of {}: {}", path.string(), e.what());
                     }
@@ -1073,7 +1273,157 @@ namespace OIF {
                         }
                     }
                 }
-            }
+
+                if (jf.contains("hasitem") && jf["hasitem"].is_array()) {
+                    for (auto const& item : jf["hasitem"]) {
+                        if (item.is_string()) {
+                            if (auto* form = GetFormFromIdentifier<RE::TESForm>(item.get<std::string>())) {
+                                r.filter.hasItem.insert(form->GetFormID());
+                            } else {
+                                logger::warn("Invalid hasitem identifier '{}' in filter of {}", item.get<std::string>(), path.string());
+                            }
+                        }
+                    }
+                }
+                
+                if (jf.contains("hasitemnot") && jf["hasitemnot"].is_array()) {
+                    for (auto const& item : jf["hasitemnot"]) {
+                        if (item.is_string()) {
+                            if (auto* form = GetFormFromIdentifier<RE::TESForm>(item.get<std::string>())) {
+                                r.filter.hasItemNot.insert(form->GetFormID());
+                            } else {
+                                logger::warn("Invalid hasitemnot identifier '{}' in filter of {}", item.get<std::string>(), path.string());
+                            }
+                        }
+                    }
+                }
+                
+                if (jf.contains("levels") && jf["levels"].is_array()) {
+                    for (auto const& lvl : jf["levels"]) {
+                        if (lvl.is_string()) {
+                            std::string levelStr = lvl.get<std::string>();
+
+                            if (levelStr.empty()) {
+                                logger::warn("Empty levels string in filter of {}", path.string());
+                                continue;
+                            }
+
+                            levelStr.erase(std::remove(levelStr.begin(), levelStr.end(), ' '), levelStr.end());
+                            LevelCondition condition;
+                            
+                            if (levelStr.length() >= 2) {
+                                if (levelStr.substr(0, 2) == ">=" || levelStr.substr(0, 2) == "<=" || levelStr.substr(0, 2) == "!=") {
+                                    condition.operator_type = levelStr.substr(0, 2);
+                                    try {
+                                        condition.value = std::stoi(levelStr.substr(2));
+                                        r.filter.level.push_back(condition);
+                                    } catch (const std::exception& e) {
+                                        logger::warn("Invalid levels value '{}' in filter of {}: {}", levelStr, path.string(), e.what());
+                                    }
+                                } else if (levelStr[0] == '>' || levelStr[0] == '<' || levelStr[0] == '=') {
+                                    condition.operator_type = levelStr.substr(0, 1);
+                                    try {
+                                        condition.value = std::stoi(levelStr.substr(1));
+                                        r.filter.level.push_back(condition);
+                                    } catch (const std::exception& e) {
+                                        logger::warn("Invalid levels value '{}' in filter of {}: {}", levelStr, path.string(), e.what());
+                                    }
+                                } else {
+                                    logger::warn("Invalid levels operator in '{}' in filter of {}", levelStr, path.string());
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                if (jf.contains("levelsnot") && jf["levelsnot"].is_array()) {
+                    for (auto const& lvl : jf["levelsnot"]) {
+                        if (lvl.is_string()) {
+                            std::string levelStr = lvl.get<std::string>();
+
+                            if (levelStr.empty()) {
+                                logger::warn("Empty levels string in filter of {}", path.string());
+                                continue;
+                            }
+
+                            levelStr.erase(std::remove(levelStr.begin(), levelStr.end(), ' '), levelStr.end());
+                            LevelCondition condition;
+                            
+                            if (levelStr.length() >= 2) {
+                                if (levelStr.substr(0, 2) == ">=" || levelStr.substr(0, 2) == "<=" || levelStr.substr(0, 2) == "!=") {
+                                    condition.operator_type = levelStr.substr(0, 2);
+                                    try {
+                                        condition.value = std::stoi(levelStr.substr(2));
+                                        r.filter.levelNot.push_back(condition);
+                                    } catch (const std::exception& e) {
+                                        logger::warn("Invalid levelsnot value '{}' in filter of {}: {}", levelStr, path.string(), e.what());
+                                    }
+                                } else if (levelStr[0] == '>' || levelStr[0] == '<' || levelStr[0] == '=') {
+                                    condition.operator_type = levelStr.substr(0, 1);
+                                    try {
+                                        condition.value = std::stoi(levelStr.substr(1));
+                                        r.filter.levelNot.push_back(condition);
+                                    } catch (const std::exception& e) {
+                                        logger::warn("Invalid levelsnot value '{}' in filter of {}: {}", levelStr, path.string(), e.what());
+                                    }
+                                } else {
+                                    logger::warn("Invalid levelsnot operator in '{}' in filter of {}", levelStr, path.string());
+                                }
+                            }
+                        }
+                    }
+                }                
+                
+                if (jf.contains("actorvalues") && jf["actorvalues"].is_array()) {
+                    for (auto const& av : jf["actorvalues"]) {
+                        if (av.is_string()) {
+                            std::string avStr = av.get<std::string>();
+                            ActorValueCondition condition;
+                            
+                            std::regex avRegex(R"(([A-Za-z]+)\s*(>=|<=|!=|>|<|=)\s*(\d+(?:\.\d+)?))");
+                            std::smatch matches;
+                            
+                            if (std::regex_match(avStr, matches, avRegex)) {
+                                condition.actorValue = tolower_str(matches[1].str());
+                                condition.operator_type = matches[2].str();
+                                try {
+                                    condition.value = std::stof(matches[3].str());
+                                    r.filter.actorValue.push_back(condition);
+                                } catch (const std::exception& e) {
+                                    logger::warn("Invalid actorvalues value '{}' in filter of {}: {}", avStr, path.string(), e.what());
+                                }
+                            } else {
+                                logger::warn("Invalid actorvalues format '{}' in filter of {}, expected format: 'ActorValue >= Value'", avStr, path.string());
+                            }
+                        }
+                    }
+                }
+                
+                if (jf.contains("actorvaluesnot") && jf["actorvaluesnot"].is_array()) {
+                    for (auto const& av : jf["actorvaluesnot"]) {
+                        if (av.is_string()) {
+                            std::string avStr = av.get<std::string>();
+                            ActorValueCondition condition;
+                            
+                            std::regex avRegex(R"(([A-Za-z]+)\s*(>=|<=|!=|>|<|=)\s*(\d+(?:\.\d+)?))");
+                            std::smatch matches;
+                            
+                            if (std::regex_match(avStr, matches, avRegex)) {
+                                condition.actorValue = tolower_str(matches[1].str());
+                                condition.operator_type = matches[2].str();
+                                try {
+                                    condition.value = std::stof(matches[3].str());
+                                    r.filter.actorValueNot.push_back(condition);
+                                } catch (const std::exception& e) {
+                                    logger::warn("Invalid actorvaluesnot value '{}' in filter of {}: {}", avStr, path.string(), e.what());
+                                }
+                            } else {
+                                logger::warn("Invalid actorvaluesnot format '{}' in filter of {}, expected format: 'ActorValue >= Value'", avStr, path.string());
+                            }
+                        }
+                    }
+                }     
+            }           
 
             if (!hasObjectIdentifier) {
                 logger::warn("Skipping rule in {}: no valid object identifiers (formTypes, formIDs, formLists, or keywords)", path.string());
@@ -1124,7 +1474,6 @@ namespace OIF {
                 {"enablelight", EffectType::kEnableLight},
                 {"disablelight", EffectType::kDisableLight},
                 {"playidle", EffectType::kPlayIdle},
-                {"setcrime", EffectType::kSetCrime},
                 {"spawneffectshader", EffectType::kSpawnEffectShader},
                 {"spawneffectshaderonitem", EffectType::kSpawnEffectShaderOnItem}
             };
@@ -1144,14 +1493,25 @@ namespace OIF {
 
                 eff.chance = effj.value("chance", r.filter.chance);
 
-                bool needsItems = !(eff.type == EffectType::kRemoveItem || eff.type == EffectType::kDisableItem || eff.type == EffectType::kEnableItem || eff.type == EffectType::kSpillInventory || eff.type == EffectType::kApplyIngestible);
+                const std::vector<EffectType> effectsWithoutItems = {
+                    EffectType::kRemoveItem,
+                    EffectType::kDisableItem,
+                    EffectType::kEnableItem,
+                    EffectType::kSpillInventory
+                };
+
+                bool needsItems = std::find(effectsWithoutItems.begin(), effectsWithoutItems.end(), eff.type) == effectsWithoutItems.end();
                 if (needsItems) {
                     if (effj.contains("items") && effj["items"].is_array()) {
                         for (const auto& itemJson : effj["items"]) {
                             EffectExtendedData extData;
+                            extData.form = nullptr;
                             extData.nonDeletable = itemJson.value("nondeletable", 0U);
+                            extData.spawnType = itemJson.value("spawntype", 4U);
+                            extData.fade = itemJson.value("fade", 0U);
                             extData.count = itemJson.value("count", 1U);
-                            extData.radius = itemJson.value("radius", 100.0f);
+                            extData.radius = itemJson.value("radius", 150.0f);
+                            extData.scale = itemJson.value("scale", -1.0f);
                             extData.amount = itemJson.value("amount", 1U);
                             extData.chance = itemJson.value("chance", 100.0f);
                             extData.duration = itemJson.value("duration", 1.0f);
@@ -1173,7 +1533,7 @@ namespace OIF {
                                     if (formListEntry.is_object() && formListEntry.contains("formid") && formListEntry["formid"].is_string()) {
                                         std::string formListId = formListEntry["formid"].get<std::string>();
                                         int idx = formListEntry.value("index", -1);
-                            
+
                                         auto* list = GetFormFromIdentifier<RE::BGSListForm>(formListId);
                                         if (list) {
                                             extData.form = list;
@@ -1187,12 +1547,23 @@ namespace OIF {
                                 }
                             }
 
-                            if (haveIdentifier || eff.type == EffectType::kRemoveLight || eff.type == EffectType::kEnableLight || eff.type == EffectType::kDisableLight || eff.type == EffectType::kPlayIdle || eff.type == EffectType::kSetCrime) {
-                                eff.items.emplace_back(extData.form, extData);
-                            }
-                        }
+                            const std::vector<EffectType> effectsWithoutForm = {
+                                EffectType::kApplyIngestible,
+                                EffectType::kRemoveLight,
+                                EffectType::kEnableLight,
+                                EffectType::kDisableLight,
+                                EffectType::kPlayIdle                            
+                            };
 
-                        if (eff.items.empty() && eff.type != EffectType::kRemoveLight && eff.type != EffectType::kEnableLight && eff.type != EffectType::kDisableLight && eff.type != EffectType::kPlayIdle || eff.type == EffectType::kSetCrime) continue;
+                            bool needsForm = std::find(effectsWithoutForm.begin(), effectsWithoutForm.end(), eff.type) == effectsWithoutForm.end();
+
+                            if (haveIdentifier || !needsForm) {
+                                auto formToAdd = needsForm ? extData.form : nullptr;
+                                eff.items.emplace_back(formToAdd, extData);
+                            }
+
+                            if (eff.items.empty() && needsForm) continue;
+                        }
                     }
                 }
                 r.effects.push_back(eff);
@@ -1203,13 +1574,17 @@ namespace OIF {
                 continue;
             }
 
-            _rules.push_back(std::move(r));
+            try {
+                _rules.push_back(std::move(r));
+            } catch (const std::exception& e) {
+                logger::error("Failed to add rule from {}: {}", path.string(), e.what());
+                continue;
+            }
         }
     }
 
     // ------------------ Match ------------------
     bool RuleManager::MatchFilter(const Filter& f, const RuleContext& ctx, Rule& currentRule) const {
-
         if (!ctx.baseObj) return false;
 
         if (!f.formTypes.empty() && !f.formTypes.contains(ctx.baseObj->GetFormType())) return false;
@@ -1292,7 +1667,7 @@ namespace OIF {
             }
         }
 
-        if (f.questItemStatus != QuestItemStatus::NotQuestItem) {
+        if (f.questItemStatus != 3) {
             auto currentStatus = GetQuestItemStatus(ctx.target);
             
             if (f.questItemStatus != currentStatus) {
@@ -1322,12 +1697,113 @@ namespace OIF {
             if (anyPresent) return false;
         }
 
+        if (!f.perks.empty()) {
+            if (!ctx.source) return false;
+            auto* actor = ctx.source->As<RE::Actor>();
+            if (!actor) return false;
+            bool hasAny = false;
+            for (const auto& perkID : f.perks) {
+                auto* perk = RE::TESForm::LookupByID<RE::BGSPerk>(perkID);
+                if (perk && actor->HasPerk(perk)) {
+                    hasAny = true;
+                    break;
+                }
+            }
+            if (!hasAny) return false;
+        }
+        
+        if (!f.perksNot.empty()) {
+            if (!ctx.source) return false;
+            auto* actor = ctx.source->As<RE::Actor>();
+            if (!actor) return false;
+            for (const auto& perkID : f.perksNot) {
+                auto* perk = RE::TESForm::LookupByID<RE::BGSPerk>(perkID);
+                if (perk && actor->HasPerk(perk)) return false;
+            }
+        }
+
+        if (!f.hasItem.empty()) {
+            if (!ctx.source) return false;
+            bool hasAnyItem = false;
+            for (auto formID : f.hasItem) {
+                if (HasItem(ctx.source, formID)) {
+                    hasAnyItem = true;
+                    break;
+                }
+            }
+            if (!hasAnyItem) return false;
+        }
+
+        if (!f.hasItemNot.empty()) {
+            if (!ctx.source) return false;
+            for (auto formID : f.hasItemNot) {
+                if (HasItem(ctx.source, formID)) {
+                    return false;
+                }
+            }
+        }
+        
+        if (!f.level.empty()) {
+            if (!ctx.source) return false;
+            int currentLevel = ctx.source->GetLevel();
+            
+            bool anyLevelMatch = false;
+            for (const auto& condition : f.level) {
+                if (CheckLevelCondition(condition, currentLevel)) {
+                    anyLevelMatch = true;
+                    break;
+                }
+            }
+            if (!anyLevelMatch) return false;
+        }
+        
+        if (!f.levelNot.empty()) {
+            if (!ctx.source) return false;
+            int currentLevel = ctx.source->GetLevel();
+            
+            for (const auto& condition : f.levelNot) {
+                if (CheckLevelCondition(condition, currentLevel)) {
+                    return false;
+                }
+            }
+        }
+        
+        if (!f.actorValue.empty()) {
+            if (!ctx.source) return false;
+            
+            bool anyAVMatch = false;
+            for (const auto& condition : f.actorValue) {
+                if (CheckActorValueCondition(condition, ctx.source)) {
+                    anyAVMatch = true;
+                    break;
+                }
+            }
+            if (!anyAVMatch) return false;
+        }
+        
+        if (!f.actorValueNot.empty()) {
+            if (!ctx.source) return false;
+            
+            for (const auto& condition : f.actorValueNot) {
+                if (CheckActorValueCondition(condition, ctx.source)) {
+                    return false;
+                }
+            }
+        }
+
         if (ctx.isHitEvent) {
             if (!f.weaponsTypes.empty() && f.weaponsTypes.find(ctx.weaponType) == f.weaponsTypes.end()) return false;
             if (!f.weaponsTypesNot.empty() && f.weaponsTypesNot.find(ctx.weaponType) != f.weaponsTypesNot.end()) return false;
-            if (!f.weapons.empty() && (!ctx.attackSource || f.weapons.find(ctx.attackSource) == f.weapons.end())) return false;
-            if (!f.weaponsNot.empty() && ctx.attackSource && f.weaponsNot.find(ctx.attackSource) != f.weaponsNot.end()) return false;
+            if (!f.weapons.empty()) {
+                if (!ctx.attackSource) return false;
+                if (f.weapons.find(ctx.attackSource) == f.weapons.end()) return false;
+            }
+            if (!f.weaponsNot.empty()) {
+                if (!ctx.attackSource) return false;
+                if (f.weaponsNot.find(ctx.attackSource) != f.weaponsNot.end()) return false;
+            }
             if (!f.weaponsLists.empty()) {
+                if (!ctx.attackSource) return false;
                 bool matched = false;
                 for (const auto& entry : f.weaponsLists) {
                     auto* list = RE::TESForm::LookupByID<RE::BGSListForm>(entry.formID);
@@ -1366,6 +1842,7 @@ namespace OIF {
                 if (!matched) return false;
             }
             if (!f.weaponsListsNot.empty()) {
+                if (!ctx.attackSource) return false;
                 for (const auto& entry : f.weaponsListsNot) {
                     auto* list = RE::TESForm::LookupByID<RE::BGSListForm>(entry.formID);
                     if (!list) continue;
@@ -1379,7 +1856,7 @@ namespace OIF {
             if (!f.attackTypes.empty() && f.attackTypes.find(ctx.attackType) == f.attackTypes.end()) return false;
             if (!f.attackTypesNot.empty() && f.attackTypesNot.find(ctx.attackType) != f.attackTypesNot.end()) return false;
             if (!f.weaponsKeywords.empty()) {
-                if (!ctx.attackSource) return false; 
+                if (!ctx.attackSource) return false;
                 auto* kwf = ctx.attackSource->As<RE::BGSKeywordForm>();
                 if (!kwf) return false;
                 bool hasAny = false;
@@ -1392,35 +1869,12 @@ namespace OIF {
                 if (!hasAny) return false;
             }
             if (!f.weaponsKeywordsNot.empty()) {
-                if (!ctx.attackSource) return false; 
+                if (!ctx.attackSource) return false;
                 auto* kwf = ctx.attackSource->As<RE::BGSKeywordForm>();
                 if (!kwf) return false;
 
                 for (auto* kw : f.weaponsKeywordsNot) {
                     if (kw && kwf->HasKeyword(kw)) return false;
-                }
-            }
-            if (!f.perks.empty()) {
-                if (!ctx.source) return false;
-                auto* actor = ctx.source->As<RE::Actor>();
-                if (!actor) return false;
-                bool hasAny = false;
-                for (const auto& perkID : f.perks) {
-                    auto* perk = RE::TESForm::LookupByID<RE::BGSPerk>(perkID);
-                    if (perk && actor->HasPerk(perk)) {
-                        hasAny = true;
-                        break;
-                    }
-                }
-                if (!hasAny) return false;
-            }
-            if (!f.perksNot.empty()) {
-                if (!ctx.source) return false;
-                auto* actor = ctx.source->As<RE::Actor>();
-                if (!actor) return false;
-                for (const auto& perkID : f.perksNot) {
-                    auto* perk = RE::TESForm::LookupByID<RE::BGSPerk>(perkID);
-                    if (perk && actor->HasPerk(perk)) return false;
                 }
             }
         }
@@ -1443,33 +1897,46 @@ namespace OIF {
             auto* target = ctxCopy.target;
             auto* source = ctxCopy.source;
 
-            auto targetFormID = target->GetBaseObject()->GetFormID();
-            auto sourceFormID = source->GetBaseObject()->GetFormID();
-            
-            if (!target || !target->GetBaseObject() || target->IsDeleted()) {
-                logger::warn("Target {} is invalid or deleted", targetFormID);
+            if (!target || target->IsDeleted()) {
+                logger::warn("Target is invalid or deleted");
                 return;
             }
 
-            if (!source || !source->GetBaseObject() || source->IsDeleted()) {
-                logger::warn("Source {} is invalid, dead or deleted", sourceFormID);
+            if (!source || source->IsDeleted()) {
+                logger::warn("Source is invalid, dead or deleted");
+                return;
+            }
+
+            auto* targetBase = target->GetBaseObject();
+            auto* sourceBase = source->GetBaseObject();
+
+            if (!targetBase) {
+                logger::warn("Target base object is invalid or deleted");
+                return;
+            }
+
+            if (!sourceBase) {
+                logger::warn("Source base object is invalid or deleted");
+                return;
+            }
+
+            auto targetFormID = targetBase->GetFormID();
+            auto sourceFormID = sourceBase->GetFormID();
+        
+            if (!targetFormID) {
+                logger::warn("Target formID is invalid");
+                return;
+            }
+
+            if (!sourceFormID) {
+                logger::warn("Source formID is invalid");
                 return;
             }
 
             static thread_local std::mt19937 rng(std::random_device{}());
             float globalRoll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
             if (globalRoll > effCopy.chance) return;
-
-                if (!ctxCopy.target || ctxCopy.target->IsDeleted()) {
-                    logger::warn("Target deleted before final effect application");
-                    return;
-                }
-
-                if (!ctxCopy.source || ctxCopy.source->IsDeleted()) {
-                    logger::warn("Source deleted before final effect application");
-                    return;
-                }
-                
+            
                 try {
                     switch (effCopy.type) {
                         case EffectType::kRemoveItem:
@@ -1488,10 +1955,6 @@ namespace OIF {
                             Effects::SpillInventory(ctxCopy);
                             break;
 
-                        case EffectType::kApplyIngestible:
-                            Effects::ApplyIngestible(ctxCopy);
-                            break;
-
                         case EffectType::kSpawnItem:
                         {
                             std::vector<ItemSpawnData> itemsData;
@@ -1505,32 +1968,40 @@ namespace OIF {
                                     if (!list) continue;
 
                                     int idx = extData.index;
-                                    if (idx == -2) {
+                                    bool spawnAll = false;
+
+                                    // Use random index if -3 is specified
+                                    if (idx == -3) {
+                                        idx = std::uniform_int_distribution<int>(0, static_cast<int>(list->forms.size()) - 1)(rng);
+                                    }
+
+                                    // Use dynamic index if -2 is specified
+                                    else if (idx == -2) {
                                         idx = ruleCopy.dynamicIndex;
-                                        if (idx == -1) {
-                                            continue;
+                                    }
+
+                                    // If index is -1, spawn all elements in the list
+                                    else if (idx == -1) {
+                                        spawnAll = true;
+                                    }
+
+                                    if (spawnAll) {
+                                        for (auto* el : list->forms) {
+                                            if (!el) continue;
+                                            if (auto* item = el->As<RE::TESBoundObject>()) itemsData.emplace_back(item, extData.count, extData.spawnType, extData.fade, extData.scale);
                                         }
                                     }
 
                                     // Use index to select a specific element
-                                    if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
+                                    else if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
                                         auto* el = list->forms[idx];
                                         if (el) {
-                                            if (auto* item = el->As<RE::TESBoundObject>())
-                                                itemsData.emplace_back(item, extData.count);
-                                        }
-                                    }
-                                    // The index is not set: sort out all the elements of the list
-                                    else {
-                                        for (auto* el : list->forms) {
-                                            if (!el) continue;
-                                            if (auto* item = el->As<RE::TESBoundObject>())
-                                                itemsData.emplace_back(item, extData.count);
+                                            if (auto* item = el->As<RE::TESBoundObject>()) itemsData.emplace_back(item, extData.count, extData.spawnType, extData.fade, extData.scale);
                                         }
                                     }
                                 }
                                 else if (auto* item = form->As<RE::TESBoundObject>()) {
-                                    itemsData.emplace_back(item, extData.count);
+                                    itemsData.emplace_back(item, extData.count, extData.spawnType, extData.fade, extData.scale);
                                 }
                             }
                             if (!itemsData.empty()) {
@@ -1552,23 +2023,27 @@ namespace OIF {
                                     if (!list) continue;
 
                                     int idx = extData.index;
-                                    if (idx == -2) {
-                                        idx = ruleCopy.dynamicIndex;
-                                        if (idx == -1) {
-                                            continue;
-                                        }
+                                    bool spawnAll = false;
+
+                                    if (idx == -3) {
+                                        idx = std::uniform_int_distribution<int>(0, static_cast<int>(list->forms.size()) - 1)(rng);
                                     }
-                                    if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[idx];
-                                        if (el) {
-                                            if (auto* spell = el->As<RE::SpellItem>())
-                                                spellsData.emplace_back(spell, extData.count, extData.radius);
-                                        }
-                                    } else {
+                                    else if (idx == -2) {
+                                        idx = ruleCopy.dynamicIndex;
+                                    }
+                                    else if (idx == -1) {
+                                        spawnAll = true;
+                                    }
+                                    if (spawnAll) {
                                         for (auto* el : list->forms) {
                                             if (!el) continue;
-                                            if (auto* spell = el->As<RE::SpellItem>())
-                                                spellsData.emplace_back(spell, extData.count, extData.radius);
+                                            if (auto* spell = el->As<RE::SpellItem>()) spellsData.emplace_back(spell, extData.count, extData.radius);
+                                        }
+                                    }
+                                    else if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
+                                        auto* el = list->forms[idx];
+                                        if (el) {
+                                            if (auto* spell = el->As<RE::SpellItem>()) spellsData.emplace_back(spell, extData.count, extData.radius);
                                         }
                                     }
                                 }
@@ -1595,23 +2070,27 @@ namespace OIF {
                                     if (!list) continue;
 
                                     int idx = extData.index;
-                                    if (idx == -2) {
-                                        idx = ruleCopy.dynamicIndex;
-                                        if (idx == -1) {
-                                            continue;
-                                        }
+                                    bool spawnAll = false;
+
+                                    if (idx == -3) {
+                                        idx = std::uniform_int_distribution<int>(0, static_cast<int>(list->forms.size()) - 1)(rng);
                                     }
-                                    if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[idx];
-                                        if (el) {
-                                            if (auto* spell = el->As<RE::SpellItem>())
-                                                spellsData.emplace_back(spell, extData.count);
-                                        }
-                                    } else {
+                                    else if (idx == -2) {
+                                        idx = ruleCopy.dynamicIndex;
+                                    }
+                                    else if (idx == -1) {
+                                        spawnAll = true;
+                                    }
+                                    if (spawnAll) {
                                         for (auto* el : list->forms) {
                                             if (!el) continue;
-                                            if (auto* spell = el->As<RE::SpellItem>())
-                                                spellsData.emplace_back(spell, extData.count);
+                                            if (auto* spell = el->As<RE::SpellItem>()) spellsData.emplace_back(spell, extData.count);
+                                        }
+                                    }
+                                    else if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
+                                        auto* el = list->forms[idx];
+                                        if (el) {
+                                            if (auto* spell = el->As<RE::SpellItem>()) spellsData.emplace_back(spell, extData.count);
                                         }
                                     }
                                 }
@@ -1638,28 +2117,32 @@ namespace OIF {
                                     if (!list) continue;
 
                                     int idx = extData.index;
-                                    if (idx == -2) {
-                                        idx = ruleCopy.dynamicIndex;
-                                        if (idx == -1) {
-                                            continue;
-                                        }
+                                    bool spawnAll = false;
+
+                                    if (idx == -3) {
+                                        idx = std::uniform_int_distribution<int>(0, static_cast<int>(list->forms.size()) - 1)(rng);
                                     }
-                                    if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[idx];
-                                        if (el) {
-                                            if (auto* actor = el->As<RE::TESNPC>())
-                                                actorsData.emplace_back(actor, extData.count);
-                                        }
-                                    } else {
+                                    else if (idx == -2) {
+                                        idx = ruleCopy.dynamicIndex;
+                                    }
+                                    else if (idx == -1) {
+                                        spawnAll = true;
+                                    }
+                                    if (spawnAll) {
                                         for (auto* el : list->forms) {
                                             if (!el) continue;
-                                            if (auto* actor = el->As<RE::TESNPC>())
-                                                actorsData.emplace_back(actor, extData.count);
+                                            if (auto* actor = el->As<RE::TESNPC>()) actorsData.emplace_back(actor, extData.count, extData.spawnType, extData.fade, extData.scale);
+                                        }
+                                    }
+                                    else if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
+                                        auto* el = list->forms[idx];
+                                        if (el) {
+                                            if (auto* actor = el->As<RE::TESNPC>()) actorsData.emplace_back(actor, extData.count, extData.spawnType, extData.fade, extData.scale);
                                         }
                                     }
                                 }
                                 else if (auto* actor = form->As<RE::TESNPC>()) {
-                                    actorsData.emplace_back(actor, extData.count);
+                                    actorsData.emplace_back(actor, extData.count, extData.spawnType, extData.fade, extData.scale);
                                 }
                             }
                             if (!actorsData.empty()) {
@@ -1681,23 +2164,27 @@ namespace OIF {
                                     if (!list) continue;
 
                                     int idx = extData.index;
-                                    if (idx == -2) {
-                                        idx = ruleCopy.dynamicIndex;
-                                        if (idx == -1) {
-                                            continue;
-                                        }
+                                    bool spawnAll = false;
+
+                                    if (idx == -3) {
+                                        idx = std::uniform_int_distribution<int>(0, static_cast<int>(list->forms.size()) - 1)(rng);
                                     }
-                                    if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[idx];
-                                        if (el) {
-                                            if (auto* impact = el->As<RE::BGSImpactDataSet>())
-                                                impactsData.emplace_back(impact, extData.count);
-                                        }
-                                    } else {
+                                    else if (idx == -2) {
+                                        idx = ruleCopy.dynamicIndex;
+                                    }
+                                    else if (idx == -1) {
+                                        spawnAll = true;
+                                    }
+                                    if (spawnAll) {
                                         for (auto* el : list->forms) {
                                             if (!el) continue;
-                                            if (auto* impact = el->As<RE::BGSImpactDataSet>())
-                                                impactsData.emplace_back(impact, extData.count);
+                                            if (auto* impact = el->As<RE::BGSImpactDataSet>()) impactsData.emplace_back(impact, extData.count);
+                                        }
+                                    }
+                                    else if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
+                                        auto* el = list->forms[idx];
+                                        if (el) {
+                                            if (auto* impact = el->As<RE::BGSImpactDataSet>()) impactsData.emplace_back(impact, extData.count);
                                         }
                                     }
                                 }
@@ -1724,28 +2211,32 @@ namespace OIF {
                                     if (!list) continue;
 
                                     int idx = extData.index;
-                                    if (idx == -2) {
-                                        idx = ruleCopy.dynamicIndex;
-                                        if (idx == -1) {
-                                            continue;
-                                        }
+                                    bool spawnAll = false;
+
+                                    if (idx == -3) {
+                                        idx = std::uniform_int_distribution<int>(0, static_cast<int>(list->forms.size()) - 1)(rng);
                                     }
-                                    if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[idx];
-                                        if (el) {
-                                            if (auto* explosion = el->As<RE::BGSExplosion>())
-                                                explosionsData.emplace_back(explosion, extData.count);
-                                        }
-                                    } else {
+                                    else if (idx == -2) {
+                                        idx = ruleCopy.dynamicIndex;
+                                    }
+                                    else if (idx == -1) {
+                                        spawnAll = true;
+                                    }
+                                    if (spawnAll) {
                                         for (auto* el : list->forms) {
                                             if (!el) continue;
-                                            if (auto* explosion = el->As<RE::BGSExplosion>())
-                                                explosionsData.emplace_back(explosion, extData.count);
+                                            if (auto* explosion = el->As<RE::BGSExplosion>()) explosionsData.emplace_back(explosion, extData.count, extData.spawnType, extData.fade);
+                                        }
+                                    }
+                                    else if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
+                                        auto* el = list->forms[idx];
+                                        if (el) {
+                                            if (auto* explosion = el->As<RE::BGSExplosion>()) explosionsData.emplace_back(explosion, extData.count, extData.spawnType, extData.fade);
                                         }
                                     }
                                 }
                                 else if (auto* explosion = form->As<RE::BGSExplosion>()) {
-                                    explosionsData.emplace_back(explosion, extData.count);
+                                    explosionsData.emplace_back(explosion, extData.count, extData.spawnType, extData.fade);
                                 }
                             }
                             if (!explosionsData.empty()) {
@@ -1767,28 +2258,32 @@ namespace OIF {
                                     if (!list) continue;
 
                                     int idx = extData.index;
-                                    if (idx == -2) {
-                                        idx = ruleCopy.dynamicIndex;
-                                        if (idx == -1) {
-                                            continue;
-                                        }
+                                    bool spawnAll = false;
+
+                                    if (idx == -3) {
+                                        idx = std::uniform_int_distribution<int>(0, static_cast<int>(list->forms.size()) - 1)(rng);
                                     }
-                                    if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[idx];
-                                        if (el) {
-                                            if (auto* item = el->As<RE::TESBoundObject>())
-                                                itemsData.emplace_back(item, extData.count, extData.nonDeletable);
-                                        }
-                                    } else {
+                                    else if (idx == -2) {
+                                        idx = ruleCopy.dynamicIndex;
+                                    }
+                                    else if (idx == -1) {
+                                        spawnAll = true;
+                                    }
+                                    if (spawnAll) {
                                         for (auto* el : list->forms) {
                                             if (!el) continue;
-                                            if (auto* item = el->As<RE::TESBoundObject>())
-                                                itemsData.emplace_back(item, extData.count, extData.nonDeletable);
+                                            if (auto* item = el->As<RE::TESBoundObject>()) itemsData.emplace_back(item, extData.count, extData.spawnType, extData.fade, extData.scale, extData.nonDeletable);
+                                        }
+                                    }
+                                    else if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
+                                        auto* el = list->forms[idx];
+                                        if (el) {
+                                            if (auto* item = el->As<RE::TESBoundObject>()) itemsData.emplace_back(item, extData.count, extData.spawnType, extData.fade, extData.scale, extData.nonDeletable);
                                         }
                                     }
                                 }
                                 else if (auto* item = form->As<RE::TESBoundObject>()) {
-                                    itemsData.emplace_back(item, extData.count, extData.nonDeletable);
+                                    itemsData.emplace_back(item, extData.count, extData.spawnType, extData.fade, extData.scale, extData.nonDeletable);
                                 }
                             }
                             if (!itemsData.empty()) {
@@ -1810,23 +2305,27 @@ namespace OIF {
                                     if (!list) continue;
 
                                     int idx = extData.index;
-                                    if (idx == -2) {
-                                        idx = ruleCopy.dynamicIndex;
-                                        if (idx == -1) {
-                                            continue;
-                                        }
+                                    bool spawnAll = false;
+
+                                    if (idx == -3) {
+                                        idx = std::uniform_int_distribution<int>(0, static_cast<int>(list->forms.size()) - 1)(rng);
                                     }
-                                    if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[idx];
-                                        if (el) {
-                                            if (auto* sound = el->As<RE::BGSSoundDescriptorForm>())
-                                                soundsData.emplace_back(sound, extData.count);
-                                        }
-                                    } else {
+                                    else if (idx == -2) {
+                                        idx = ruleCopy.dynamicIndex;
+                                    }
+                                    else if (idx == -1) {
+                                        spawnAll = true;
+                                    }
+                                    if (spawnAll) {
                                         for (auto* el : list->forms) {
                                             if (!el) continue;
-                                            if (auto* sound = el->As<RE::BGSSoundDescriptorForm>())
-                                                soundsData.emplace_back(sound, extData.count);
+                                            if (auto* sound = el->As<RE::BGSSoundDescriptorForm>()) soundsData.emplace_back(sound, extData.count);
+                                        }
+                                    }
+                                    else if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
+                                        auto* el = list->forms[idx];
+                                        if (el) {
+                                            if (auto* sound = el->As<RE::BGSSoundDescriptorForm>()) soundsData.emplace_back(sound, extData.count);
                                         }
                                     }
                                 }
@@ -1853,28 +2352,32 @@ namespace OIF {
                                     if (!list) continue;
 
                                     int idx = extData.index;
-                                    if (idx == -2) {
-                                        idx = ruleCopy.dynamicIndex;
-                                        if (idx == -1) {
-                                            continue;
-                                        }
+                                    bool spawnAll = false;
+
+                                    if (idx == -3) {
+                                        idx = std::uniform_int_distribution<int>(0, static_cast<int>(list->forms.size()) - 1)(rng);
                                     }
-                                    if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[idx];
-                                        if (el) {
-                                            if (auto* actor = el->As<RE::TESNPC>())
-                                                actorsData.emplace_back(actor, extData.count, extData.nonDeletable);
-                                        }
-                                    } else {
+                                    else if (idx == -2) {
+                                        idx = ruleCopy.dynamicIndex;
+                                    }
+                                    else if (idx == -1) {
+                                        spawnAll = true;
+                                    }
+                                    if (spawnAll) {
                                         for (auto* el : list->forms) {
                                             if (!el) continue;
-                                            if (auto* actor = el->As<RE::TESNPC>())
-                                                actorsData.emplace_back(actor, extData.count, extData.nonDeletable);
+                                            if (auto* actor = el->As<RE::TESNPC>()) actorsData.emplace_back(actor, extData.count, extData.spawnType, extData.fade, extData.scale, extData.nonDeletable);
+                                        }
+                                    }
+                                    else if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
+                                        auto* el = list->forms[idx];
+                                        if (el) {
+                                            if (auto* actor = el->As<RE::TESNPC>()) actorsData.emplace_back(actor, extData.count, extData.spawnType, extData.fade, extData.scale, extData.nonDeletable);
                                         }
                                     }
                                 }
                                 else if (auto* actor = form->As<RE::TESNPC>()) {
-                                    actorsData.emplace_back(actor, extData.count, extData.nonDeletable);
+                                    actorsData.emplace_back(actor, extData.count, extData.spawnType, extData.fade, extData.scale, extData.nonDeletable);
                                 }
                             }
                             if (!actorsData.empty()) {
@@ -1900,19 +2403,19 @@ namespace OIF {
                                             auto* el = list->forms[extData.index];
                                             if (el) {
                                                 if (auto* lvli = el->As<RE::TESLevItem>())
-                                                    lvlItemsData.emplace_back(lvli, extData.count);
+                                                    lvlItemsData.emplace_back(lvli, extData.count, extData.spawnType, extData.fade, extData.scale);
                                             }
                                         }
                                     } else {
                                         for (auto* el : list->forms) {
                                             if (!el) continue;
                                             if (auto* lvli = el->As<RE::TESLevItem>())
-                                                lvlItemsData.emplace_back(lvli, extData.count);
+                                                lvlItemsData.emplace_back(lvli, extData.count, extData.spawnType, extData.fade, extData.scale);
                                         }
                                     }
                                 }
                                 else if (auto* lvli = form->As<RE::TESLevItem>())
-                                    lvlItemsData.emplace_back(lvli, extData.count);
+                                    lvlItemsData.emplace_back(lvli, extData.count, extData.spawnType, extData.fade, extData.scale);
                             }
                             if (!lvlItemsData.empty()) {
                                 Effects::SpawnLeveledItem(ctxCopy, lvlItemsData);
@@ -1937,19 +2440,19 @@ namespace OIF {
                                             auto* el = list->forms[extData.index];
                                             if (el) {
                                                 if (auto* lvli = el->As<RE::TESLevItem>())
-                                                    lvlItemsData.emplace_back(lvli, extData.count, extData.nonDeletable);
+                                                    lvlItemsData.emplace_back(lvli, extData.count, extData.spawnType, extData.fade, extData.scale, extData.nonDeletable);
                                             }
                                         }
                                     } else {
                                         for (auto* el : list->forms) {
                                             if (!el) continue;
                                             if (auto* lvli = el->As<RE::TESLevItem>())
-                                                lvlItemsData.emplace_back(lvli, extData.count, extData.nonDeletable);
+                                                lvlItemsData.emplace_back(lvli, extData.count, extData.spawnType, extData.fade, extData.scale, extData.nonDeletable);
                                         }
                                     }
                                 }
                                 else if (auto* lvli = form->As<RE::TESLevItem>())
-                                    lvlItemsData.emplace_back(lvli, extData.count, extData.nonDeletable);
+                                    lvlItemsData.emplace_back(lvli, extData.count, extData.spawnType, extData.fade, extData.scale, extData.nonDeletable);
                             }
                             if (!lvlItemsData.empty()) {
                                 Effects::SwapLeveledItem(ctxCopy, lvlItemsData);
@@ -2048,19 +2551,19 @@ namespace OIF {
                                             auto* el = list->forms[extData.index];
                                             if (el) {
                                                 if (auto* lvlc = el->As<RE::TESLevCharacter>())
-                                                    lvlActorsData.emplace_back(lvlc, extData.count);
+                                                    lvlActorsData.emplace_back(lvlc, extData.count, extData.spawnType, extData.fade, extData.scale);
                                             }
                                         }
                                     } else {
                                         for (auto* el : list->forms) {
                                             if (!el) continue;
                                             if (auto* lvlc = el->As<RE::TESLevCharacter>())
-                                                lvlActorsData.emplace_back(lvlc, extData.count);
+                                                lvlActorsData.emplace_back(lvlc, extData.count, extData.spawnType, extData.fade, extData.scale);
                                         }
                                     }
                                 }
                                 else if (auto* lvlc = form->As<RE::TESLevCharacter>()) {
-                                    lvlActorsData.emplace_back(lvlc, extData.count);
+                                    lvlActorsData.emplace_back(lvlc, extData.count, extData.spawnType, extData.fade, extData.scale);
                                 }
                             }
                             if (!lvlActorsData.empty()) {
@@ -2086,22 +2589,42 @@ namespace OIF {
                                             auto* el = list->forms[extData.index];
                                             if (el) {
                                                 if (auto* lvlc = el->As<RE::TESLevCharacter>())
-                                                    lvlActorsData.emplace_back(lvlc, extData.count, extData.nonDeletable);
+                                                    lvlActorsData.emplace_back(lvlc, extData.count, extData.spawnType, extData.fade, extData.scale, extData.nonDeletable);
                                             }
                                         }
                                     } else {
                                         for (auto* el : list->forms) {
                                             if (!el) continue;
                                             if (auto* lvlc = el->As<RE::TESLevCharacter>())
-                                                lvlActorsData.emplace_back(lvlc, extData.count, extData.nonDeletable);
+                                                lvlActorsData.emplace_back(lvlc, extData.count, extData.spawnType, extData.fade, extData.scale, extData.nonDeletable);
                                         }
                                     }
                                 }
                                 else if (auto* lvlc = form->As<RE::TESLevCharacter>())
-                                    lvlActorsData.emplace_back(lvlc, extData.count, extData.nonDeletable);
+                                    lvlActorsData.emplace_back(lvlc, extData.count, extData.spawnType, extData.fade, extData.scale, extData.nonDeletable);
                             }
                             if (!lvlActorsData.empty()) {
                                 Effects::SwapLeveledActor(ctxCopy, lvlActorsData);
+                            }
+                        }
+                        break;
+
+                        case EffectType::kApplyIngestible:
+                        {
+                            std::vector<IngestibleApplyData> ingestibleData;
+                            for (const auto& [form, extData] : effCopy.items) {                                
+                                float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
+                                if (roll > extData.chance) continue;
+
+                                IngestibleApplyData data;
+                                data.ingestible = nullptr;      // not used, a placeholder
+                                data.count = 0;                 // not used, a placeholder
+                                data.radius = extData.radius;
+                                data.chance = extData.chance;
+                                ingestibleData.emplace_back(std::move(data));
+                            }
+                            if (!ingestibleData.empty()) {
+                                Effects::ApplyIngestible(ctxCopy, ingestibleData);
                             }
                         }
                         break;
@@ -2119,23 +2642,27 @@ namespace OIF {
                                     if (!list) continue;
 
                                     int idx = extData.index;
-                                    if (idx == -2) {
-                                        idx = ruleCopy.dynamicIndex;
-                                        if (idx == -1) {
-                                            continue;
-                                        }
+                                    bool spawnAll = false;
+
+                                    if (idx == -3) {
+                                        idx = std::uniform_int_distribution<int>(0, static_cast<int>(list->forms.size()) - 1)(rng);
                                     }
-                                    if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[idx];
-                                        if (el) {
-                                            if (auto* ingestible = el->As<RE::MagicItem>())
-                                                ingestibleData.emplace_back(ingestible, extData.count, extData.radius);
-                                        }
-                                    } else {
+                                    else if (idx == -2) {
+                                        idx = ruleCopy.dynamicIndex;
+                                    }
+                                    else if (idx == -1) {
+                                        spawnAll = true;
+                                    }
+                                    if (spawnAll) {
                                         for (auto* el : list->forms) {
                                             if (!el) continue;
-                                            if (auto* ingestible = el->As<RE::MagicItem>())
-                                                ingestibleData.emplace_back(ingestible, extData.count, extData.radius);
+                                            if (auto* ingestible = el->As<RE::MagicItem>()) ingestibleData.emplace_back(ingestible, extData.count, extData.radius);
+                                        }
+                                    }
+                                    else if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
+                                        auto* el = list->forms[idx];
+                                        if (el) {
+                                            if (auto* ingestible = el->As<RE::MagicItem>()) ingestibleData.emplace_back(ingestible, extData.count, extData.radius);
                                         }
                                     }
                                 }
@@ -2162,28 +2689,32 @@ namespace OIF {
                                     if (!list) continue;
 
                                     int idx = extData.index;
-                                    if (idx == -2) {
-                                        idx = ruleCopy.dynamicIndex;
-                                        if (idx == -1) {
-                                            continue;
-                                        }
+                                    bool spawnAll = false;
+
+                                    if (idx == -3) {
+                                        idx = std::uniform_int_distribution<int>(0, static_cast<int>(list->forms.size()) - 1)(rng);
                                     }
-                                    if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[idx];
-                                        if (el) {
-                                            if (auto* light = el->As<RE::TESObjectLIGH>())
-                                                lightsData.emplace_back(light, extData.count);
-                                        }
-                                    } else {
+                                    else if (idx == -2) {
+                                        idx = ruleCopy.dynamicIndex;
+                                    }
+                                    else if (idx == -1) {
+                                        spawnAll = true;
+                                    }
+                                    if (spawnAll) {
                                         for (auto* el : list->forms) {
                                             if (!el) continue;
-                                            if (auto* light = el->As<RE::TESObjectLIGH>())
-                                                lightsData.emplace_back(light, extData.count);
+                                            if (auto* light = el->As<RE::TESObjectLIGH>()) lightsData.emplace_back(light, extData.count, extData.spawnType, extData.fade, extData.scale);
+                                        }
+                                    }
+                                    else if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
+                                        auto* el = list->forms[idx];
+                                        if (el) {
+                                            if (auto* light = el->As<RE::TESObjectLIGH>()) lightsData.emplace_back(light, extData.count, extData.spawnType, extData.fade, extData.scale);
                                         }
                                     }
                                 }
                                 else if (auto* light = form->As<RE::TESObjectLIGH>()) {
-                                    lightsData.emplace_back(light, extData.count);
+                                    lightsData.emplace_back(light, extData.count, extData.spawnType, extData.fade, extData.scale);
                                 }
                             }
                             if (!lightsData.empty()) {
@@ -2204,23 +2735,27 @@ namespace OIF {
                                     if (!list) continue;
                         
                                     int idx = extData.index;
-                                    if (idx == -2) {
-                                        idx = ruleCopy.dynamicIndex;
-                                        if (idx == -1) {
-                                            continue;
-                                        }
+                                    bool spawnAll = false;
+
+                                    if (idx == -3) {
+                                        idx = std::uniform_int_distribution<int>(0, static_cast<int>(list->forms.size()) - 1)(rng);
                                     }
-                                    if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[idx];
-                                        if (el) {
-                                            if (auto* light = el->As<RE::TESObjectLIGH>())
-                                                lightsData.emplace_back(light, extData.radius);
-                                        }
-                                    } else {
+                                    else if (idx == -2) {
+                                        idx = ruleCopy.dynamicIndex;
+                                    }
+                                    else if (idx == -1) {
+                                        spawnAll = true;
+                                    }
+                                    if (spawnAll) {
                                         for (auto* el : list->forms) {
                                             if (!el) continue;
-                                            if (auto* light = el->As<RE::TESObjectLIGH>())
-                                                lightsData.emplace_back(light, extData.radius);
+                                            if (auto* light = el->As<RE::TESObjectLIGH>()) lightsData.emplace_back(light, extData.radius);
+                                        }
+                                    }
+                                    else if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
+                                        auto* el = list->forms[idx];
+                                        if (el) {
+                                            if (auto* light = el->As<RE::TESObjectLIGH>()) lightsData.emplace_back(light, extData.radius);
                                         }
                                     }
                                 }
@@ -2247,23 +2782,27 @@ namespace OIF {
                                     if (!list) continue;
 
                                     int idx = extData.index;
-                                    if (idx == -2) {
-                                        idx = ruleCopy.dynamicIndex;
-                                        if (idx == -1) {
-                                            continue;
-                                        }
+                                    bool spawnAll = false;
+
+                                    if (idx == -3) {
+                                        idx = std::uniform_int_distribution<int>(0, static_cast<int>(list->forms.size()) - 1)(rng);
                                     }
-                                    if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[idx];
-                                        if (el) {
-                                            if (auto* light = el->As<RE::TESObjectLIGH>())
-                                                lightsData.emplace_back(light, extData.radius);
-                                        }
-                                    } else {
+                                    else if (idx == -2) {
+                                        idx = ruleCopy.dynamicIndex;
+                                    }
+                                    else if (idx == -1) {
+                                        spawnAll = true;
+                                    }
+                                    if (spawnAll) {
                                         for (auto* el : list->forms) {
                                             if (!el) continue;
-                                            if (auto* light = el->As<RE::TESObjectLIGH>())
-                                                lightsData.emplace_back(light, extData.radius);
+                                            if (auto* light = el->As<RE::TESObjectLIGH>()) lightsData.emplace_back(light, extData.radius);
+                                        }
+                                    }
+                                    else if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
+                                        auto* el = list->forms[idx];
+                                        if (el) {
+                                            if (auto* light = el->As<RE::TESObjectLIGH>()) lightsData.emplace_back(light, extData.radius);
                                         }
                                     }
                                 }
@@ -2290,23 +2829,27 @@ namespace OIF {
                                     if (!list) continue;
 
                                     int idx = extData.index;
-                                    if (idx == -2) {
-                                        idx = ruleCopy.dynamicIndex;
-                                        if (idx == -1) {
-                                            continue;
-                                        }
+                                    bool spawnAll = false;
+
+                                    if (idx == -3) {
+                                        idx = std::uniform_int_distribution<int>(0, static_cast<int>(list->forms.size()) - 1)(rng);
                                     }
-                                    if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[idx];
-                                        if (el) {
-                                            if (auto* light = el->As<RE::TESObjectLIGH>())
-                                                lightsData.emplace_back(light, extData.radius);
-                                        }
-                                    } else {
+                                    else if (idx == -2) {
+                                        idx = ruleCopy.dynamicIndex;
+                                    }
+                                    else if (idx == -1) {
+                                        spawnAll = true;
+                                    }
+                                    if (spawnAll) {
                                         for (auto* el : list->forms) {
                                             if (!el) continue;
-                                            if (auto* light = el->As<RE::TESObjectLIGH>())
-                                                lightsData.emplace_back(light, extData.radius);
+                                            if (auto* light = el->As<RE::TESObjectLIGH>()) lightsData.emplace_back(light, extData.radius, light->GetFormID(), extData.chance);
+                                        }
+                                    }
+                                    else if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
+                                        auto* el = list->forms[idx];
+                                        if (el) {
+                                            if (auto* light = el->As<RE::TESObjectLIGH>()) lightsData.emplace_back(light, extData.radius);
                                         }
                                     }
                                 }
@@ -2341,27 +2884,6 @@ namespace OIF {
                             }
                         }
                         break;
-                        /*
-                        case EffectType::kSetCrime:
-                        {
-                            std::vector<CrimeData> crimeData;
-                            for (const auto& [form, extData] : effCopy.items) {
-                                float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
-                                if (roll > extData.chance) continue;
-                        
-                                if (!extData.string.empty()) {
-                                    CrimeData data;
-                                    data.radius = extData.radius > 0.f ? extData.radius : 1024.f;
-                                    data.amount = extData.amount > 0 ? extData.amount : 1;
-                                    data.chance = extData.chance;
-                                    crimeData.emplace_back(std::move(data));
-                                }
-                            }
-                            if (!crimeData.empty()) {
-                                Effects::SetCrime(ctxCopy, crimeData);
-                            }
-                        }
-                        break;*/
 
                         case EffectType::kSpawnEffectShader:
                         {
@@ -2376,23 +2898,27 @@ namespace OIF {
                                     if (!list) continue;
 
                                     int idx = extData.index;
-                                    if (idx == -2) {
-                                        idx = ruleCopy.dynamicIndex;
-                                        if (idx == -1) {
-                                            continue;
-                                        }
+                                    bool spawnAll = false;
+
+                                    if (idx == -3) {
+                                        idx = std::uniform_int_distribution<int>(0, static_cast<int>(list->forms.size()) - 1)(rng);
                                     }
-                                    if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[idx];
-                                        if (el) {
-                                            if (auto* shader = el->As<RE::TESEffectShader>())
-                                                effectShadersData.emplace_back(shader, extData.count, extData.radius, extData.duration);
-                                        }
-                                    } else {
+                                    else if (idx == -2) {
+                                        idx = ruleCopy.dynamicIndex;
+                                    }
+                                    else if (idx == -1) {
+                                        spawnAll = true;
+                                    }
+                                    if (spawnAll) {
                                         for (auto* el : list->forms) {
                                             if (!el) continue;
-                                            if (auto* shader = el->As<RE::TESEffectShader>())
-                                                effectShadersData.emplace_back(shader, extData.count, extData.radius, extData.duration);
+                                            if (auto* shader = el->As<RE::TESEffectShader>()) effectShadersData.emplace_back(shader, extData.count, extData.radius, extData.duration);
+                                        }
+                                    }
+                                    else if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
+                                        auto* el = list->forms[idx];
+                                        if (el) {
+                                            if (auto* shader = el->As<RE::TESEffectShader>()) effectShadersData.emplace_back(shader, extData.count, extData.radius, extData.duration);
                                         }
                                     }
                                 }
@@ -2419,23 +2945,27 @@ namespace OIF {
                                     if (!list) continue;
 
                                     int idx = extData.index;
-                                    if (idx == -2) {
-                                        idx = ruleCopy.dynamicIndex;
-                                        if (idx == -1) {
-                                            continue;
-                                        }
+                                    bool spawnAll = false;
+
+                                    if (idx == -3) {
+                                        idx = std::uniform_int_distribution<int>(0, static_cast<int>(list->forms.size()) - 1)(rng);
                                     }
-                                    if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[idx];
-                                        if (el) {
-                                            if (auto* shader = el->As<RE::TESEffectShader>())
-                                                effectShadersData.emplace_back(shader, extData.count, extData.duration);
-                                        }
-                                    } else {
+                                    else if (idx == -2) {
+                                        idx = ruleCopy.dynamicIndex;
+                                    }
+                                    else if (idx == -1) {
+                                        spawnAll = true;
+                                    }
+                                    if (spawnAll) {
                                         for (auto* el : list->forms) {
                                             if (!el) continue;
-                                            if (auto* shader = el->As<RE::TESEffectShader>())
-                                                effectShadersData.emplace_back(shader, extData.count, extData.duration);
+                                            if (auto* shader = el->As<RE::TESEffectShader>()) effectShadersData.emplace_back(shader, extData.count, extData.duration);
+                                        }
+                                    }
+                                    else if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
+                                        auto* el = list->forms[idx];
+                                        if (el) {
+                                            if (auto* shader = el->As<RE::TESEffectShader>()) effectShadersData.emplace_back(shader, extData.count, extData.duration);
                                         }
                                     }
                                 }
@@ -2465,69 +2995,60 @@ namespace OIF {
     {
         std::unique_lock lock(_ruleMutex);
 
-        bool stateChanged = false;
-
-        struct ProcessedCleaner {
-            ~ProcessedCleaner() {
-                std::thread([](){ 
-                    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                    OIF::Effects::ClearProcessedItems(); 
-                }).detach();
-            }
-        } _cleaner;
-
         if (!ctx.target || ctx.target->IsDeleted() || !ctx.source || ctx.source->IsDeleted()) return;
 
-        auto formType = ctx.target->GetBaseObject()->GetFormType();
-        bool supported = false;
-        for (const auto& [typeStr, type] : formTypeMap) {
-            if (type == formType) {
-                supported = true;
-                break;
-            }
-        }
-        if (!supported) return;
-
-        if (OIF::Effects::IsItemProcessed(ctx.target)) return;
-        OIF::Effects::MarkItemAsProcessed(ctx.target);
+        // Collect all effects for batching
+        static std::vector<std::tuple<Effect, RuleContext, Rule>> pendingEffects;
+        static std::mutex pendingMutex;
 
         // Walk through every rule and apply those whose filters match
         for (std::size_t ruleIdx = 0; ruleIdx < _rules.size(); ++ruleIdx) {
             Rule& r = _rules[ruleIdx];
 
             // Event type must be listed in the rule
-            if (std::find(r.events.begin(), r.events.end(), ctx.event) == r.events.end())
-                continue;
+            if (std::find(r.events.begin(), r.events.end(), ctx.event) == r.events.end()) continue;
 
             r.dynamicIndex = 0;
 
-            // Custom filter check
-            if (!MatchFilter(r.filter, ctx, r))
-                continue;
+            if (!MatchFilter(r.filter, ctx, r)) continue;
 
-            // Unique key for interaction and limit counts
-            Key key{
-                static_cast<std::uint32_t>(ctx.source->GetFormID()),
-                static_cast<std::uint32_t>(ctx.target->GetFormID()),
-                static_cast<std::uint16_t>(ruleIdx)
-            };
-
-            // Limit of interactions (if limit is 0, it means no limit)
+            // 1. LIMIT CHECK BLOCK (important data which will be partially saved)
+            bool limitCheckPassed = true;
             if (r.filter.limit > 0) {
-                std::uint32_t& limitCnt = _limitCounts[key];
-                if (limitCnt >= r.filter.limit)
-                    continue;
-                ++limitCnt;
-                stateChanged = true; 
+                Key limitKey{
+                    static_cast<std::uint32_t>(ctx.source->GetFormID()),
+                    static_cast<std::uint32_t>(ctx.target->GetFormID()),
+                    static_cast<std::uint16_t>(ruleIdx)
+                };
+
+                std::uint32_t& limitCnt = _limitCounts[limitKey];
+                if (limitCnt >= r.filter.limit) {
+                    limitCheckPassed = false;
+                } else {
+                    ++limitCnt;
+                }
             }
 
-            // Interaction quota ("hit twice before effect")
+            if (!limitCheckPassed) continue;
+
+            // 2. INTERACTIONS CHECK BLOCK (temporary data - can be reset)
+            bool interactionCheckPassed = true;
             if (r.filter.interactions > 1) {
-                std::uint32_t& interactionsCnt = _interactionsCounts[key];
-                if (++interactionsCnt < r.filter.interactions)
-                    continue;
-                interactionsCnt = 0;
+                Key interactionKey{
+                    static_cast<std::uint32_t>(ctx.source->GetFormID()),
+                    static_cast<std::uint32_t>(ctx.target->GetFormID()),
+                    static_cast<std::uint16_t>(ruleIdx)
+                };
+
+                std::uint32_t& interactionsCnt = _interactionsCounts[interactionKey];
+                if (++interactionsCnt < r.filter.interactions) {
+                    interactionCheckPassed = false;
+                } else {
+                    interactionsCnt = 0;
+                }
             }
+
+            if (!interactionCheckPassed) continue;
 
             // Apply every effect bound to this rule
             for (const auto& eff : r.effects) {
@@ -2536,30 +3057,41 @@ namespace OIF {
         }
 
         // Prevent unbounded growth of interaction counter map
-        constexpr std::size_t MAX_INTERACTION_ENTRIES = 5000;
+        if (_interactionsCounts.size() > 1000) {
+            logger::debug("Clearing interactions cache: {} entries", _interactionsCounts.size());
+            _interactionsCounts.clear();
+        }
 
-        auto cleanupInteractions = [](auto& container) {
-            if (container.size() > MAX_INTERACTION_ENTRIES) {
-                auto it = container.begin();
-                std::advance(it, container.size() / 2);
-                container.erase(container.begin(), it);
-            }
-        };
-
-        auto cleanupLimits = [](auto& container) {
-            if (container.size() > MAX_INTERACTION_ENTRIES) {
-                auto it = container.begin();
-                while (it != container.end()) {
-                    if (it->second == 0) {
-                        it = container.erase(it);
-                    } else {
-                        ++it;
-                    }
+        if (_limitCounts.size() > 1000) {
+            std::size_t removedCount = 0;
+            auto it = _limitCounts.begin();
+            while (it != _limitCounts.end()) {
+                if (it->second == 0) {  // Remove only unused limits
+                    it = _limitCounts.erase(it);
+                    ++removedCount;
+                } else {
+                    ++it;
                 }
             }
-        };
-
-        cleanupLimits(_limitCounts);
-        cleanupInteractions(_interactionsCounts);
+            logger::debug("Cleaned {} unused limit entries, remaining: {}", removedCount, _limitCounts.size());
+        }
+    
+        // Emergency cleanup if counts grow too large
+        if (_interactionsCounts.size() > 5000) {
+            logger::warn("Emergency interactions cleanup!");
+            _interactionsCounts.clear();
+        }
+    
+        if (_limitCounts.size() > 5000) {
+            logger::warn("Emergency limits cleanup - removing only zero values!");
+            auto it = _limitCounts.begin();
+            while (it != _limitCounts.end()) {
+                if (it->second == 0) {
+                    it = _limitCounts.erase(it);
+                } else {
+                    ++it;
+                }
+            }
+        }
     }
 }

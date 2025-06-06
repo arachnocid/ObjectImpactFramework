@@ -89,20 +89,6 @@ namespace OIF
         static constexpr std::uint32_t R_KEY_CODE = 19;
     };
 
-    class ObjectLoadedSink : public RE::BSTEventSink<RE::TESObjectLoadedEvent>
-    {
-    public:
-        static ObjectLoadedSink* GetSingleton()
-        {
-            static ObjectLoadedSink sink;
-            return &sink;
-        }
-
-        RE::BSEventNotifyControl ProcessEvent(
-            const RE::TESObjectLoadedEvent* evn,
-            RE::BSTEventSource<RE::TESObjectLoadedEvent>*) override;
-    };
-
     class CellAttachDetachSink : public RE::BSTEventSink<RE::TESCellAttachDetachEvent>
     {
     public:

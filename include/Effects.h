@@ -3,11 +3,6 @@
 
 namespace OIF::Effects
 {
-    // ------------------ Helpers ------------------
-    bool IsItemProcessed(RE::TESObjectREFR* item);
-    void MarkItemAsProcessed(RE::TESObjectREFR* item);
-    void ClearProcessedItems();
-
     // ------------------ Effects ------------------
     void RemoveItem(const RuleContext& ctx);
     void DisableItem(const RuleContext& ctx);
@@ -28,14 +23,13 @@ namespace OIF::Effects
     void SpawnLeveledSpellOnItem(const RuleContext& ctx, const std::vector<LvlSpellSpawnData>& spellsData);
     void SpawnLeveledActor(const RuleContext& ctx, const std::vector<LvlActorSpawnData>& actorsData);
     void SwapLeveledActor(const RuleContext& ctx, const std::vector<LvlActorSpawnData>& actorsData);
-    void ApplyIngestible(const RuleContext& ctx);
+    void ApplyIngestible(const RuleContext& ctx, const std::vector<IngestibleApplyData>& ingestiblesData);
     void ApplyOtherIngestible(const RuleContext& ctx, const std::vector<IngestibleApplyData>& ingestiblesData);
     void SpawnLight(const RuleContext& ctx, const std::vector<LightSpawnData>& lightsData);
     void RemoveLight(const RuleContext& ctx, const std::vector<LightRemoveData>& lightsData);
     void EnableLight(const RuleContext& ctx, const std::vector<LightRemoveData>& lightsData);
     void DisableLight(const RuleContext& ctx, const std::vector<LightRemoveData>& lightsData);
     void PlayIdle(const RuleContext& ctx, const std::vector<PlayIdleData>& idleData);
-    // void SetCrime(const RuleContext& ctx, const std::vector<CrimeData>& crimeData);
     void SpawnEffectShader(const RuleContext& ctx, const std::vector<EffectShaderSpawnData>& effectShadersData);
     void SpawnEffectShaderOnItem(const RuleContext& ctx, const std::vector<EffectShaderSpawnData>& effectShadersData);
 }

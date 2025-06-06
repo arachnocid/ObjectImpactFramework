@@ -1,47 +1,11 @@
 #include "Effects.h"
 #include <future>
 
-namespace IdleManager {
-
-}
-
 namespace OIF::Effects
 {
     // ------------------ Helpers ------------------
     static std::unordered_set<std::uint32_t> processedItems; 
     static std::mutex processedItemsMutex;
-
-    // Check if the item has already been processed
-    // This is used to prevent duplicate processing of the same item
-    bool IsItemProcessed(RE::TESObjectREFR* item)
-    {
-        if (!item)
-            return false;
-            
-        const auto id = item->GetFormID();
-        std::lock_guard lock(processedItemsMutex);
-        return processedItems.contains(id);
-    }
-
-    // Mark the item as processed
-    // This is used to prevent reprocessing the same item
-    void MarkItemAsProcessed(RE::TESObjectREFR* item)
-    {
-        if (!item)
-            return;
-            
-        const auto id = item->GetFormID();
-        std::lock_guard lock(processedItemsMutex);
-        processedItems.insert(id);
-    }
-
-    // Clear the processed items set
-    // This is used to reset the processed items list
-    void ClearProcessedItems()
-    {
-        std::lock_guard lock(processedItemsMutex);
-        processedItems.clear();
-    }
 
     // Copy ownership from one reference to another
     void CopyOwnership(RE::TESObjectREFR* from, RE::TESObjectREFR* to)
@@ -53,29 +17,7 @@ namespace OIF::Effects
         }
     }
 
-    // Set the selected reference in the console - taken from the ConsoleUtil NG source code
-    void SetSelectedReference(RE::TESObjectREFR* a_reference) {
-        using Message = RE::UI_MESSAGE_TYPE;
-    
-        if (a_reference) {
-            const auto factory = RE::MessageDataFactoryManager::GetSingleton();
-            const auto intfcStr = RE::InterfaceStrings::GetSingleton();
-            const auto creator =
-                factory && intfcStr ?
-                      factory->GetCreator<RE::ConsoleData>(intfcStr->consoleData) :
-                      nullptr;
-    
-            const auto consoleData = creator ? creator->Create() : nullptr;
-            const auto msgQ = RE::UIMessageQueue::GetSingleton();
-            if (consoleData && msgQ) {
-                consoleData->type = static_cast<RE::ConsoleData::DataType>(1);
-                consoleData->pickRef = a_reference->CreateRefHandle();
-                msgQ->AddMessage(intfcStr->console, Message::kUpdate, consoleData);
-            }
-        }
-    }
-
-    // Execute a list of commands in the console - taken from the ConsoleUtil NG source code
+    // Execute a list of commands in the console - taken and adapted from the ConsoleUtil NG source code
     template <typename... Args>
     void ExecuteCommand(const std::string& command, RE::TESObjectREFR* targetRef = nullptr, Args... args) {
         const auto scriptFactory = RE::IFormFactory::GetConcreteFormFactoryByType<RE::Script>();
@@ -110,13 +52,14 @@ namespace OIF::Effects
     void SetObjectScale(RE::TESObjectREFR* ref, float scale) {
         if (!ref) return;
         ExecuteCommand("setscale " + std::to_string(scale), ref);
+        ExecuteCommand("", nullptr);
     }
 
     // Same as above, but for playing idle animations on actors
     void PlayIdleOnActor(RE::Actor* actor, const std::string& idleName) {
         if (!actor) return;
-        SetSelectedReference(actor);
         ExecuteCommand("sendanimevent " + idleName, actor);
+        ExecuteCommand("", nullptr);
     }
 
     // Resolve leveled items, spells, and NPCs
@@ -246,6 +189,300 @@ namespace OIF::Effects
         return nullptr;
     }
 
+    inline NiPoint3 GetObjectCenter(RE::TESObjectREFR* target) {
+        if (!target) return NiPoint3{0.0f, 0.0f, 0.0f};
+        
+        if (auto* root = target->Get3D()) {
+            return root->worldBound.center;
+        }
+        
+        const auto& bmin = target->GetBoundMin();
+        const auto& bmax = target->GetBoundMax();
+        return NiPoint3{
+            (bmin.x + bmax.x) * 0.5f,
+            (bmin.y + bmax.y) * 0.5f,
+            (bmin.z + bmax.z) * 0.5f
+        };
+    }
+
+    inline NiPoint3 GetObjectBottom(RE::TESObjectREFR* target) {
+        if (!target) return NiPoint3{0.0f, 0.0f, 0.0f};
+        
+        if (auto* root = target->Get3D()) {
+            const auto& center = root->worldBound.center;
+            const auto& radius = root->worldBound.radius;
+            return NiPoint3{center.x, center.y, center.z - radius};
+        }
+        
+        const auto& bmin = target->GetBoundMin();
+        const auto& bmax = target->GetBoundMax();
+        return NiPoint3{
+            (bmin.x + bmax.x) * 0.5f,
+            (bmin.y + bmax.y) * 0.5f,
+            bmin.z
+        };
+    }
+    
+    inline NiPoint3 GetObjectTop(RE::TESObjectREFR* target) {
+        if (!target) return NiPoint3{0.0f, 0.0f, 0.0f};
+        
+        if (auto* root = target->Get3D()) {
+            const auto& center = root->worldBound.center;
+            const auto& radius = root->worldBound.radius;
+            return NiPoint3{center.x, center.y, center.z + radius};
+        }
+        
+        const auto& bmin = target->GetBoundMin();
+        const auto& bmax = target->GetBoundMax();
+        return NiPoint3{
+            (bmin.x + bmax.x) * 0.5f,
+            (bmin.y + bmax.y) * 0.5f,
+            bmax.z
+        };
+    }
+    
+    inline void GetToNearestNavmesh(RE::TESObjectREFR* dummy, float verticalOffset = 1.0f) {
+        if (!dummy || dummy->IsDeleted() || !dummy->GetParentCell()) {
+            logger::warn("GetToNearestNavmesh: Invalid ref, dummy, or cell");
+            return;
+        }
+    
+        const auto cell = dummy->GetParentCell();
+        const auto& runtimeData = cell->GetRuntimeData();
+        if (!runtimeData.navMeshes) {
+            logger::warn("GetToNearestNavmesh: No navmeshes in cell");
+            return;
+        }
+    
+        const auto dummyPos = dummy->GetPosition();
+    
+        // Taken and adapted from the Papyrus Extender source code
+        auto& navMeshes = runtimeData.navMeshes->navMeshes;
+        auto shortestDistance = (std::numeric_limits<float>::max)();
+        std::optional<RE::NiPoint3> nearestNavmeshPos = std::nullopt;
+    
+        int navmeshCount = 0;
+        int vertexCount = 0;
+    
+        for (const auto& navMesh : navMeshes) {
+            if (!navMesh) continue;
+            navmeshCount++;
+            
+            for (auto& [location] : navMesh->vertices) {
+                vertexCount++;
+                const auto linearDistance = dummyPos.GetDistance(location);
+                if (linearDistance < shortestDistance) {
+                    shortestDistance = linearDistance;
+                    nearestNavmeshPos.emplace(location);
+                }
+            }
+        }
+    
+        if (nearestNavmeshPos) {
+            const RE::NiPoint3 finalPos = {
+                dummyPos.x, 
+                dummyPos.y,      
+                nearestNavmeshPos->z + verticalOffset 
+            };
+
+            dummy->SetPosition(finalPos);
+        } else {
+            logger::warn("GetToNearestNavmesh: Navmesh position not found");
+        }
+    }
+
+    RE::NiPointer<RE::TESObjectREFR> Spawn(RE::TESObjectREFR* target, RE::TESBoundObject* item, std::uint32_t type, std::uint32_t fade) {
+        if (!target || !item) {
+            logger::error("Spawn: Invalid target or item pointer");
+            return nullptr;
+        }
+    
+        if (target->IsDeleted() || !target->GetParentCell()) {
+            logger::error("Spawn: Target is deleted or has no parent cell");
+            return nullptr;
+        }
+    
+        // Helper lambda for fade application
+        auto ApplyFade = [](RE::NiPointer<RE::TESObjectREFR> ref) {
+            if (!ref || ref->IsDeleted()) {
+                return;
+            }
+                        
+            try {
+                ref->formFlags |= static_cast<std::uint32_t>(RE::TESObjectREFR::RecordFlags::kNeverFades);
+            } catch (...) {
+                logger::error("Spawn: Exception while applying fade to spawned object");
+            }
+        };
+    
+        // For types <= 3, just place the item directly
+        if (type <= 3) {
+            auto spawnedItem = target->PlaceObjectAtMe(item, true);
+            if (spawnedItem) {
+                if (spawnedItem->IsDeleted()) {
+                    logger::warn("Spawn: Spawned item was deleted immediately");
+                    return nullptr;
+                }
+                
+                if (!spawnedItem->IsDeleted() && spawnedItem->GetParentCell()) {
+                    try {
+                        switch (type) {
+                            case 1: spawnedItem->SetPosition(GetObjectCenter(target));  break;
+                            case 2: spawnedItem->SetPosition(GetObjectTop(target));     break;
+                            case 3: spawnedItem->SetPosition(GetObjectBottom(target));  break;
+                            default: break;
+                        }
+                    } catch (...) {
+                        logger::error("Spawn: Exception while setting spawned item position");
+                    }
+                    
+                    if (fade == 0) {
+                        ApplyFade(spawnedItem);
+                    }
+                }
+            }
+            return spawnedItem;
+        }
+    
+        static RE::TESBoundObject* dummyForm = nullptr;
+        static std::mutex dummyFormMutex;
+        static bool dummyFormInitialized = false;
+        
+        {
+            // Try to get the dummy
+            std::lock_guard<std::mutex> lock(dummyFormMutex);
+            if (!dummyFormInitialized) {
+                dummyFormInitialized = true;
+                auto* dh = RE::TESDataHandler::GetSingleton();
+                if (dh) {
+                    auto* form = dh->LookupForm(0x000B79FF, "Skyrim.esm");
+                    if (form) {
+                        dummyForm = form->As<RE::TESBoundObject>();
+                        if (!dummyForm) {
+                            logger::error("Spawn: Failed to cast dummy form to TESBoundObject");
+                        }
+                    } else {
+                        logger::error("Spawn: Failed to lookup dummy form 0x000B79FF");
+                    }
+                } else {
+                    logger::error("Spawn: TESDataHandler singleton is null");
+                }
+            }
+        }
+    
+        if (!dummyForm) {
+            logger::warn("Spawn: Dummy form unavailable, falling back to direct spawn");
+            auto spawned = target->PlaceObjectAtMe(item, true);
+            if (spawned && !spawned->IsDeleted()) {
+                if (fade == 0) {
+                    ApplyFade(spawned);
+                }
+                return spawned;
+            }
+        }
+    
+        // Create the dummy
+        auto dummy = target->PlaceObjectAtMe(dummyForm, false);
+        if (!dummy) {
+            logger::warn("Spawn: Failed to create dummy, falling back to direct spawn");
+            auto spawned = target->PlaceObjectAtMe(item, true);
+            if (spawned && !spawned->IsDeleted()) {
+                if (fade == 0) {
+                    ApplyFade(spawned);
+                }
+                return spawned;
+            }
+        }
+    
+        // Validate dummy state before proceeding
+        if (dummy->IsDeleted() || !dummy->GetParentCell() || dummy->IsDisabled()) {
+            logger::warn("Spawn: Dummy is in invalid state, cleaning up and falling back");
+            if (dummy && !dummy->IsDeleted()) {
+                try {
+                    dummy->SetDelete(true);
+                } catch (...) {
+                    logger::error("Spawn: Exception while deleting dummy");
+                }
+            }
+            auto spawned = target->PlaceObjectAtMe(item, true);
+            if (spawned && !spawned->IsDeleted()) {
+                if (fade == 0) {
+                    ApplyFade(spawned);
+                }
+                return spawned;
+            }
+        }
+    
+        // Move the dummy to the target node
+        if (auto targetObject = target->Get3D()) {
+            if (auto node = targetObject->AsNode()) {
+                if (dummy && !dummy->IsDeleted() && dummy->GetParentCell() && 
+                    target && !target->IsDeleted() && target->GetParentCell()) {
+                    try {
+                        dummy->MoveToNode(target, node);
+                        dummy->data.angle = target->data.angle;
+                    } catch (...) {
+                        logger::error("Spawn: Exception while moving dummy to node");
+                    }
+                }
+            }
+        }
+    
+        // Position the dummy based on type
+        if (dummy && !dummy->IsDeleted() && dummy->GetParentCell()) {
+            try {
+                switch (type) {
+                    case 5: dummy->SetPosition(GetObjectCenter(target));  break;
+                    case 6: dummy->SetPosition(GetObjectTop(target));     break;
+                    case 7: dummy->SetPosition(GetObjectBottom(target));  break;
+                    case 8: {
+                        auto dummyPos = dummy->GetPosition();
+                        GetToNearestNavmesh(dummy.get(), 1.0f);
+                        dummy->data.angle = RE::NiPoint3{0.0f, 0.0f, 0.0f};
+                        break;
+                    }
+                }
+            } catch (...) {
+                logger::error("Spawn: Exception while setting dummy position");
+            }
+        }
+    
+        // Spawn the real item from dummy
+        RE::NiPointer<RE::TESObjectREFR> spawned;
+        if (dummy && !dummy->IsDeleted() && dummy->GetParentCell()) {
+            try {
+                spawned = dummy->PlaceObjectAtMe(item, true);
+            } catch (...) {
+                logger::error("Spawn: Exception while spawning item from dummy");
+                spawned = nullptr;
+            }
+        }
+    
+        if (!spawned || spawned->IsDeleted()) {
+            try {
+                spawned = target->PlaceObjectAtMe(item, true);
+            } catch (...) {
+                logger::error("Spawn: Exception during fallback direct spawn");
+                spawned = nullptr;
+            }
+        }
+    
+        if (fade == 0 && spawned && !spawned->IsDeleted()) {
+            ApplyFade(spawned);
+        }
+    
+        if (dummy && !dummy->IsDeleted()) {
+            try {
+                dummy->Disable();
+                dummy->SetDelete(true);
+            } catch (...) {
+                logger::error("Spawn: Exception while cleaning up dummy");
+            }
+        }
+    
+        return spawned;
+    }
+    
     // ------------------ Effects ------------------
     void RemoveItem(const RuleContext& ctx)
     {
@@ -290,33 +527,17 @@ namespace OIF::Effects
             return;
         }
 
-        // Determine drop position
-        // If the container is a 3D object, use its world position
-        // Otherwise, use the center of its bounding box
-        NiPoint3 dropPos;
-        if (auto* root = ctx.target->Get3D()) { 
-            dropPos = root->worldBound.center;     
-        } else {                                    
-            const auto& bmin = ctx.target->GetBoundMin();
-            const auto& bmax = ctx.target->GetBoundMax();
-            dropPos = NiPoint3{
-                (bmin.x + bmax.x) * 0.5f,
-                (bmin.y + bmax.y) * 0.5f,
-                (bmin.z + bmax.z) * 0.5f
-            };
-        }
-
         for (const auto& itemData : itemsData) {
             if (!itemData.item)
                 continue;
 
             for (std::uint32_t i = 0; i < itemData.count; ++i) {
-                RE::NiPointer<RE::TESObjectREFR> item = ctx.target->PlaceObjectAtMe(itemData.item, true);
-                if (item) {
-                    item->SetPosition(dropPos);
+                auto item = Spawn(ctx.target, itemData.item, itemData.spawnType, itemData.fade);
+                if (item && ctx.target) {
                     CopyOwnership(ctx.target, item.get());
-                } else {
-                    logger::warn("SpawnItem: Failed to spawn item {}", itemData.item->GetFormID());
+                    if (itemData.scale > -1.0f && ctx.target) {
+                        SetObjectScale(item.get(), ctx.target->GetScale());
+                    }
                 }
             }
         }
@@ -324,8 +545,8 @@ namespace OIF::Effects
 
     void SpawnSpell(const RuleContext& ctx, const std::vector<SpellSpawnData>& spellsData)
     {
-        if (!ctx.source) {
-            logger::error("SpawnSpell: No source to cast the spell");
+        if (!ctx.target || ctx.target->IsDeleted()) {
+            logger::warn("SpawnSpell: No valid target location for dummy caster");
             return;
         }
 
@@ -334,91 +555,161 @@ namespace OIF::Effects
             return;
         }
 
-        // Determine caster and target
-        // The target object is the source of the effect
-        auto* caster = ctx.target;
-        auto* target = ctx.source;
-
-        if (!target || target->IsDeleted()) {
-            logger::warn("SpawnSpell: No valid target to cast the spell");
-            return;
-        }
-
-        if (!caster || caster->IsDeleted()) {
+        if (!ctx.source || ctx.source->IsDeleted()) {
             logger::warn("SpawnSpell: No valid source to cast the spell");
             return;
         }
-
-        auto* mc = caster->GetMagicCaster(RE::MagicSystem::CastingSource::kInstant);
+    
+        static RE::TESBoundObject* dummyForm = nullptr;
+        if (!dummyForm) {
+            auto* dh = RE::TESDataHandler::GetSingleton();
+            auto* form = dh ? dh->LookupForm(0x000B79FF, "Skyrim.esm") : nullptr;
+            dummyForm = form ? form->As<RE::TESBoundObject>() : nullptr;
+        }
+    
+        if (!dummyForm) {
+            logger::error("SpawnSpell: Cannot create dummy caster");
+            return;
+        }
+    
+        auto dummy = ctx.target->PlaceObjectAtMe(dummyForm, true);
+        if (!dummy) {
+            logger::error("SpawnSpell: Failed to create dummy caster");
+            return;
+        }
+    
+        if (auto targetObject = ctx.target->Get3D()) {
+            if (auto node = targetObject->AsNode()) {
+                dummy->MoveToNode(ctx.target, node);
+            }
+        }
+    
+        auto* mc = dummy->GetMagicCaster(RE::MagicSystem::CastingSource::kInstant);
         if (!mc) {
-            logger::error("SpawnSpell: caster has no MagicCaster");
+            logger::error("SpawnSpell: Dummy has no MagicCaster");
+            dummy->Disable();
+            dummy->SetDelete(true);
             return;
         }
 
+        auto* tes = RE::TES::GetSingleton();
+        if (!tes) {
+            logger::error("SpawnLeveledSpell: Cannot get TES singleton");
+            if (dummy) {
+                dummy->Disable();
+                dummy->SetDelete(true);
+                return;
+            }
+        }
+    
         for (const auto& spellData : spellsData) {
             if (!spellData.spell) continue;
-
+            if (spellData.radius <= 0) return;
+    
             std::vector<RE::Actor*> targets;
 
-            RE::TES::GetSingleton()->ForEachReferenceInRange(caster, spellData.radius, [&](RE::TESObjectREFR* a_ref) {
+            tes->ForEachReferenceInRange(dummy.get(), spellData.radius, [&](RE::TESObjectREFR* a_ref) {
                 auto* actor = a_ref->As<RE::Actor>();
                 if (actor && !actor->IsDead() && !actor->IsDisabled()) {
                     targets.push_back(actor);
                 }
                 return RE::BSContainer::ForEachResult::kContinue;
             });
-
+    
             if (targets.empty()) {
-                return;
+                continue;
             }
-
+    
             for (auto* tgt : targets) {
                 for (std::uint32_t i = 0; i < spellData.count; ++i) {
+                    if (!mc || !tgt || tgt->IsDeleted() || !spellData.spell) {
+                        logger::warn("SpawnSpell: Invalid MagicCaster, target, or spell");
+                        continue;
+                    }
                     mc->CastSpellImmediate(spellData.spell, false, tgt, 1.0f, false, 0.0f, nullptr);
                 }
             }
         }
+
+        if (!dummy) {
+            logger::error("SpawnSpell: Dummy caster is null after casting");
+            return;
+        }
+    
+        dummy->Disable();
+        dummy->SetDelete(true);
     }
 
     void SpawnSpellOnItem(const RuleContext& ctx, const std::vector<SpellSpawnData>& spellsData)
     {
-        if (!ctx.source) {
-            logger::error("SpawnSpellOnItem: No source to cast the spell");
+        if (!ctx.target || ctx.target->IsDeleted()) {
+            logger::warn("SpawnSpellOnItem: No valid target to cast the spell on");
             return;
         }
-
+    
         if (spellsData.empty()) {
             logger::error("SpawnSpellOnItem: No spells to spawn");
             return;
         }
-
-        RE::TESObjectREFR* caster = ctx.source;
-        RE::TESObjectREFR* target = ctx.target;
-
-        if (!target || target->IsDeleted()) {
-            logger::warn("SpawnSpell: No valid target to cast the spell");
+    
+        if (!ctx.source || ctx.source->IsDeleted()) {  
+            logger::warn("SpawnSpellOnItem: No valid source to cast the spell");
             return;
         }
-
-        if (!caster || caster->IsDeleted()) {
-            logger::warn("SpawnSpell: No valid source to cast the spell");
+    
+        static RE::TESBoundObject* dummyForm = nullptr;
+        if (!dummyForm) {
+            auto* dh = RE::TESDataHandler::GetSingleton();
+            auto* form = dh ? dh->LookupForm(0x000B79FF, "Skyrim.esm") : nullptr;
+            dummyForm = form ? form->As<RE::TESBoundObject>() : nullptr;
+        }
+    
+        if (!dummyForm) {
+            logger::error("SpawnSpellOnItem: Cannot create dummy for spell casting");
             return;
         }
-
-        auto* mc = caster->GetMagicCaster(RE::MagicSystem::CastingSource::kInstant);
-        if (!mc) {
-            logger::error("SpawnSpell: caster has no MagicCaster");
+    
+        auto dummy = ctx.target->PlaceObjectAtMe(dummyForm, true);
+        if (!dummy) {
+            logger::error("SpawnSpellOnItem: Failed to create dummy");
             return;
         }
-
-        for (const auto& spellData : spellsData) {
-            if (!spellData.spell)
-                continue;
-
-            for (std::uint32_t i = 0; i < spellData.count; ++i) {
-                mc->CastSpellImmediate(spellData.spell, false, target ? target : caster, 1.0f, false, 0.0f, nullptr);
+    
+        if (auto targetObject = ctx.target->Get3D()) {
+            if (auto node = targetObject->AsNode()) {
+                dummy->MoveToNode(ctx.target, node);
             }
         }
+    
+        auto* mc = dummy->GetMagicCaster(RE::MagicSystem::CastingSource::kInstant);
+        if (!mc) {
+            logger::error("SpawnSpellOnItem: Dummy has no MagicCaster");
+            if (dummy) {
+                dummy->Disable();
+                dummy->SetDelete(true);
+            }
+            return;
+        }
+    
+        for (const auto& spellData : spellsData) {
+            if (!spellData.spell) continue;
+    
+            for (std::uint32_t i = 0; i < spellData.count; ++i) {
+                if (!mc || !ctx.target || ctx.target->IsDeleted() || !spellData.spell) {
+                    logger::warn("SpawnSpellOnItem: Invalid MagicCaster, target, or spell");
+                    continue;
+                }
+                mc->CastSpellImmediate(spellData.spell, false, ctx.target, 1.0f, false, 0.0f, nullptr);
+            }
+        }
+
+        if (!dummy) {
+            logger::error("SpawnSpellOnItem: Dummy caster is null after casting");
+            return;
+        }
+    
+        dummy->Disable();
+        dummy->SetDelete(true);
     }
 
     void SpawnActor(const RuleContext& ctx, const std::vector<ActorSpawnData>& actorsData)
@@ -433,27 +724,16 @@ namespace OIF::Effects
             return;
         }
 
-        NiPoint3 dropPos;
-        if (auto* root = ctx.target->Get3D()) { 
-            dropPos = root->worldBound.center;     
-        } else {                                    
-            const auto& bmin = ctx.target->GetBoundMin();
-            const auto& bmax = ctx.target->GetBoundMax();
-            dropPos = NiPoint3{
-                (bmin.x + bmax.x) * 0.5f,
-                (bmin.y + bmax.y) * 0.5f,
-                (bmin.z + bmax.z) * 0.5f
-            };
-        }
-
         for (const auto& actorData : actorsData) {
             if (!actorData.npc)
                 continue;
 
             for (std::uint32_t i = 0; i < actorData.count; ++i) {
-                RE::NiPointer<RE::TESObjectREFR> npc = ctx.target->PlaceObjectAtMe(actorData.npc, true);
-                if (npc) {
-                    npc->SetPosition(dropPos);
+                auto actor = Spawn(ctx.target, actorData.npc, actorData.spawnType, actorData.fade);
+                if (actor && ctx.target) {
+                    if (actorData.scale > -1.0f) {
+                        SetObjectScale(actor.get(), ctx.target->GetScale());
+                    }
                 }
             }
         }
@@ -480,36 +760,8 @@ namespace OIF::Effects
         RE::NiPoint3 hitPos = ctx.target->GetPosition();
         RE::NiPoint3 pickDir;
         
-        if (ctx.source) {
-            RE::NiPoint3 sourcePos = ctx.source->GetPosition();
-            RE::NiPoint3 targetPos = ctx.target->GetPosition();
-            
-            // Raycast from source to goal to obtain an accurate collision point
-            RE::bhkPickData pickData;
-            pickData.rayInput.from = sourcePos;
-            pickData.rayInput.to = targetPos;
-            
-            bool foundHitPos = false;
-            
-            if (ctx.target->GetParentCell()) {
-                if (ctx.target->GetParentCell()->GetbhkWorld()) {
-                    ctx.target->GetParentCell()->GetbhkWorld()->PickObject(pickData);
-                    
-                    if (pickData.rayOutput.HasHit()) {
-                        float hitFraction = pickData.rayOutput.hitFraction;
-                        hitPos = sourcePos + (targetPos - sourcePos) * hitFraction;
-                        foundHitPos = true;
-                        logger::info("Using hitFraction: {} for hit position", hitFraction);
-                    }
-                }
-            }
-            
-            pickDir = hitPos - sourcePos;
-            
-        } else {
-            hitPos = ctx.target->GetPosition();
-            pickDir = RE::NiPoint3(0.0f, 0.0f, 1.0f);
-        }
+        hitPos = ctx.target->GetPosition();
+        pickDir = RE::NiPoint3(0.0f, 0.0f, 1.0f);
         
         float pickLen = pickDir.Length();
         if (pickLen > 0.0f) {
@@ -526,6 +778,10 @@ namespace OIF::Effects
                 continue;
 
             for (std::uint32_t i = 0; i < impactData.count; ++i) {
+                if (!im || !ctx.target || ctx.target->IsDeleted() || !impactData.impact) {
+                    logger::warn("SpawnImpact: Invalid ImpactManager, target, or impact");
+                    continue;
+                }
                 im->PlayImpactEffect(ctx.target, impactData.impact, nodeName, pickDir, pickLen, false, false);
             }
         }
@@ -548,7 +804,7 @@ namespace OIF::Effects
                 continue;
 
             for (std::uint32_t i = 0; i < explosionData.count; ++i) {
-                ctx.target->PlaceObjectAtMe(explosionData.explosion, true);
+                auto explosion = Spawn(ctx.target, explosionData.explosion, explosionData.spawnType, explosionData.fade);              
             }
         }
     }
@@ -567,29 +823,26 @@ namespace OIF::Effects
 
         bool anyItemSpawned = false;
 
-        std::unordered_set<RE::TESObjectREFR*> items;
-
         for (const auto& itemData : itemsData) {
             if (!itemData.item)
                 continue;
 
             for (std::uint32_t i = 0; i < itemData.count; ++i) {
-                RE::NiPointer<RE::TESObjectREFR> item = (ctx.target->PlaceObjectAtMe(itemData.item, true));
-                    if (item) {
-                        anyItemSpawned = true;
-                        items.insert(item.get());
-                        CopyOwnership(ctx.target, item.get());
+                auto item = Spawn(ctx.target, itemData.item, itemData.spawnType, itemData.fade);
+                if (item && ctx.target) {
+                    anyItemSpawned = true;
+                    CopyOwnership(ctx.target, item.get());
+                    if (itemData.scale > -1.0f) {
                         SetObjectScale(item.get(), ctx.target->GetScale());
-                    } else {
-                        logger::warn("SwapItem: Failed to swap with item {}", itemData.item->GetFormID());
                     }
                 }
             }
+        }
 
-        if (anyItemSpawned) {
+        if (anyItemSpawned && ctx.target) {
             if (!ctx.target->IsDisabled()) ctx.target->Disable();
             for (const auto& itemData : itemsData) {
-                if (!itemData.nonDeletable) {
+                if (!itemData.nonDeletable && ctx.target) {
                     ctx.target->SetDelete(true);
                 }
             }
@@ -668,7 +921,7 @@ namespace OIF::Effects
 
         for (auto& [obj, data] : containerRef->GetInventory()) {
             if (!obj) {
-                logger::warn("SpillInventory: Invalid inventory object for target {}", containerRef->GetFormID());
+                logger::warn("SpillInventory: Invalid inventory object for target {}", containerRef ? containerRef->GetFormID() : 0);
                 continue;
             } else if (obj && (data.first > 0)) {
                 containerRef->RemoveItem(obj, data.first, ITEM_REMOVE_REASON::kDropping, nullptr, containerRef, &dropPos, &dropAngle);
@@ -688,19 +941,6 @@ namespace OIF::Effects
             return;
         }
 
-        NiPoint3 dropPos;
-        if (auto* root = ctx.target->Get3D()) { 
-            dropPos = root->worldBound.center;     
-        } else {                                    
-            const auto& bmin = ctx.target->GetBoundMin();
-            const auto& bmax = ctx.target->GetBoundMax();
-            dropPos = NiPoint3{
-                (bmin.x + bmax.x) * 0.5f,
-                (bmin.y + bmax.y) * 0.5f,
-                (bmin.z + bmax.z) * 0.5f
-            };
-        }
-
         bool anyActorSpawned = false;
 
         for (const auto& actorData : actorsData) {
@@ -708,18 +948,20 @@ namespace OIF::Effects
                 continue;
 
             for (std::uint32_t i = 0; i < actorData.count; ++i) {
-                RE::NiPointer<RE::TESObjectREFR> npc = ctx.target->PlaceObjectAtMe(actorData.npc, true);
-                if (npc) {
-                    npc->SetPosition(dropPos);
+                auto actor = Spawn(ctx.target, actorData.npc, actorData.spawnType, actorData.fade);
+                if (actor && ctx.target) {
                     anyActorSpawned = true;
+                    if (actorData.scale > -1.0f && ctx.target) {
+                        SetObjectScale(actor.get(), ctx.target->GetScale());
+                    }
                 }
             }
         }
 
-        if (anyActorSpawned) {
+        if (anyActorSpawned && ctx.target) {
             if (!ctx.target->IsDisabled()) ctx.target->Disable();
             for (const auto& itemData : actorsData) {
-                if (!itemData.nonDeletable) {
+                if (!itemData.nonDeletable && ctx.target) {
                     ctx.target->SetDelete(true);
                 }
             }
@@ -738,37 +980,24 @@ namespace OIF::Effects
             return;
         }
 
-        NiPoint3 dropPos;
-        if (auto* root = ctx.target->Get3D()) { 
-            dropPos = root->worldBound.center;     
-        } else {                                    
-            const auto& bmin = ctx.target->GetBoundMin();
-            const auto& bmax = ctx.target->GetBoundMax();
-            dropPos = NiPoint3{
-                (bmin.x + bmax.x) * 0.5f,
-                (bmin.y + bmax.y) * 0.5f,
-                (bmin.z + bmax.z) * 0.5f
-            };
-        }
+        for (const auto& itemData : itemsData) {
+            if (!itemData.item) continue;
 
-        for (const auto& d : itemsData) {
-            if (!d.item) continue;
-
-            for (std::uint32_t i = 0; i < d.count; ++i) {
-                auto* obj = ResolveLeveledItem(d.item);
+            for (std::uint32_t i = 0; i < itemData.count; ++i) {
+                auto* obj = ResolveLeveledItem(itemData.item);
                 if (!obj) {
-                    logger::warn("SpawnLeveledItem: can't resolve LVLI {:X}",
-                                d.item->GetFormID());
+                    logger::warn("SpawnLeveledItem: can't resolve LVLI {:X}", itemData.item ? itemData.item->GetFormID() : 0);
                     continue;
                 }
 
-                auto ref = ctx.target->PlaceObjectAtMe(obj, true);
-                if (ref) {
-                    CopyOwnership(ctx.target, ref.get());
-                    ref->SetPosition(dropPos);
+                auto item = Spawn(ctx.target, obj, itemData.spawnType, itemData.fade);
+                if (item && ctx.target) {
+                    CopyOwnership(ctx.target, item.get());
+                    if (itemData.scale > -1.0f && ctx.target) {
+                        SetObjectScale(item.get(), ctx.target->GetScale());
+                    }
                 } else {
-                    logger::warn("SpawnLeveledItem: place failed for {:X}",
-                                obj->GetFormID());
+                    logger::warn("SpawnLeveledItem: place failed for {:X}", obj ? obj->GetFormID() : 0);
                 }
             }
         }
@@ -788,30 +1017,33 @@ namespace OIF::Effects
 
         bool spawned = false;
 
-        for (const auto& d : itemsData) {
-            if (!d.item) continue;
+        for (const auto& itemData : itemsData) {
+            if (!itemData.item) continue;
 
-            for (std::uint32_t i = 0; i < d.count; ++i) {
-                auto* obj = ResolveLeveledItem(d.item);
+            for (std::uint32_t i = 0; i < itemData.count; ++i) {
+                auto* obj = ResolveLeveledItem(itemData.item);
                 if (!obj) {
-                    logger::warn("SwapLeveledItem: can't resolve LVLI {:X}", d.item->GetFormID());
+                    logger::warn("SwapLeveledItem: can't resolve LVLI {:X}", itemData.item ? itemData.item->GetFormID() : 0);
                     continue;
                 }
 
-                auto ref = ctx.target->PlaceObjectAtMe(obj, true);
-                if (ref) {
-                    CopyOwnership(ctx.target, ref.get());
-                    SetObjectScale(ref.get(), ctx.target->GetScale());
+                auto item = Spawn(ctx.target, obj, itemData.spawnType, itemData.fade);
+                if (item && ctx.target) {
+                    spawned = true;
+                    CopyOwnership(ctx.target, item.get());
+                    if (itemData.scale > -1.0f && ctx.target) {
+                        SetObjectScale(item.get(), ctx.target->GetScale());
+                    }
                 } else {
-                    logger::warn("SwapLeveledItem: place failed for {:X}", obj->GetFormID());
+                    logger::warn("SwapLeveledItem: place failed for {:X}", obj ? obj->GetFormID() : 0);
                 }
             }
         }
         
-        if (spawned) {
+        if (spawned && ctx.target) {
             if (!ctx.target->IsDisabled()) ctx.target->Disable();
             for (const auto& itemData : itemsData) {
-                if (!itemData.nonDeletable) {
+                if (!itemData.nonDeletable && ctx.target) {
                     ctx.target->SetDelete(true);
                 }
             }        
@@ -820,109 +1052,182 @@ namespace OIF::Effects
 
     void SpawnLeveledSpell(const RuleContext& ctx, const std::vector<LvlSpellSpawnData>& spellsData)
     {
-        if (!ctx.source) {
-            logger::error("SpawnLeveledSpell: No source to cast the spell");
+        if (!ctx.target || ctx.target->IsDeleted()) {
+            logger::warn("SpawnLeveledSpell: No valid target location for dummy caster");
             return;
         }
-
+    
         if (spellsData.empty()) {
             logger::error("SpawnLeveledSpell: No spells to spawn");
             return;
         }
-
-        auto* caster = ctx.target;
-        auto* target = ctx.source;
-
-        if (!target || target->IsDeleted()) {
-            logger::warn("SpawnLeveledSpell: No valid target to cast the spell");
-            return;
-        }
-
-        if (!caster || caster->IsDeleted()) {
+    
+        if (!ctx.source || ctx.source->IsDeleted()) {
             logger::warn("SpawnLeveledSpell: No valid source to cast the spell");
             return;
         }
-
-        auto* mc = caster->GetMagicCaster(RE::MagicSystem::CastingSource::kInstant);
-        if (!mc) {
-            logger::error("SpawnLeveledSpell: The caster has no MagicCaster");
+    
+        static RE::TESBoundObject* dummyForm = nullptr;
+        if (!dummyForm) {
+            auto* dh = RE::TESDataHandler::GetSingleton();
+            auto* form = dh ? dh->LookupForm(0x000B79FF, "Skyrim.esm") : nullptr;
+            dummyForm = form ? form->As<RE::TESBoundObject>() : nullptr;
+        }
+    
+        if (!dummyForm) {
+            logger::error("SpawnLeveledSpell: Cannot create dummy caster");
             return;
         }
-
+    
+        auto dummy = ctx.target->PlaceObjectAtMe(dummyForm, true);
+        if (!dummy) {
+            logger::error("SpawnLeveledSpell: Failed to create dummy caster");
+            return;
+        }
+    
+        if (auto targetObject = ctx.target->Get3D()) {
+            if (auto node = targetObject->AsNode()) {
+                dummy->MoveToNode(ctx.target, node);
+            }
+        }
+    
+        auto* mc = dummy->GetMagicCaster(RE::MagicSystem::CastingSource::kInstant);
+        if (!mc) {
+            logger::error("SpawnLeveledSpell: Dummy has no MagicCaster");
+            dummy->Disable();
+            dummy->SetDelete(true);
+            return;
+        }
+    
+        auto* tes = RE::TES::GetSingleton();
+        if (!tes) {
+            logger::error("SpawnLeveledSpell: Cannot get TES singleton");
+            if (dummy) {
+                dummy->Disable();
+                dummy->SetDelete(true);
+                return;
+            }
+        }
+    
         for (const auto& spellData : spellsData) {
             if (!spellData.spell) continue;
-
+            if (spellData.radius <= 0) return;
+    
             std::vector<RE::Actor*> targets;
-
-            RE::TES::GetSingleton()->ForEachReferenceInRange(caster, spellData.radius, [&](RE::TESObjectREFR* a_ref) {
+    
+            tes->ForEachReferenceInRange(dummy.get(), spellData.radius, [&](RE::TESObjectREFR* a_ref) {
                 auto* actor = a_ref->As<RE::Actor>();
                 if (actor && !actor->IsDead() && !actor->IsDisabled()) {
                     targets.push_back(actor);
                 }
                 return RE::BSContainer::ForEachResult::kContinue;
             });
-
+    
             if (targets.empty()) {
-                return;
-            }
-
-            auto* spell = ResolveLeveledSpell(spellData.spell);
-            if (!spell) {
-                logger::warn("SpawnLeveledSpell: Can't resolve LVLS {:X}", spellData.spell->GetFormID());
                 continue;
             }
-
+    
+            auto* spell = ResolveLeveledSpell(spellData.spell);
+            if (!spell) {
+                logger::warn("SpawnLeveledSpell: Can't resolve LVLS {:X}", spellData.spell ? spellData.spell->GetFormID() : 0);
+                continue;
+            }
+    
             for (auto* tgt : targets) {
                 for (std::uint32_t i = 0; i < spellData.count; ++i) {
+                    if (!mc || !tgt || tgt->IsDeleted() || !spell) {
+                        logger::warn("SpawnLeveledSpell: Invalid MagicCaster, target, or spell");
+                        continue;
+                    }
                     mc->CastSpellImmediate(spell, false, tgt, 1.0f, false, 0.0f, nullptr);
                 }
             }
         }
-    }
-
-    void SpawnLeveledSpellOnItem(const RuleContext& ctx, const std::vector<LvlSpellSpawnData>& spellsData)
-    {
-        if (!ctx.source) {
-            logger::error("SpawnLeveledSpellOnItem: No source to cast the spell");
+        
+        if (!dummy) {
+            logger::error("SpawnLeveledSpell: Dummy caster is null after casting");
             return;
         }
-
+    
+        dummy->Disable();
+        dummy->SetDelete(true);
+    }
+    
+    void SpawnLeveledSpellOnItem(const RuleContext& ctx, const std::vector<LvlSpellSpawnData>& spellsData)
+    {
+        if (!ctx.target || ctx.target->IsDeleted()) {
+            logger::warn("SpawnLeveledSpellOnItem: No valid target to cast the spell on");
+            return;
+        }
+    
         if (spellsData.empty()) {
             logger::error("SpawnLeveledSpellOnItem: No spells to spawn");
             return;
         }
-
-        auto* caster = ctx.source;
-        auto* target = ctx.target;
-
-        if (!target || target->IsDeleted()) {
-            logger::warn("SpawnLeveledSpellOnItem: No valid target to cast the spell");
-            return;
-        }
-
-        if (!caster || caster->IsDeleted()) {
+    
+        if (!ctx.source || ctx.source->IsDeleted()) {
             logger::warn("SpawnLeveledSpellOnItem: No valid source to cast the spell");
             return;
         }
-
-        auto* mc = caster->GetMagicCaster(RE::MagicSystem::CastingSource::kInstant);
-        if (!mc) {
-            logger::error("SpawnLeveledSpellOnItem: The caster has no MagicCaster");
+    
+        static RE::TESBoundObject* dummyForm = nullptr;
+        if (!dummyForm) {
+            auto* dh = RE::TESDataHandler::GetSingleton();
+            auto* form = dh ? dh->LookupForm(0x000B79FF, "Skyrim.esm") : nullptr;
+            dummyForm = form ? form->As<RE::TESBoundObject>() : nullptr;
+        }
+    
+        if (!dummyForm) {
+            logger::error("SpawnLeveledSpellOnItem: Cannot create dummy for spell casting");
             return;
         }
-
+    
+        auto dummy = ctx.target->PlaceObjectAtMe(dummyForm, true);
+        if (!dummy) {
+            logger::error("SpawnLeveledSpellOnItem: Failed to create dummy");
+            return;
+        }
+    
+        if (auto targetObject = ctx.target->Get3D()) {
+            if (auto node = targetObject->AsNode()) {
+                dummy->MoveToNode(ctx.target, node);
+            }
+        }
+    
+        auto* mc = dummy->GetMagicCaster(RE::MagicSystem::CastingSource::kInstant);
+        if (!mc) {
+            logger::error("SpawnLeveledSpellOnItem: Dummy has no MagicCaster");
+            if (dummy) {
+                dummy->Disable();
+                dummy->SetDelete(true);
+            }
+            return;
+        }
+    
         for (const auto& spellData : spellsData) {
             if (!spellData.spell) continue;
-
+    
             for (std::uint32_t i = 0; i < spellData.count; ++i) {
                 auto* spell = ResolveLeveledSpell(spellData.spell);
                 if (!spell) {
-                    logger::warn("SpawnLeveledSpellOnItem: Can't resolve LVLS {:X}", spellData.spell->GetFormID());
+                    logger::warn("SpawnLeveledSpellOnItem: Can't resolve LVLS {:X}", spellData.spell ? spellData.spell->GetFormID() : 0);
                     continue;
                 }
-                mc->CastSpellImmediate(spell, false, target, 1.0f, false, 0.0f, nullptr);
+                if (!mc || !ctx.target || ctx.target->IsDeleted() || !spell) {
+                    logger::warn("SpawnLeveledSpellOnItem: Invalid MagicCaster, target, or spell");
+                    continue;
+                }
+                mc->CastSpellImmediate(spell, false, ctx.target, 1.0f, false, 0.0f, nullptr);
             }
         }
+
+        if (!dummy) {
+            logger::error("SpawnLeveledSpellOnItem: Dummy caster is null after casting");
+            return;
+        }
+    
+        dummy->Disable();
+        dummy->SetDelete(true);
     }
 
     void SpawnLeveledActor(const RuleContext& ctx, const std::vector<LvlActorSpawnData>& actorsData)
@@ -937,32 +1242,21 @@ namespace OIF::Effects
             return;
         }
 
-        NiPoint3 dropPos;
-        if (auto* root = ctx.target->Get3D()) { 
-            dropPos = root->worldBound.center;     
-        } else {                                    
-            const auto& bmin = ctx.target->GetBoundMin();
-            const auto& bmax = ctx.target->GetBoundMax();
-            dropPos = NiPoint3{
-                (bmin.x + bmax.x) * 0.5f,
-                (bmin.y + bmax.y) * 0.5f,
-                (bmin.z + bmax.z) * 0.5f
-            };
-        }
-
         for (const auto& actorData : actorsData) {
             if (!actorData.npc) continue;
 
             for (std::uint32_t i = 0; i < actorData.count; ++i) {
                 auto* npcBase = ResolveLeveledNPC(actorData.npc);
                 if (!npcBase) {
-                    logger::warn("SpawnLeveledActor: Can't resolve LVLC {:X}", actorData.npc->GetFormID());
+                    logger::warn("SpawnLeveledActor: Can't resolve LVLC {:X}", actorData.npc ? actorData.npc->GetFormID() : 0);
                     continue;
                 }
 
-                auto ref = ctx.target->PlaceObjectAtMe(npcBase, true);
-                if (ref) {
-                    ref->SetPosition(dropPos);
+                auto actor = Spawn(ctx.target, npcBase, actorData.spawnType, actorData.fade);
+                if (actor && ctx.target) {
+                    if (actorData.scale > -1.0f && ctx.target) {
+                        SetObjectScale(actor.get(), ctx.target->GetScale());
+                    }
                 }
             }
         }
@@ -980,19 +1274,6 @@ namespace OIF::Effects
             return;
         }
 
-        NiPoint3 dropPos;
-        if (auto* root = ctx.target->Get3D()) { 
-            dropPos = root->worldBound.center;     
-        } else {                                    
-            const auto& bmin = ctx.target->GetBoundMin();
-            const auto& bmax = ctx.target->GetBoundMax();
-            dropPos = NiPoint3{
-                (bmin.x + bmax.x) * 0.5f,
-                (bmin.y + bmax.y) * 0.5f,
-                (bmin.z + bmax.z) * 0.5f
-            };
-        }
-
         bool spawned = false;
 
         for (const auto& actorData : actorsData) {
@@ -1001,117 +1282,232 @@ namespace OIF::Effects
             for (std::uint32_t i = 0; i < actorData.count; ++i) {
                 auto* npcBase = ResolveLeveledNPC(actorData.npc);
                 if (!npcBase) {
-                    logger::warn("SpawnLeveledActor: Can't resolve LVLC {:X}", actorData.npc->GetFormID());
+                    logger::warn("SpawnLeveledActor: Can't resolve LVLC {:X}", actorData.npc ? actorData.npc->GetFormID() : 0);
                     continue;
                 }
 
-                auto ref = ctx.target->PlaceObjectAtMe(npcBase, true);
-                if (ref) {
-                    ref->SetPosition(dropPos);
-                }
+                auto actor = Spawn(ctx.target, npcBase, actorData.spawnType, actorData.fade);
+                if (actor && ctx.target) {
+                    spawned = true;
+                    if (actorData.scale > -1.0f && ctx.target) {
+                        SetObjectScale(actor.get(), ctx.target->GetScale());
+                    }
+                } 
             }
         }
 
-        if (spawned) {
+        if (spawned && ctx.target) {
             if (!ctx.target->IsDisabled()) ctx.target->Disable();
             for (const auto& itemData : actorsData) {
-                if (!itemData.nonDeletable) {
+                if (!itemData.nonDeletable && ctx.target) {
                     ctx.target->SetDelete(true);
                 }
             }        
         }
     }
 
-    void ApplyIngestible(const RuleContext& ctx)
+    void ApplyIngestible(const RuleContext& ctx, const std::vector<IngestibleApplyData>& ingestiblesData)
     {
         if (!ctx.target || ctx.target->IsDeleted()) {
-            logger::error("ApplyIngestible: No target to apply ingestible");
-            return;
-        }
-        if (!ctx.source || ctx.source->IsDeleted()) {
-            logger::error("ApplyIngestible: No source to apply ingestible");
-            return;
-        }
-    
-        auto* targetRef = ctx.target;
-        auto* casterRef = ctx.source;
-        auto* casterMC  = casterRef->GetMagicCaster(RE::MagicSystem::CastingSource::kInstant);
-        if (!casterMC) {
-            logger::warn("ApplyIngestible: The source has no MagicCaster");
-            return;
-        }
-    
-        auto* magicItem = targetRef->GetBaseObject()->As<RE::MagicItem>();
-        if (!magicItem) {
-            logger::warn("ApplyIngestible: The target is not a MagicItem");
+            logger::warn("ApplyIngestible: No valid target location for dummy caster");
             return;
         }
 
-        const bool hostile = magicItem->IsPoison();
-
-        RE::TES::GetSingleton()->ForEachReferenceInRange(targetRef, 150.0, [&](RE::TESObjectREFR* a_ref) {
-            auto* actor = a_ref->As<RE::Actor>();
-            if (actor && !actor->IsDisabled() && !actor->IsDeleted() && !actor->IsDead() && !actor->IsGhost()) {
-                casterMC->CastSpellImmediate(magicItem, false, actor, 1.0f, hostile, 0.0f, nullptr);
-            }
-            return RE::BSContainer::ForEachResult::kContinue;
-        });
-    }
-
-    void ApplyOtherIngestible(const RuleContext& ctx, const std::vector<IngestibleApplyData>& ingestiblesData)
-    {
         if (ingestiblesData.empty()) {
             logger::error("ApplyOtherIngestible: No ingestibles to apply");
             return;
         }
 
         if (!ctx.source || ctx.source->IsDeleted()) {
-            logger::error("ApplyOtherIngestible: No source to apply ingestible");
-            return;
-        }
-        
-        if (!ctx.target || ctx.target->IsDeleted()) {
-            logger::error("ApplyOtherIngestible: No target to apply ingestible");
+            logger::warn("ApplyIngestible: No valid source to apply ingestible");
             return;
         }
 
-        auto* targetRef = ctx.target;
-        auto* casterRef = ctx.source;
-        auto* casterMC  = casterRef->GetMagicCaster(RE::MagicSystem::CastingSource::kInstant);
-        if (!casterMC) {
-            logger::warn("ApplyOtherIngestible: The source has no MagicCaster");
+        auto* baseObject = ctx.target->GetBaseObject();
+        if (!baseObject) {
+            logger::error("ApplyIngestible: Target has no base object");
             return;
         }
 
+        auto* magicItem = baseObject->As<RE::MagicItem>();
+        if (!magicItem) {
+            logger::warn("ApplyIngestible: The target is not a MagicItem");
+            return;
+        }
+
+        static RE::TESBoundObject* dummyForm = nullptr;
+        if (!dummyForm) {
+            auto* dh = RE::TESDataHandler::GetSingleton();
+            auto* form = dh ? dh->LookupForm(0x000B79FF, "Skyrim.esm") : nullptr;
+            dummyForm = form ? form->As<RE::TESBoundObject>() : nullptr;
+        }
+
+        if (!dummyForm) {
+            logger::error("ApplyIngestible: Cannot create dummy caster");
+            return;
+        }
+
+        auto dummy = ctx.target->PlaceObjectAtMe(dummyForm, true);
+        if (!dummy) {
+            logger::error("ApplyIngestible: Failed to create dummy caster");
+            return;
+        }
+
+        if (auto targetObject = ctx.target->Get3D()) {
+            if (auto node = targetObject->AsNode()) {
+                dummy->MoveToNode(ctx.target, node);
+            }
+        }
+
+        auto* mc = dummy->GetMagicCaster(RE::MagicSystem::CastingSource::kInstant);
+        if (!mc) {
+            logger::error("ApplyIngestible: Dummy has no MagicCaster");
+            dummy->Disable();
+            dummy->SetDelete(true);
+            return;
+        }
+
+        auto* tes = RE::TES::GetSingleton();
+        if (!tes) {
+            logger::error("ApplyIngestible: TES singleton is null");
+            if (dummy) {
+                dummy->Disable();
+                dummy->SetDelete(true);
+                return;
+            }
+        }
+
+        const auto& data = ingestiblesData[0];
+        if (data.radius <= 0) return;
+
+        const bool hostile = magicItem->IsPoison();
         std::vector<RE::Actor*> targets;
-    
-        // Include the caster if it's a valid actor
-        if (auto* casterActor = casterRef->As<RE::Actor>(); casterActor && !casterActor->IsDead() && !casterActor->IsDisabled()) {
-            targets.push_back(casterActor);
+
+        tes->ForEachReferenceInRange(dummy.get(), data.radius, [&](RE::TESObjectREFR* a_ref) {
+            auto* actor = a_ref->As<RE::Actor>();
+            if (actor && !actor->IsDisabled() && !actor->IsDeleted() && !actor->IsDead() && !actor->IsGhost()) {
+                targets.push_back(actor);
+            }
+            return RE::BSContainer::ForEachResult::kContinue;
+        });
+
+        if (targets.empty()) {
+        } else {
+            for (auto* actor : targets) {
+                if (!mc || !actor || actor->IsDeleted() || !magicItem) {
+                    logger::warn("ApplyIngestible: Invalid MagicCaster, target, or magic item");
+                    continue;
+                }
+                mc->CastSpellImmediate(magicItem, false, actor, 1.0f, hostile, 0.0f, nullptr);
+            }
+        }
+
+        if (!dummy) {
+            logger::error("ApplyIngestible: Dummy caster is null after casting");
+            return;
+        }
+
+        dummy->Disable();
+        dummy->SetDelete(true);
+    }
+
+    void ApplyOtherIngestible(const RuleContext& ctx, const std::vector<IngestibleApplyData>& ingestiblesData)
+    {
+        if (!ctx.target || ctx.target->IsDeleted()) {
+            logger::warn("ApplyOtherIngestible: No valid target location for dummy caster");
+            return;
+        }
+
+        if (ingestiblesData.empty()) {
+            logger::error("ApplyOtherIngestible: No ingestibles to apply");
+            return;
+        }
+
+        if (!ctx.source || ctx.source->IsDeleted()) {
+            logger::warn("ApplyOtherIngestible: No valid source to apply ingestible");
+            return;
+        }
+
+        static RE::TESBoundObject* dummyForm = nullptr;
+        if (!dummyForm) {
+            auto* dh = RE::TESDataHandler::GetSingleton();
+            auto* form = dh ? dh->LookupForm(0x000B79FF, "Skyrim.esm") : nullptr;
+            dummyForm = form ? form->As<RE::TESBoundObject>() : nullptr;
+        }
+
+        if (!dummyForm) {
+            logger::error("ApplyOtherIngestible: Cannot create dummy caster");
+            return;
+        }
+
+        auto dummy = ctx.target->PlaceObjectAtMe(dummyForm, true);
+        if (!dummy) {
+            logger::error("ApplyOtherIngestible: Failed to create dummy caster");
+            return;
+        }
+
+        if (auto targetObject = ctx.target->Get3D()) {
+            if (auto node = targetObject->AsNode()) {
+                dummy->MoveToNode(ctx.target, node);
+            }
+        }
+
+        auto* mc = dummy->GetMagicCaster(RE::MagicSystem::CastingSource::kInstant);
+        if (!mc) {
+            logger::error("ApplyOtherIngestible: Dummy has no MagicCaster");
+            dummy->Disable();
+            dummy->SetDelete(true);
+            return;
+        }
+
+        auto* tes = RE::TES::GetSingleton();
+        if (!tes) {
+            logger::error("ApplyIngestible: TES singleton is null");
+            if (dummy) {
+                dummy->Disable();
+                dummy->SetDelete(true);
+                return;
+            }
         }
 
         for (const auto& ingestibleData : ingestiblesData) {
             if (!ingestibleData.ingestible) continue;
-    
-            RE::TES::GetSingleton()->ForEachReferenceInRange(targetRef, ingestibleData.radius, [&](RE::TESObjectREFR* a_ref) {
-                if (auto* actor = a_ref->As<RE::Actor>(); actor && !actor->IsDead() && !actor->IsDisabled()) {
+            if (ingestibleData.radius <= 0) continue;
+
+            std::vector<RE::Actor*> targets;
+
+            tes->ForEachReferenceInRange(dummy.get(), ingestibleData.radius, [&](RE::TESObjectREFR* a_ref) {
+                auto* actor = a_ref->As<RE::Actor>();
+                if (actor && !actor->IsDisabled() && !actor->IsDeleted() && !actor->IsDead() && !actor->IsGhost()) {
                     targets.push_back(actor);
                 }
                 return RE::BSContainer::ForEachResult::kContinue;
             });
-        
+
             if (targets.empty()) {
-                return;
+                continue;
             }
-    
+
             const bool hostile = ingestibleData.ingestible->IsPoison();
-    
+
             for (auto* tgt : targets) {
                 for (std::uint32_t i = 0; i < ingestibleData.count; ++i) {
-                    casterMC->CastSpellImmediate(ingestibleData.ingestible, false, tgt, 1.0f, hostile, 0.0f, nullptr);
+                    if (!mc || !tgt || tgt->IsDeleted() || !ingestibleData.ingestible) {
+                        logger::warn("ApplyOtherIngestible: Invalid MagicCaster, target, or ingestible");
+                        continue;
+                    }
+                    mc->CastSpellImmediate(ingestibleData.ingestible, false, tgt, 1.0f, hostile, 0.0f, nullptr);
                 }
             }
         }
+
+        if (!dummy) {
+            logger::error("ApplyOtherIngestible: Dummy caster is null after casting");
+            return;
+        }
+
+        dummy->Disable();
+        dummy->SetDelete(true);
     }
 
     void SpawnLight(const RuleContext& ctx, const std::vector<LightSpawnData>& lightsData)
@@ -1126,28 +1522,17 @@ namespace OIF::Effects
             return;
         }
 
-        NiPoint3 pos;
-        if (auto* root = ctx.target->Get3D()) {
-            pos = root->worldBound.center;
-        } else {
-            const auto& bmin = ctx.target->GetBoundMin();
-            const auto& bmax = ctx.target->GetBoundMax();
-            pos = NiPoint3{
-                (bmin.x + bmax.x) * 0.5f,
-                (bmin.y + bmax.y) * 0.5f,
-                (bmin.z + bmax.z) * 0.5f
-            };
-        }
-
         for (const auto& lightData : lightsData) {
             if (!lightData.light)
                 continue;
 
             for (std::uint32_t i = 0; i < lightData.count; ++i) {
-                RE::NiPointer<RE::TESObjectREFR> ref = ctx.target->PlaceObjectAtMe(lightData.light, true);
-                if (ref) {
-                    ref->SetPosition(pos);
-                    ref->Enable(false);
+                auto light = Spawn(ctx.target, lightData.light, lightData.spawnType, lightData.fade);
+                if (light && ctx.target) {
+                    light->Enable(false);
+                    if (lightData.scale > -1.0f && ctx.target) {
+                        SetObjectScale(light.get(), ctx.target->GetScale());
+                    }
                 }
             }
         }
@@ -1166,25 +1551,25 @@ namespace OIF::Effects
         }
 
         auto* tes = RE::TES::GetSingleton();
-        if (!tes)
+        if (!tes) {
+            logger::error("RemoveLight: TES singleton is null");
             return;
+        }
 
         for (const auto& lightData : lightsData) {
-            if (lightData.radius <= 0)
-                continue;
+            if (lightData.radius <= 0) continue;
 
-            tes->ForEachReferenceInRange(ctx.target, static_cast<float>(lightData.radius), [&](RE::TESObjectREFR* ref) {
-                    if (!ref || ref->IsDisabled() || ref->IsDeleted())
-                        return RE::BSContainer::ForEachResult::kContinue;
-    
-                    auto* baseObj = ref->GetBaseObject();
-                    if (baseObj && baseObj->Is(RE::FormType::Light)) {
-                        if (!ref->IsDisabled()) ref->Disable();
-                        ref->SetDelete(true); 
-                    }
+            tes->ForEachReferenceInRange(ctx.target, lightData.radius, [&](RE::TESObjectREFR* ref) {
+                if (!ref || ref->IsDisabled() || ref->IsDeleted())
                     return RE::BSContainer::ForEachResult::kContinue;
+
+                auto* baseObj = ref->GetBaseObject();
+                if (ref && baseObj && baseObj->Is(RE::FormType::Light)) {
+                    if (!ref->IsDisabled()) ref->Disable();
+                    ref->SetDelete(true); 
                 }
-            );
+                return RE::BSContainer::ForEachResult::kContinue;
+            });
         }
     }
 
@@ -1201,24 +1586,24 @@ namespace OIF::Effects
         }
 
         auto* tes = RE::TES::GetSingleton();
-        if (!tes)
+        if (!tes) {
+            logger::error("EnableLight: TES singleton is null");
             return;
+        }
 
         for (const auto& lightData : lightsData) {
-            if (lightData.radius <= 0)
-                continue;
+            if (lightData.radius <= 0) continue;
 
-            tes->ForEachReferenceInRange(ctx.target, static_cast<float>(lightData.radius), [&](RE::TESObjectREFR* ref) {
-                    if (!ref || ref->IsDisabled() || ref->IsDeleted())
-                        return RE::BSContainer::ForEachResult::kContinue;
-    
-                    auto* baseObj = ref->GetBaseObject();
-                    if (baseObj && baseObj->Is(RE::FormType::Light)) {
-                        if (ref->IsDisabled()) ref->Enable(false);
-                    }
+            tes->ForEachReferenceInRange(ctx.target, lightData.radius, [&](RE::TESObjectREFR* ref) {
+                if (!ref || ref->IsDisabled() || ref->IsDeleted())
                     return RE::BSContainer::ForEachResult::kContinue;
+
+                auto* baseObj = ref->GetBaseObject();
+                if (ref && baseObj && baseObj->Is(RE::FormType::Light)) {
+                    if (ref->IsDisabled()) ref->Enable(false);
                 }
-            );
+                return RE::BSContainer::ForEachResult::kContinue;
+            });
         }
     }
 
@@ -1235,24 +1620,24 @@ namespace OIF::Effects
         }
 
         auto* tes = RE::TES::GetSingleton();
-        if (!tes)
+        if (!tes) {
+            logger::error("DisableLight: TES singleton is null");
             return;
+        }
 
         for (const auto& lightData : lightsData) {
-            if (lightData.radius <= 0)
-                continue;
+            if (lightData.radius <= 0) continue;
 
-            tes->ForEachReferenceInRange(ctx.target, static_cast<float>(lightData.radius), [&](RE::TESObjectREFR* ref) {
-                    if (!ref || ref->IsDisabled() || ref->IsDeleted())
-                        return RE::BSContainer::ForEachResult::kContinue;
-    
-                    auto* baseObj = ref->GetBaseObject();
-                    if (baseObj && baseObj->Is(RE::FormType::Light)) {
-                        if (!ref->IsDisabled()) ref->Disable();
-                    }
+            tes->ForEachReferenceInRange(ctx.target, lightData.radius, [&](RE::TESObjectREFR* ref) {
+                if (!ref || ref->IsDisabled() || ref->IsDeleted())
                     return RE::BSContainer::ForEachResult::kContinue;
+
+                auto* baseObj = ref->GetBaseObject();
+                if (ref && baseObj && baseObj->Is(RE::FormType::Light)) {
+                    if (!ref->IsDisabled()) ref->Disable();
                 }
-            );
+                return RE::BSContainer::ForEachResult::kContinue;
+            });
         }
     }
 
@@ -1263,7 +1648,6 @@ namespace OIF::Effects
             return;
         }
         
-        // it ignores the rest of the data if there are multiple items
         const auto& data = playIdleData[0];
         
         if (data.string.empty()) {
@@ -1318,58 +1702,6 @@ namespace OIF::Effects
         }
     }
 
-    /* DOESN'T WORK AS INTENDED - USE SPAWNSPELL WITH A MAYHAM-LIKE MAGIC EFFECT INSTEAD
-    void SetCrime(const RuleContext& ctx, const std::vector<CrimeData>& crimeData)
-    {
-        if (!ctx.target || ctx.target->IsDeleted()) {
-            logger::error("SetCrime: No target to disable light around");
-            return;
-        }
-
-        if (!ctx.source || ctx.source->IsDeleted() || ctx.source->IsDead()) {
-            logger::error("SetCrime: No source to set crime");
-            return;
-        }
-    
-        if (crimeData.empty()) {
-            logger::error("SetCrime: No bounty data provided");
-            return;
-        }
-
-        auto player = RE::PlayerCharacter::GetSingleton();
-        if (!player || player->IsDeleted() || player->IsDead()) {
-            logger::error("SetCrime: Player character is not valid");
-            return;
-        }
-        
-        const auto& data = crimeData[0];
-        
-        RE::TES::GetSingleton()->ForEachReferenceInRange(ctx.source, data.radius, [&](RE::TESObjectREFR* a_ref) {
-            auto* actor = a_ref->As<RE::Actor>();
-            if (actor && actor != ctx.source && 
-                !actor->IsPlayerTeammate() && !actor->IsAnimal() && !actor->IsDead() && 
-                !actor->IsDisabled() && !actor->IsDragon() && !actor->IsGhost() &&
-                !actor->IsHorse() && !actor->IsInRagdollState() && !actor->IsSummoned()) {
-
-                for (auto level : {RE::DETECTION_PRIORITY::kVeryLow, RE::DETECTION_PRIORITY::kLow, RE::DETECTION_PRIORITY::kNormal, RE::DETECTION_PRIORITY::kHigh, RE::DETECTION_PRIORITY::kCritical}) {
-                    if (actor->RequestDetectionLevel(ctx.source, level) > 0) {
-                        RE::TESForm* owner = nullptr;
-                        owner = ctx.target->GetActorOwner();
-                        if (!owner) {
-                            if (auto* cell = ctx.source->GetParentCell()) {
-                                owner = cell->GetOwner();
-                            }  
-                        }
-                        if (!owner) owner = actor;
-                        if (owner) actor->StealAlarm(ctx.target, ctx.target->GetBaseObject(), data.amount, data.amount, owner, false);  
-                    }
-                    break;
-                }
-            }
-            return RE::BSContainer::ForEachResult::kContinue;
-        });
-    }*/
-
     void SpawnEffectShader(const RuleContext& ctx, const std::vector<EffectShaderSpawnData>& effectShadersData) 
     {
         if (!ctx.target || ctx.target->IsDeleted()) {
@@ -1386,13 +1718,19 @@ namespace OIF::Effects
             logger::error("SpawnEffectShader: No effect shaders to spawn");
             return;
         }
+
+        auto* tes = RE::TES::GetSingleton();
+        if (!tes) {
+            logger::error("SpawnEffectShader: TES singleton is null");
+            return;
+        }
             
         for (const auto& effectShaderData : effectShadersData) {
             if (!effectShaderData.effectShader) continue;
     
             std::vector<RE::Actor*> targets;
         
-            RE::TES::GetSingleton()->ForEachReferenceInRange(ctx.target, effectShaderData.radius, [&](RE::TESObjectREFR* a_ref) {
+            tes->ForEachReferenceInRange(ctx.target, effectShaderData.radius, [&](RE::TESObjectREFR* a_ref) {
                 auto* actor = a_ref->As<RE::Actor>();
                 if (actor && !actor->IsDead() && !actor->IsDisabled()) {
                     targets.push_back(actor);
@@ -1411,8 +1749,8 @@ namespace OIF::Effects
     
                     if (!shaderEffect) {
                         logger::error("SpawnEffectShader: Failed to apply effect shader {} on actor {}", 
-                            effectShaderData.effectShader->GetFormID(),
-                            actor->GetFormID());
+                            effectShaderData.effectShader ? effectShaderData.effectShader->GetFormID() : 0,
+                            actor ? actor->GetFormID() : 0);
                     }
                 }
             }
@@ -1439,8 +1777,8 @@ namespace OIF::Effects
 
                 if (!shaderEffect) {
                     logger::error("SpawnEffectShader: Failed to apply effect shader {} on target {}", 
-                        effectShaderData.effectShader->GetFormID(),
-                        ctx.target->GetFormID());
+                        effectShaderData.effectShader ? effectShaderData.effectShader->GetFormID() : 0,
+                        ctx.target ? ctx.target->GetFormID() : 0);
                 }
             }
         }

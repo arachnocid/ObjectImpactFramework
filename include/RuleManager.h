@@ -12,9 +12,9 @@ namespace OIF
 		kRelease,
 		kThrow,
 		kTelekinesis,
-		kObjectLoaded,
 		kCellAttach,
-		kCellDetach
+		kCellDetach,
+		kDestroy
 	};
 
 	enum class EffectType { 
@@ -26,19 +26,24 @@ namespace OIF
 		kSpawnLeveledSpell, kSpawnLeveledSpellOnItem, kSpawnLeveledActor,
 		kSwapLeveledActor, kApplyIngestible, kApplyOtherIngestible,
 		kSpawnLight, kRemoveLight, kEnableLight, kDisableLight,
-		kPlayIdle, kSetCrime, kSpawnEffectShader, kSpawnEffectShaderOnItem
+		kPlayIdle, kSpawnEffectShader, kSpawnEffectShaderOnItem
 	};
-
-	enum class QuestItemStatus {
-        NotQuestItem = 0,
-        HasAlias = 1,
-		IsQuestItem = 2
-    };
 
 	// ---------------------- Filer ----------------------
 	struct FormListEntry {
 		std::uint32_t formID = 0; 											// id of the form of the formlist
 		int index = -1;           											// -1 -use the entire list
+	};
+
+	struct LevelCondition {
+		std::string operator_type; 											// ">=", "=", "<", ">", "<=", "!="
+		int value = 0;
+	};
+
+	struct ActorValueCondition {
+		std::string actorValue; 											// "Health", "Magicka", "Stamina", etc.
+		std::string operator_type; 											// ">=", "=", "<", ">", "<=", "!="
+		float value = 0.0f;
 	};
 
 	struct Filter {
@@ -50,7 +55,7 @@ namespace OIF
 		std::vector<FormListEntry> formListsNot; 							// formlists contents to avoid 
 		std::unordered_set<RE::BGSKeyword*> keywords;        	  			// must have ANY of these keywords
 		std::unordered_set<RE::BGSKeyword*> keywordsNot;      				// must NOT have ANY of these keywords
-		QuestItemStatus questItemStatus = QuestItemStatus::NotQuestItem;	// 0 - not a quest item, 1 - an important item, 2 - a quest item
+		std::uint32_t questItemStatus{ 0 };									// 0 - not a quest item, 1 - an important item, 2 - a quest item, 3 - all/undefined
 		float chance{ 100.f };         							   			// the chance of 0‑100 %
 		std::uint32_t interactions{1};										// number of interactions required to satisfy filter
 		std::uint32_t limit = 0; 											// number of interactions to stop the effect
@@ -80,6 +85,14 @@ namespace OIF
 		std::set<RE::FormID> weatherIDsNot; 								// weather IDs to avoid
 		std::vector<RE::FormID> weatherLists; 								// weather lists
 		std::vector<RE::FormID> weatherListsNot; 							// weather lists to avoid
+
+		// Actor values and inventory filters
+		std::set<RE::FormID> hasItem; 										// has any of these items
+		std::set<RE::FormID> hasItemNot; 									// does not have any of these items
+		std::vector<LevelCondition> level; 									// level conditions, e.g. {">=", 10}
+		std::vector<LevelCondition> levelNot; 								// level conditions to avoid, e.g. {"<", 5}
+		std::vector<ActorValueCondition> actorValue; 						// actor value conditions, e.g. {"Health", ">=", 50.0f}
+		std::vector<ActorValueCondition> actorValueNot; 					// actor value conditions to avoid, e.g. {"Magicka", "<", 20.0f}
 
 		// Other filters
 		std::set<std::string> requiredPlugins; 								// required plugins
@@ -112,9 +125,12 @@ namespace OIF
 		float chance{ 100.f };         							   			// the chance of 0‑100 %
 		float duration{ 1.f }; 												// the duration of the playidle effect
 		float radius{ 100 };												// the radius of the DetachNearbyLight effect
+		float scale{ -1.f };												// the scale of the spawned item
 		std::string string;													// the text string to use in the effect, e.g. for PlayIdle
 		std::uint32_t amount; 												// the amount to set
 		std::uint32_t nonDeletable{ 0 }; 									// 1 if the form should not be deleted after disabling
+		std::uint32_t spawnType{ 4 };										// the type of spawn
+		std::uint32_t fade{ 0 };											// 0 if the effect should not fade, 1 if it should fade out
 		bool isFormList = false;											// true if the form is a BGSListForm
 		int index = -1;														// index of the form in the list
 	};
@@ -143,6 +159,9 @@ namespace OIF
 	struct ItemSpawnData {
 		RE::TESBoundObject* item;
 		std::uint32_t count;
+		std::uint32_t spawnType{ 4 };
+		std::uint32_t fade{ 0 };
+		float scale;
 		std::uint32_t nonDeletable{ 0 };
 		std::uint32_t formID;
 		float chance{ 100.f };
@@ -159,6 +178,9 @@ namespace OIF
 	struct ActorSpawnData {
 		RE::TESNPC* npc;
 		std::uint32_t count;
+		std::uint32_t spawnType{ 4 };
+		std::uint32_t fade{ 0 };
+		float scale;
 		std::uint32_t nonDeletable{ 0 };
 		std::uint32_t formID;
 		float chance{ 100.f };
@@ -167,6 +189,9 @@ namespace OIF
 	struct LvlItemSpawnData {
 		RE::TESLevItem* item;
 		std::uint32_t count;
+		std::uint32_t spawnType{ 4 };
+		std::uint32_t fade{ 0 };
+		float scale;
 		std::uint32_t nonDeletable{ 0 };
 		std::uint32_t formID;
 		float chance{ 100.f };
@@ -183,6 +208,9 @@ namespace OIF
 	struct LvlActorSpawnData {
 		RE::TESLevCharacter* npc;
 		std::uint32_t count;
+		std::uint32_t spawnType{ 4 };
+		std::uint32_t fade{ 0 };
+		float scale;
 		std::uint32_t nonDeletable{ 0 };
 		std::uint32_t formID;
 		float chance{ 100.f };
@@ -198,6 +226,8 @@ namespace OIF
 	struct ExplosionSpawnData {
 		RE::BGSExplosion* explosion;
 		std::uint32_t count;
+		std::uint32_t spawnType{ 4 };
+		std::uint32_t fade{ 0 };
 		std::uint32_t formID;
 		float chance{ 100.f };
 	};
@@ -220,6 +250,9 @@ namespace OIF
 	struct LightSpawnData {
 		RE::TESObjectLIGH* light;
 		std::uint32_t count;
+		std::uint32_t spawnType{ 4 };
+		std::uint32_t fade{ 0 };
+		float scale;
 		std::uint32_t formID;
 		float chance{100.f};
 	};
@@ -237,14 +270,6 @@ namespace OIF
         float duration{1.0f};
 		float chance{100.f};
     };
-
-	/*
-	struct CrimeData {
-		RE::TESForm* item;
-		float radius;
-		std::uint32_t amount;
-		float chance{ 100.f };
-	};*/
 
 	struct EffectShaderSpawnData {
 		RE::TESEffectShader* effectShader;
