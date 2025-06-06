@@ -130,7 +130,7 @@ namespace OIF
 		std::uint32_t amount; 												// the amount to set
 		std::uint32_t nonDeletable{ 0 }; 									// 1 if the form should not be deleted after disabling
 		std::uint32_t spawnType{ 4 };										// the type of spawn
-		std::uint32_t fade{ 0 };											// 0 if the effect should not fade, 1 if it should fade out
+		std::uint32_t fade{ 1 };											// 0 if the effect should not fade, 1 if it should fade out
 		bool isFormList = false;											// true if the form is a BGSListForm
 		int index = -1;														// index of the form in the list
 	};
@@ -160,7 +160,7 @@ namespace OIF
 		RE::TESBoundObject* item;
 		std::uint32_t count;
 		std::uint32_t spawnType{ 4 };
-		std::uint32_t fade{ 0 };
+		std::uint32_t fade{ 1 };
 		float scale;
 		std::uint32_t nonDeletable{ 0 };
 		std::uint32_t formID;
@@ -179,7 +179,7 @@ namespace OIF
 		RE::TESNPC* npc;
 		std::uint32_t count;
 		std::uint32_t spawnType{ 4 };
-		std::uint32_t fade{ 0 };
+		std::uint32_t fade{ 1 };
 		float scale;
 		std::uint32_t nonDeletable{ 0 };
 		std::uint32_t formID;
@@ -190,7 +190,7 @@ namespace OIF
 		RE::TESLevItem* item;
 		std::uint32_t count;
 		std::uint32_t spawnType{ 4 };
-		std::uint32_t fade{ 0 };
+		std::uint32_t fade{ 1 };
 		float scale;
 		std::uint32_t nonDeletable{ 0 };
 		std::uint32_t formID;
@@ -209,7 +209,7 @@ namespace OIF
 		RE::TESLevCharacter* npc;
 		std::uint32_t count;
 		std::uint32_t spawnType{ 4 };
-		std::uint32_t fade{ 0 };
+		std::uint32_t fade{ 1 };
 		float scale;
 		std::uint32_t nonDeletable{ 0 };
 		std::uint32_t formID;
@@ -227,7 +227,7 @@ namespace OIF
 		RE::BGSExplosion* explosion;
 		std::uint32_t count;
 		std::uint32_t spawnType{ 4 };
-		std::uint32_t fade{ 0 };
+		std::uint32_t fade{ 1 };
 		std::uint32_t formID;
 		float chance{ 100.f };
 	};
@@ -251,7 +251,7 @@ namespace OIF
 		RE::TESObjectLIGH* light;
 		std::uint32_t count;
 		std::uint32_t spawnType{ 4 };
-		std::uint32_t fade{ 0 };
+		std::uint32_t fade{ 1 };
 		float scale;
 		std::uint32_t formID;
 		float chance{100.f};

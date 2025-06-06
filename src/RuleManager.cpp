@@ -1508,7 +1508,7 @@ namespace OIF {
                             extData.form = nullptr;
                             extData.nonDeletable = itemJson.value("nondeletable", 0U);
                             extData.spawnType = itemJson.value("spawntype", 4U);
-                            extData.fade = itemJson.value("fade", 0U);
+                            extData.fade = itemJson.value("fade", 1U);
                             extData.count = itemJson.value("count", 1U);
                             extData.radius = itemJson.value("radius", 150.0f);
                             extData.scale = itemJson.value("scale", -1.0f);
