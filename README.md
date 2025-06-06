@@ -353,8 +353,8 @@ For effect types that support an `items` array, you can specify detailed configu
   - `6`: Bypass with spawning at the top of the original.
   - `7`: Bypass with spawning at the bottom of the original.
   - `8`: Pin to the ground regardless of the landing location (e.g., when used with `Throw`, an object that lands on the wall will spawn a new one directly beneath it on the floor).
- 
-  - **NOTE**: If you want to spawn **explosions**, use `0` or `4` only.
+
+  **NOTE**: If you want to spawn **explosions**, use `0` or `4` only.
 
 ### Examples
 
