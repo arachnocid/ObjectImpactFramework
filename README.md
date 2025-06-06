@@ -340,8 +340,8 @@ For effect types that support an `items` array, you can specify detailed configu
 - **`scale`** (optional): Used for **spawn/swap** functions only. Allows you to select the scale of the spawned item. By default, it is copied from the target object.
 
 - **`fade`** (optional): Used for **spawn/swap** functions only. Determines whether the object will have a fade effect upon creation:
-  - `0` (default): Without fade effect.
-  - `1`: With fade effect.
+  - `0`: Without fade effect (do not use with explosions).
+  - `1` (default): With fade effect.
 
 - **`spawnType`** (optional): Used for **spawn/swap** functions only. Allows you to select the type of how the object should be spawned. Options:
   - `0`: Common PlaceAtMe().
@@ -353,6 +353,8 @@ For effect types that support an `items` array, you can specify detailed configu
   - `6`: Bypass with spawning at the top of the original.
   - `7`: Bypass with spawning at the bottom of the original.
   - `8`: Pin to the ground regardless of the landing location (e.g., when used with `Throw`, an object that lands on the wall will spawn a new one directly beneath it on the floor).
+ 
+  - **NOTE**: If you want to spawn **explosions**, use `0` or `4` only.
 
 ### Examples
 
