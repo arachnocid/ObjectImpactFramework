@@ -340,7 +340,7 @@ For effect types that support an `items` array, you can specify detailed configu
 - **`scale`** (optional): Used for **spawn/swap** functions only. Allows you to select the scale of the spawned item. By default, it is copied from the target object.
 
 - **`fade`** (optional): Used for **spawn/swap** functions only. Determines whether the object will have a fade effect upon creation:
-  - `0`: Without fade effect (do not use with explosions).
+  - `0`: Without fade effect (do **not** use with **explosions**).
   - `1` (default): With fade effect.
 
 - **`spawnType`** (optional): Used for **spawn/swap** functions only. Allows you to select the type of how the object should be spawned. Options:
