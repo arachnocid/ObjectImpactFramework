@@ -12,7 +12,8 @@ This guide explains how to set up those JSON files so you can customize the mod 
 ## Mod Authors Info
 
 - **Filter Note**: An object must be defined by at least one of the three parameters - `formIDs`, `editorIDs`, `formLists`, `formTypes`, `keywords` - for the event to work.
-- **Form IDs Must Match**: Make sure the `formID` fits the effect (e.g., a spell ID for `"SpawnSpell"`, an item ID for `"SpawnItem"`).
+- **FormIDs Note**: If you are not using the standard `0x` prefix and are copying from CK or SSEEdit, make sure you put `00` instead of the load order digits.
+- **Identifiers Must Match**: Make sure the `formID` or `editorID` fits the effect (e.g., a spell ID for `"SpawnSpell"`, an item ID for `"SpawnItem"`).
 - **Keywords Note**: For containers, doors, statics, movable statics, and trees, the `keywords` filter is ignored since they don't use keywords.
 - **Priority Note**: Place effects with `"Remove"` and `"Swap"` (unless used with `"nonDeletable": 1` flag) prefixes at the very end of the event, otherwise the removed object may not have time to call other effects on itself before gets deleted.
 - You can modify existing JSON files without quitting the game, edit the file and reload the save.
@@ -201,7 +202,7 @@ For rules with the `"Hit"` event, additional filters can refine which attacks tr
   - `"handtohand"`: Unarmed attacks.
   - `"spell"`: Spells.
   - `"scroll"`: Scrolls.
-  - `"shout"`: Shouts.
+  - `"shout"`: Shouts. **Note:** All shouts don't work with statics. Those shouts that are pure projectiles (e.g., Unrelenting Force) will work ONLY with `furniture`, `flora`, `doors`, `containers` and `activators`.
   - `"ability"`: Racial or other abilities.
   - `"power"`: Greater powers.
   - `"lesserpower"`: Lesser powers.
