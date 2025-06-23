@@ -202,7 +202,7 @@ For rules with the `"Hit"` event, additional filters can refine which attacks tr
   - `"handtohand"`: Unarmed attacks.
   - `"spell"`: Spells.
   - `"scroll"`: Scrolls.
-  - `"shout"`: Shouts. **Note:** All shouts don't work with statics. Those shouts that are pure projectiles (e.g., Unrelenting Force) will work ONLY with `furniture`, `flora`, `doors`, `containers` and `activators`.
+  - `"shout"`: Shouts. **Note:** All shouts don't work with statics. Those shouts that are pure projectiles (e.g., Unrelenting Force) will work only with `furniture`, `flora`, `doors`, `containers` and `activators`.
   - `"ability"`: Racial or other abilities.
   - `"power"`: Greater powers.
   - `"lesserpower"`: Lesser powers.
