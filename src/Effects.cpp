@@ -117,11 +117,11 @@ namespace OIF::Effects
         dfs(root, 0);
     }
 
-    /*static void CollectTriShapes(RE::NiNode* root, const std::vector<std::string>& triShapeNames, std::vector<RE::BSGeometry*>& out)
+    /*static void CollectTriShapes(RE::NiNode* root, const std::vector<std::string>& strings, std::vector<RE::BSGeometry*>& out)
     {
         if (!root) return;
         
-        bool collectAll = triShapeNames.empty();
+        bool collectAll = strings.empty();
         
         std::function<void(RE::NiAVObject*)> traverse = [&](RE::NiAVObject* obj) {
             if (!obj) return;
@@ -131,7 +131,7 @@ namespace OIF::Effects
                 
                 if (!collectAll && obj->name.c_str()) {
                     std::string objName = obj->name.c_str();
-                    for (const auto& pattern : triShapeNames) {
+                    for (const auto& pattern : strings) {
                         if (objName.find(pattern) != std::string::npos) {
                             shouldAdd = true;
                             break;
@@ -1980,9 +1980,9 @@ namespace OIF::Effects
 
         for (const auto& data : nodeData) {
             std::vector<RE::NiNode*> matches;
-            CollectNodes(rootNode, data.nodeNames, matches);
+            CollectNodes(rootNode, data.strings, matches);
             if (matches.empty()) {
-                logger::warn("ToggleNode: No BSnode found for {} names", data.nodeNames.size());
+                logger::warn("ToggleNode: No BSnode found for {} names", data.strings.size());
                 continue;
             }
             
@@ -2034,7 +2034,7 @@ namespace OIF::Effects
     
         for (const auto& data : shaderFlagsData) {
             std::vector<RE::BSGeometry*> matches;
-            CollectTriShapes(rootNode, data.triShapeNames, matches);
+            CollectTriShapes(rootNode, data.strings, matches);
     
             if (matches.empty()) {
                 logger::warn("ToggleShaderFlag: No TriShape found");

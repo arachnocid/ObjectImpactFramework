@@ -136,14 +136,13 @@ namespace OIF
 		float duration{ 1.f }; 												// the duration of the playidle effect
 		float radius{ 100 };												// the radius of the DetachNearbyLight effect
 		float scale{ -1.f };												// the scale of the spawned item
-		std::string string;													// the text string to use in the effect, e.g. for PlayIdle
+		std::string string;													// the text string to use in different effects
+		std::vector<std::string> strings;									// the test strings to use in different effects
 		std::uint32_t amount; 												// the amount to set
 		std::uint32_t nonDeletable{ 0 }; 									// 1 if the form should not be deleted after disabling
 		std::uint32_t spawnType{ 4 };										// the type of spawn
 		std::uint32_t fade{ 1 };											// 0 if the effect should not fade, 1 if it should fade out
 		std::uint32_t mode{ 0 };											// the type of search for the node, 0 - by name, 1 - by type
-		std::vector<std::string> nodeNames;									// the name of the node to change
-		std::vector<std::string> triShapeNames;								// the name of the triShape node to change
 		std::vector<std::string> flagNames;									// the name of the shader flags to toggle
 		bool isFormList = false;											// true if the form is a BGSListForm
 		int index = -1;														// index of the form in the list
@@ -293,16 +292,16 @@ namespace OIF
 
 	struct NodeData {
 		std::uint32_t mode;
-		std::vector<std::string> nodeNames; 
+		std::vector<std::string> strings; 
 		float chance{ 100.f };
 	};
 
-	struct ShaderFlagData {
+	/*struct ShaderFlagData {
 		std::uint32_t mode;
 		std::vector<std::string> flagNames;
-		std::vector<std::string> triShapeNames;
+		std::vector<std::string> strings;
 		float chance{ 100.f };
-	};
+	};*/
 
 	struct Rule {
 		std::vector<EventType> events;

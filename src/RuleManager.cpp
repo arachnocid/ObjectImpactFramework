@@ -1871,8 +1871,7 @@ namespace OIF {
                             extData.duration = itemJson.value("duration", 1.0f);
                             extData.string = itemJson.value("string", std::string{});
                             extData.mode = itemJson.value("mode", 0U);
-                            extData.nodeNames = itemJson.value("nodenames", std::vector<std::string>{});
-                            extData.triShapeNames = itemJson.value("triShapeNames", std::vector<std::string>{});
+                            extData.strings = itemJson.value("strings", std::vector<std::string>{});
                             extData.flagNames = itemJson.value("flagnames", std::vector<std::string>{});
 
                             bool haveIdentifier = false;
@@ -3510,7 +3509,7 @@ namespace OIF {
 
                                 NodeData data;
                                 data.mode = extData.mode;
-                                data.nodeNames = extData.nodeNames;
+                                data.strings = extData.strings;
                                 data.chance = extData.chance;
                                 nodeData.emplace_back(std::move(data));
                             }
@@ -3530,7 +3529,7 @@ namespace OIF {
                                 ShaderFlagData data;
                                 data.mode = extData.mode;
                                 data.flagNames = extData.flagNames;
-                                data.triShapeNames = extData.triShapeNames;
+                                data.strings = extData.strings;
                                 data.chance = extData.chance;
                                 shaderFlagData.emplace_back(std::move(data));
                             }
