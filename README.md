@@ -206,6 +206,7 @@ For rules with the `"Hit"` event, additional filters can refine which attacks tr
   - `"ability"`: Racial or other abilities.
   - `"power"`: Greater powers.
   - `"lesserpower"`: Lesser powers.
+  - `"explosion"`: Explosions.
   - `"total"`: Yet to discover. Supposedly matches all weapon types.
   - `"other"`: Miscellaneous types not covered above.
  
@@ -227,7 +228,6 @@ For rules with the `"Hit"` event, additional filters can refine which attacks tr
   - `"regular"`: Standard attacks.
   - `"power"`: Power attacks.
   - `"bash"`: Shield or weapon bashes.
-  - `"projectile"`: Ranged projectile attacks (e.g., arrows).
   - `"charge"`: Charging attacks (e.g., sprinting strikes).
   - `"rotating"`: Continuous spinning attacks.
   - `"continuous"`: Concentration type spells (e.g., flames, frostbite).
