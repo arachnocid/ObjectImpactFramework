@@ -11,7 +11,7 @@ This guide explains how to set up those JSON files so you can customize the mod 
 
 ## Mod Authors Info
 
-- **Filter Note**: An object must be defined by at least one of the three parameters - `formIDs`, `formLists`, `formTypes`, `keywords` - for the event to work.
+- **Filter Note**: An object must be defined by at least one of the three parameters - `formIDs`, `editorIDs`, `formLists`, `formTypes`, `keywords` - for the event to work.
 - **Form IDs Must Match**: Make sure the `formID` fits the effect (e.g., a spell ID for `"SpawnSpell"`, an item ID for `"SpawnItem"`).
 - **Keywords Note**: For containers, doors, statics, movable statics, and trees, the `keywords` filter is ignored since they don't use keywords.
 - **Priority Note**: Place effects with `"Remove"` and `"Swap"` (unless used with `"nonDeletable": 1` flag) prefixes at the very end of the event, otherwise the removed object may not have time to call other effects on itself before gets deleted.
