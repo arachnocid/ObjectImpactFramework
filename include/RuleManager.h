@@ -34,18 +34,18 @@ namespace OIF
 
 	// ---------------------- Filer ----------------------
 	struct FormListEntry {
-		std::uint32_t formID = 0; 											// id of the form of the formlist
-		int index = -1;           											// -1 -use the entire list
+		std::uint32_t formID = 0; 							// id of the form of the formlist
+		int index = -1;           							// -1 -use the entire list
 	};
 
 	struct LevelCondition {
-		std::string operator_type; 											// ">=", "=", "<", ">", "<=", "!="
+		std::string operator_type; 							// ">=", "=", "<", ">", "<=", "!="
 		int value = 0;
 	};
 
 	struct ActorValueCondition {
-		std::string actorValue; 											// "Health", "Magicka", "Stamina", etc.
-		std::string operator_type; 											// ">=", "=", "<", ">", "<=", "!="
+		std::string actorValue; 							// "Health", "Magicka", "Stamina", etc.
+		std::string operator_type; 							// ">=", "=", "<", ">", "<=", "!="
 		float value = 0.0f;
 	};
 
@@ -55,60 +55,60 @@ namespace OIF
 		std::unordered_set<RE::FormType> formTypesNot;       				// base form type to avoid
 		std::unordered_set<std::uint32_t> formIDs;           	  			// FormIDs to match
 		std::unordered_set<std::uint32_t> formIDsNot;       	  			// FormIDs to avoid
-		std::vector<FormListEntry> formLists; 								// formlists contents to match
-		std::vector<FormListEntry> formListsNot; 							// formlists contents to avoid 
+		std::vector<FormListEntry> formLists; 						// formlists contents to match
+		std::vector<FormListEntry> formListsNot; 					// formlists contents to avoid 
 		std::unordered_set<RE::BGSKeyword*> keywords;        	  			// must have ANY of these keywords
 		std::unordered_set<RE::BGSKeyword*> keywordsNot;      				// must NOT have ANY of these keywords
-		std::uint32_t questItemStatus{ 0 };									// 0 - not a quest item, 1 - an item with an alias, 2 - a quest item, 3 - all/undefined
-		float chance{ 100.f };         							   			// the chance of 0‑100 % for the event to trigger
-		std::uint32_t interactions{ 1 };									// number of interactions required to satisfy filter
-		std::uint32_t limit = 0; 											// number of interactions to stop the effect
-		std::uint32_t isInitiallyDisabled{ 2 }; 							// 0 - not initially disabled, 1 - initially disabled, 2 - all/undefined
+		std::uint32_t questItemStatus{ 0 };						// 0 - not a quest item, 1 - an item with an alias, 2 - a quest item, 3 - all/undefined
+		float chance{ 100.f };         							// the chance of 0‑100 % for the event to trigger
+		std::uint32_t interactions{ 1 };						// number of interactions required to satisfy filter
+		std::uint32_t limit = 0; 							// number of interactions to stop the effect
+		std::uint32_t isInitiallyDisabled{ 2 }; 					// 0 - not initially disabled, 1 - initially disabled, 2 - all/undefined
 		
 		// New hit-specific filters
 		std::unordered_set<std::string> weaponsTypes;          	 			// weapon type categories
 		std::unordered_set<std::string> weaponsTypesNot;      				// weapon type categories to avoid
 		std::unordered_set<RE::BGSKeyword*> weaponsKeywords;	   			// specific weapons or spells keywords
 		std::unordered_set<RE::BGSKeyword*> weaponsKeywordsNot;				// specific weapons or spells keywords to avoid
-		std::unordered_set<RE::TESForm*> weapons;       	 				// specific weapons or spells
-		std::unordered_set<RE::TESForm*> weaponsNot;       					// specific weapons or spells to avoid
-		std::vector<FormListEntry> weaponsLists;           					// specific weapons or spells lists
-		std::vector<FormListEntry> weaponsListsNot;       					// specific weapons or spells lists to avoid
-		std::uint32_t allowProjectiles{ 1 }; 								// 0 - no projectiles, 1 - allow projectiles
-		std::unordered_set<RE::TESForm*> projectiles;  	  					// specific projectiles
-		std::unordered_set<RE::TESForm*> projectilesNot; 					// specific projectiles to avoid
-		std::vector<FormListEntry> projectilesLists; 						// specific projectiles lists
-		std::vector<FormListEntry> projectilesListsNot; 					// specific projectiles lists to avoid
+		std::unordered_set<RE::TESForm*> weapons;       	 			// specific weapons or spells
+		std::unordered_set<RE::TESForm*> weaponsNot;       				// specific weapons or spells to avoid
+		std::vector<FormListEntry> weaponsLists;           				// specific weapons or spells lists
+		std::vector<FormListEntry> weaponsListsNot;       				// specific weapons or spells lists to avoid
+		std::uint32_t allowProjectiles{ 1 }; 						// 0 - no projectiles, 1 - allow projectiles
+		std::unordered_set<RE::TESForm*> projectiles;  	  				// specific projectiles
+		std::unordered_set<RE::TESForm*> projectilesNot; 				// specific projectiles to avoid
+		std::vector<FormListEntry> projectilesLists; 					// specific projectiles lists
+		std::vector<FormListEntry> projectilesListsNot; 				// specific projectiles lists to avoid
 		std::unordered_set<std::string> attackTypes;           				// attack types
 		std::unordered_set<std::string> attackTypesNot;       				// attack types to avoid
 		std::unordered_set<std::string> deliveryTypes;           			// delivery types
 		std::unordered_set<std::string> deliveryTypesNot;       			// delivery types to avoid
 
 		// Location and weather filters
-		std::set<RE::FormID> locationIDs; 									// location IDs
-		std::set<RE::FormID> locationIDsNot; 								// location IDs to avoid
-		std::vector<RE::FormID> locationLists; 								// location lists
-		std::vector<RE::FormID> locationListsNot; 							// location lists to avoid
-		std::set<RE::FormID> weatherIDs; 									// weather IDs
-		std::set<RE::FormID> weatherIDsNot; 								// weather IDs to avoid
-		std::vector<RE::FormID> weatherLists; 								// weather lists
-		std::vector<RE::FormID> weatherListsNot; 							// weather lists to avoid
+		std::set<RE::FormID> locationIDs; 						// location IDs
+		std::set<RE::FormID> locationIDsNot; 						// location IDs to avoid
+		std::vector<RE::FormID> locationLists; 						// location lists
+		std::vector<RE::FormID> locationListsNot; 					// location lists to avoid
+		std::set<RE::FormID> weatherIDs; 						// weather IDs
+		std::set<RE::FormID> weatherIDsNot; 						// weather IDs to avoid
+		std::vector<RE::FormID> weatherLists; 						// weather lists
+		std::vector<RE::FormID> weatherListsNot; 					// weather lists to avoid
 
 		// Actor values and inventory filters
-		std::unordered_set<std::uint32_t> perks;           					// perks to match
-		std::unordered_set<std::uint32_t> perksNot;       					// perks to avoid 
-		std::set<RE::FormID> hasItem; 										// has any of these items
-		std::set<RE::FormID> hasItemNot; 									// does not have any of these items
-		std::vector<LevelCondition> level; 									// level conditions, e.g. {">=", 10}
-		std::vector<LevelCondition> levelNot; 								// level conditions to avoid, e.g. {"<", 5}
-		std::vector<ActorValueCondition> actorValue; 						// actor value conditions, e.g. {"Health", ">=", 50.0f}
-		std::vector<ActorValueCondition> actorValueNot; 					// actor value conditions to avoid, e.g. {"Magicka", "<", 20.0f}
+		std::unordered_set<std::uint32_t> perks;           				// perks to match
+		std::unordered_set<std::uint32_t> perksNot;       				// perks to avoid 
+		std::set<RE::FormID> hasItem; 							// has any of these items
+		std::set<RE::FormID> hasItemNot; 						// does not have any of these items
+		std::vector<LevelCondition> level; 						// level conditions, e.g. {">=", 10}
+		std::vector<LevelCondition> levelNot; 						// level conditions to avoid, e.g. {"<", 5}
+		std::vector<ActorValueCondition> actorValue; 					// actor value conditions, e.g. {"Health", ">=", 50.0f}
+		std::vector<ActorValueCondition> actorValueNot; 				// actor value conditions to avoid, e.g. {"Magicka", "<", 20.0f}
 
 		// Other filters
-		std::set<std::string> requiredPlugins; 								// required plugins
-		std::set<std::string> requiredPluginsNot; 							// plugins to avoid
-		std::set<std::string> requiredDLLs; 								// required DLLs
-		std::set<std::string> requiredDLLsNot; 								// DLLs to avoid
+		std::set<std::string> requiredPlugins; 						// required plugins
+		std::set<std::string> requiredPluginsNot; 					// plugins to avoid
+		std::set<std::string> requiredDLLs; 						// required DLLs
+		std::set<std::string> requiredDLLsNot; 						// DLLs to avoid
 	};
 
 	struct FilterCache {
@@ -129,29 +129,29 @@ namespace OIF
 
 	// ---------------------- Effect ----------------------
 	struct EffectExtendedData {
-		RE::TESForm* formID{ nullptr };  							   		// the thing to spawn/cast/play
-		std::vector<FormListEntry> formLists; 								// formlists contents to spawn/cast/play
-		std::uint32_t count{ 1 };      							   			// the amount of items to spawn/cast/play
-		float chance{ 100.f };         							   			// the chance of 0‑100 %
-		float duration{ 1.f }; 												// the duration of the playidle effect
-		float radius{ 100 };												// the radius of the DetachNearbyLight effect
-		float scale{ -1.f };												// the scale of the spawned item
-		std::string string;													// the text string to use in different effects
-		std::vector<std::string> strings;									// the test strings to use in different effects
-		std::uint32_t amount; 												// the amount to set
-		std::uint32_t nonDeletable{ 0 }; 									// 1 if the form should not be deleted after disabling
-		std::uint32_t spawnType{ 4 };										// the type of spawn
-		std::uint32_t fade{ 1 };											// 0 if the effect should not fade, 1 if it should fade out
-		std::uint32_t mode{ 0 };											// the type of search for the node, 0 - by name, 1 - by type
-		std::vector<std::string> flagNames;									// the name of the shader flags to toggle
-		bool isFormList = false;											// true if the form is a BGSListForm
-		int index = -1;														// index of the form in the list
+		RE::TESForm* formID{ nullptr };  						// the thing to spawn/cast/play
+		std::vector<FormListEntry> formLists; 						// formlists contents to spawn/cast/play
+		std::uint32_t count{ 1 };      							// the amount of items to spawn/cast/play
+		float chance{ 100.f };         							// the chance of 0‑100 %
+		float duration{ 1.f }; 								// the duration of the playidle effect
+		float radius{ 100 };								// the radius of the DetachNearbyLight effect
+		float scale{ -1.f };								// the scale of the spawned item
+		std::string string;								// the text string to use in different effects
+		std::vector<std::string> strings;						// the test strings to use in different effects
+		std::uint32_t amount; 								// the amount to set
+		std::uint32_t nonDeletable{ 0 }; 						// 1 if the form should not be deleted after disabling
+		std::uint32_t spawnType{ 4 };							// the type of spawn
+		std::uint32_t fade{ 1 };							// 0 if the effect should not fade, 1 if it should fade out
+		std::uint32_t mode{ 0 };							// the type of search for the node, 0 - by name, 1 - by type
+		std::vector<std::string> flagNames;						// the name of the shader flags to toggle
+		bool isFormList = false;							// true if the form is a BGSListForm
+		int index = -1;									// index of the form in the list
 	};
 
 	struct Effect {
-		EffectType type{ EffectType::kSpawnItem }; 							// the type of effect
-		std::vector<std::pair<RE::TESForm*, EffectExtendedData>> items;		// the vector of items to utilize
-		float chance{ 100.f }; 												// the chance of 0‑100% (private, uses filter's value)
+		EffectType type{ EffectType::kSpawnItem }; 					// the type of effect
+		std::vector<std::pair<RE::TESForm*, EffectExtendedData>> items;			// the vector of items to utilize
+		float chance{ 100.f }; 								// the chance of 0‑100% (private, uses filter's value)
 	};
 
 	struct RuleContext {
