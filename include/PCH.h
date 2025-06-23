@@ -5,7 +5,6 @@
 #	define SKSE_SUPPORT_XBYAK
 #	include "RE/Skyrim.h"
 #	include "SKSE/SKSE.h"
-#   include "RE/Skyrim.h"
 #	include <xbyak/xbyak.h>
 
 #ifdef NDEBUG
@@ -111,9 +110,10 @@ static void OnMessage(SKSE::MessagingInterface::Message* a_msg)
 {
     switch (a_msg->type) {
     case SKSE::MessagingInterface::kDataLoaded:
-        SKSE::log::info("kDataLoaded – registering event sinks and loading rules");
-        RuleManager::GetSingleton()->LoadRules();
-		OIF::RegisterSinks();
+        SKSE::log::info("kDataLoaded – registering event sinks, installing hooks, and loading rules");
+		RegisterSinks();
+		InstallHooks();
+		RuleManager::GetSingleton()->LoadRules();
         break;
 
     case SKSE::MessagingInterface::kPostLoadGame:

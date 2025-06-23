@@ -4,8 +4,158 @@
 namespace OIF::Effects
 {
     // ------------------ Helpers ------------------
-    static std::unordered_set<std::uint32_t> processedItems; 
-    static std::mutex processedItemsMutex;
+    /*std::unordered_map<std::string, RE::BSShaderProperty::EShaderPropertyFlag> g_shaderFlagMap = {
+        // Shader Flags 1
+        {"specular", RE::BSShaderProperty::EShaderPropertyFlag::kSpecular},
+        {"skinned", RE::BSShaderProperty::EShaderPropertyFlag::kSkinned},
+        {"temp_refraction", RE::BSShaderProperty::EShaderPropertyFlag::kTempRefraction},
+        {"vertex_alpha", RE::BSShaderProperty::EShaderPropertyFlag::kVertexAlpha},
+        {"grayscale_to_palette_color", RE::BSShaderProperty::EShaderPropertyFlag::kGrayscaleToPaletteColor},
+        {"grayscale_to_palette_alpha", RE::BSShaderProperty::EShaderPropertyFlag::kGrayscaleToPaletteAlpha},
+        {"falloff", RE::BSShaderProperty::EShaderPropertyFlag::kFalloff},
+        {"env_map", RE::BSShaderProperty::EShaderPropertyFlag::kEnvMap},
+        {"receive_shadows", RE::BSShaderProperty::EShaderPropertyFlag::kReceiveShadows},
+        {"cast_shadows", RE::BSShaderProperty::EShaderPropertyFlag::kCastShadows},
+        {"face", RE::BSShaderProperty::EShaderPropertyFlag::kFace},
+        {"parallax", RE::BSShaderProperty::EShaderPropertyFlag::kParallax},
+        {"model_space_normals", RE::BSShaderProperty::EShaderPropertyFlag::kModelSpaceNormals},
+        {"non_projective_shadows", RE::BSShaderProperty::EShaderPropertyFlag::kNonProjectiveShadows},
+        {"multi_texture_landscape", RE::BSShaderProperty::EShaderPropertyFlag::kMultiTextureLandscape},
+        {"refraction", RE::BSShaderProperty::EShaderPropertyFlag::kRefraction},
+        {"refraction_falloff", RE::BSShaderProperty::EShaderPropertyFlag::kRefractionFalloff},
+        {"eye_reflect", RE::BSShaderProperty::EShaderPropertyFlag::kEyeReflect},
+        {"hair_tint", RE::BSShaderProperty::EShaderPropertyFlag::kHairTint},
+        {"screendoor_alpha_fade", RE::BSShaderProperty::EShaderPropertyFlag::kScreendoorAlphaFade},
+        {"local_map_clear", RE::BSShaderProperty::EShaderPropertyFlag::kLocalMapClear},
+        {"face_gen_rgb_tint", RE::BSShaderProperty::EShaderPropertyFlag::kFaceGenRGBTint},
+        {"own_emit", RE::BSShaderProperty::EShaderPropertyFlag::kOwnEmit},
+        {"projected_uv", RE::BSShaderProperty::EShaderPropertyFlag::kProjectedUV},
+        {"multiple_textures", RE::BSShaderProperty::EShaderPropertyFlag::kMultipleTextures},
+        {"remappable_textures", RE::BSShaderProperty::EShaderPropertyFlag::kRemappableTextures},
+        {"decal", RE::BSShaderProperty::EShaderPropertyFlag::kDecal},
+        {"dynamic_decal", RE::BSShaderProperty::EShaderPropertyFlag::kDynamicDecal},
+        {"parallax_occlusion", RE::BSShaderProperty::EShaderPropertyFlag::kParallaxOcclusion},
+        {"external_emittance", RE::BSShaderProperty::EShaderPropertyFlag::kExternalEmittance},
+        {"soft_effect", RE::BSShaderProperty::EShaderPropertyFlag::kSoftEffect},
+        {"z_buffer_test", RE::BSShaderProperty::EShaderPropertyFlag::kZBufferTest},
+        
+        // Shader Flags 2
+        {"z_buffer_write", RE::BSShaderProperty::EShaderPropertyFlag::kZBufferWrite},
+        {"lod_landscape", RE::BSShaderProperty::EShaderPropertyFlag::kLODLandscape},
+        {"lod_objects", RE::BSShaderProperty::EShaderPropertyFlag::kLODObjects},
+        {"no_fade", RE::BSShaderProperty::EShaderPropertyFlag::kNoFade},
+        {"two_sided", RE::BSShaderProperty::EShaderPropertyFlag::kTwoSided},
+        {"vertex_colors", RE::BSShaderProperty::EShaderPropertyFlag::kVertexColors},
+        {"glow_map", RE::BSShaderProperty::EShaderPropertyFlag::kGlowMap},
+        {"assume_shadowmask", RE::BSShaderProperty::EShaderPropertyFlag::kAssumeShadowmask},
+        {"character_lighting", RE::BSShaderProperty::EShaderPropertyFlag::kCharacterLighting},
+        {"multi_index_snow", RE::BSShaderProperty::EShaderPropertyFlag::kMultiIndexSnow},
+        {"vertex_lighting", RE::BSShaderProperty::EShaderPropertyFlag::kVertexLighting},
+        {"uniform_scale", RE::BSShaderProperty::EShaderPropertyFlag::kUniformScale},
+        {"fit_slope", RE::BSShaderProperty::EShaderPropertyFlag::kFitSlope},
+        {"billboard", RE::BSShaderProperty::EShaderPropertyFlag::kBillboard},
+        {"no_lod_land_blend", RE::BSShaderProperty::EShaderPropertyFlag::kNoLODLandBlend},
+        {"envmap_light_fade", RE::BSShaderProperty::EShaderPropertyFlag::kEnvmapLightFade},
+        {"wireframe", RE::BSShaderProperty::EShaderPropertyFlag::kWireframe},
+        {"weapon_blood", RE::BSShaderProperty::EShaderPropertyFlag::kWeaponBlood},
+        {"hide_on_local_map", RE::BSShaderProperty::EShaderPropertyFlag::kHideOnLocalMap},
+        {"premult_alpha", RE::BSShaderProperty::EShaderPropertyFlag::kPremultAlpha},
+        {"cloud_lod", RE::BSShaderProperty::EShaderPropertyFlag::kCloudLOD},
+        {"anisotropic_lighting", RE::BSShaderProperty::EShaderPropertyFlag::kAnisotropicLighting},
+        {"no_transparency_multisample", RE::BSShaderProperty::EShaderPropertyFlag::kNoTransparencyMultiSample},
+        {"menu_screen", RE::BSShaderProperty::EShaderPropertyFlag::kMenuScreen},
+        {"multi_layer_parallax", RE::BSShaderProperty::EShaderPropertyFlag::kMultiLayerParallax},
+        {"soft_lighting", RE::BSShaderProperty::EShaderPropertyFlag::kSoftLighting},
+        {"rim_lighting", RE::BSShaderProperty::EShaderPropertyFlag::kRimLighting},
+        {"back_lighting", RE::BSShaderProperty::EShaderPropertyFlag::kBackLighting},
+        {"snow", RE::BSShaderProperty::EShaderPropertyFlag::kSnow},
+        {"tree_anim", RE::BSShaderProperty::EShaderPropertyFlag::kTreeAnim},
+        {"effect_lighting", RE::BSShaderProperty::EShaderPropertyFlag::kEffectLighting},
+        {"hd_lod_objects", RE::BSShaderProperty::EShaderPropertyFlag::kHDLODObjects}
+    };*/
+
+    static void CollectNodes(RE::NiNode* root, const std::vector<std::string>& nodeNames, std::vector<RE::NiNode*>& out)
+    {
+        if (!root || nodeNames.empty()) return;
+    
+        std::unordered_set<RE::NiNode*> visited;
+    
+        auto isNodeMatchingPattern = [&](RE::NiAVObject* node) -> bool
+        {
+            if (!node || !node->name.c_str()) return false;
+    
+            std::string nName{ node->name.c_str() };
+            for (const auto& pattern : nodeNames) {
+                if (std::search(nName.begin(), nName.end(), 
+                            pattern.begin(), pattern.end(),
+                            [](char a, char b) { 
+                                return std::tolower(static_cast<unsigned char>(a)) == std::tolower(static_cast<unsigned char>(b)); 
+                            }) != nName.end())
+                    return true;
+            }
+            return false;
+        };
+    
+        std::function<void(RE::NiNode*, int)> dfs = [&](RE::NiNode* node, int depth)
+        {
+            if (!node || depth > 100) return;
+            
+            if (visited.find(node) != visited.end()) return;
+            visited.insert(node);
+    
+            if (isNodeMatchingPattern(node)) out.emplace_back(node);
+    
+            auto& children = node->GetChildren();
+            for (auto const& child : children)
+            {
+                if (child && child->AsNode()) dfs(child->AsNode(), depth + 1);
+            }
+            
+            visited.erase(node);
+        };
+    
+        dfs(root, 0);
+    }
+
+    /*static void CollectTriShapes(RE::NiNode* root, const std::vector<std::string>& triShapeNames, std::vector<RE::BSGeometry*>& out)
+    {
+        if (!root) return;
+        
+        bool collectAll = triShapeNames.empty();
+        
+        std::function<void(RE::NiAVObject*)> traverse = [&](RE::NiAVObject* obj) {
+            if (!obj) return;
+            
+            if (auto* geometry = skyrim_cast<RE::BSGeometry*>(obj)) {
+                bool shouldAdd = collectAll;
+                
+                if (!collectAll && obj->name.c_str()) {
+                    std::string objName = obj->name.c_str();
+                    for (const auto& pattern : triShapeNames) {
+                        if (objName.find(pattern) != std::string::npos) {
+                            shouldAdd = true;
+                            break;
+                        }
+                    }
+                }
+                
+                if (shouldAdd) {
+                    out.push_back(geometry);
+                }
+            }
+            
+            if (auto* node = obj->AsNode()) {
+                auto& children = node->GetChildren();
+                for (auto& child : children) {
+                    if (child) {
+                        traverse(child.get());
+                    }
+                }
+            }
+        };
+        
+        traverse(root);
+    }*/
 
     // Copy ownership from one reference to another
     void CopyOwnership(RE::TESObjectREFR* from, RE::TESObjectREFR* to)
@@ -554,11 +704,6 @@ namespace OIF::Effects
             logger::error("SpawnSpell: No spells to spawn");
             return;
         }
-
-        if (!ctx.source || ctx.source->IsDeleted()) {
-            logger::warn("SpawnSpell: No valid source to cast the spell");
-            return;
-        }
     
         static RE::TESBoundObject* dummyForm = nullptr;
         if (!dummyForm) {
@@ -652,11 +797,6 @@ namespace OIF::Effects
             return;
         }
     
-        if (!ctx.source || ctx.source->IsDeleted()) {  
-            logger::warn("SpawnSpellOnItem: No valid source to cast the spell");
-            return;
-        }
-    
         static RE::TESBoundObject* dummyForm = nullptr;
         if (!dummyForm) {
             auto* dh = RE::TESDataHandler::GetSingleton();
@@ -738,53 +878,109 @@ namespace OIF::Effects
             }
         }
     }
-    
-    void SpawnImpact(const RuleContext& ctx, const std::vector<ImpactSpawnData>& impactsData)
-    {
-        if (!ctx.target || ctx.target->IsDeleted()) {
-            logger::error("SpawnImpact: No target to spawn impacts");
-            return;
-        }
 
-        if (impactsData.empty()) {
-            logger::error("SpawnImpact: No impacts to spawn");
+    // A placeholder. Haven't find a decent way to spawn pure impacts yet
+    void SpawnImpact(const RuleContext& ctx, const std::vector<ImpactSpawnData>& impactsData) {
+        (void)ctx;
+        (void)impactsData;
+        return;
+    }
+    
+    void SpawnImpactDataSet(const RuleContext& ctx, const std::vector<ImpactDataSetSpawnData>& impactsData)
+    {
+        if (!ctx.target || ctx.target->IsDeleted() || impactsData.empty()) {
+            logger::error("SpawnImpactDataSet: No target or impacts data to spawn");
             return;
-        }
+        }   
 
         auto* im = RE::BGSImpactManager::GetSingleton();
         if (!im) {
-            logger::error("SpawnImpact: Failed to get impact manager");
+            logger::error("SpawnImpactDataSet: BGSImpactManager is null");
             return;
         }
 
-        RE::NiPoint3 hitPos = ctx.target->GetPosition();
-        RE::NiPoint3 pickDir;
-        
-        hitPos = ctx.target->GetPosition();
-        pickDir = RE::NiPoint3(0.0f, 0.0f, 1.0f);
-        
-        float pickLen = pickDir.Length();
-        if (pickLen > 0.0f) {
-            pickDir /= pickLen;
-        } else {
-            pickLen = 1.0f;                
-            pickDir = RE::NiPoint3(0.0f, 0.0f, 1.0f);
+        auto* sourceActor = ctx.source ? ctx.source->As<RE::Actor>() : nullptr;
+        if (!sourceActor) {
+            auto* player = RE::PlayerCharacter::GetSingleton();
+            if (!player) {
+                logger::error("SpawnImpactDataSet: No source actor or player found");
+                return;
+            }
+            sourceActor = player;
         }
 
-        RE::BSFixedString nodeName("");     // no specific node
+        static RE::TESBoundObject* dummyForm = nullptr;
+        if (!dummyForm) {
+            auto* dh = RE::TESDataHandler::GetSingleton();
+            auto* form = dh ? dh->LookupForm(0x000B79FF, "Skyrim.esm") : nullptr;
+            dummyForm = form ? form->As<RE::TESBoundObject>() : nullptr;
+        }
 
-        for (const auto& impactData : impactsData) {
-            if (!impactData.impact)
-                continue;
+        if (!dummyForm) {
+            logger::error("SpawnImpactDataSet: Cannot create dummy");
+            return;
+        }
 
-            for (std::uint32_t i = 0; i < impactData.count; ++i) {
-                if (!im || !ctx.target || ctx.target->IsDeleted() || !impactData.impact) {
-                    logger::warn("SpawnImpact: Invalid ImpactManager, target, or impact");
-                    continue;
-                }
-                im->PlayImpactEffect(ctx.target, impactData.impact, nodeName, pickDir, pickLen, false, false);
+        auto dummy = ctx.target->PlaceObjectAtMe(dummyForm, false);
+        if (!dummy) {
+            logger::error("SpawnImpactDataSet: Failed to create dummy");
+            return;
+        }
+
+        if (auto targetObject = ctx.target->Get3D()) {
+            if (auto node = targetObject->AsNode()) {
+                dummy->MoveToNode(ctx.target, node);
             }
         }
+
+        RE::NiPoint3 hitPos;
+        bool hitPosFound = false;
+        
+        if (sourceActor->IsPlayerRef()) {
+            auto* crosshairData = RE::CrosshairPickData::GetSingleton();
+            if (crosshairData && crosshairData->target->get().get() == ctx.target) {
+                auto crosshairHitPos = *crosshairData->collisionPoint;
+                if (crosshairHitPos != RE::NiPoint3{0.0f, 0.0f, 0.0f}) {
+                    hitPos = crosshairHitPos;
+                    hitPosFound = true;
+                }
+            }
+        }
+        
+        if (!hitPosFound) {
+            hitPos = ctx.target->GetPosition();
+            
+            if (auto* targetRef3D = ctx.target->Get3D()) {
+                auto bounds = targetRef3D->worldBound;
+                if (bounds.radius > 0.0f) {
+                    hitPos = bounds.center;
+                    hitPos.z = bounds.center.z - bounds.radius + 5.0f;
+                }
+            } else {
+                logger::warn("SpawnImpactDataSet: Target has no 3D model, skipping");
+                dummy->Disable();
+                dummy->SetDelete(true);
+                return;
+            }
+        }
+
+        auto dummyPos = dummy->GetPosition();
+        dummyPos.z = hitPos.z;
+        dummy->SetPosition(dummyPos);
+
+        auto finalHitPos = dummy->GetPosition();
+
+        for (const auto& data : impactsData) {
+            if (!data.impact)
+                continue;
+        
+            for (uint32_t i = 0; i < data.count; ++i) {
+                im->PlayImpactEffect(ctx.target, data.impact, "", finalHitPos, 0.0f, false, false);
+            }
+        }
+
+        dummy->Disable();
+        dummy->SetDelete(true);
     }
 
     void SpawnExplosion(const RuleContext& ctx, const std::vector<ExplosionSpawnData>& explosionsData)
@@ -1062,11 +1258,6 @@ namespace OIF::Effects
             return;
         }
     
-        if (!ctx.source || ctx.source->IsDeleted()) {
-            logger::warn("SpawnLeveledSpell: No valid source to cast the spell");
-            return;
-        }
-    
         static RE::TESBoundObject* dummyForm = nullptr;
         if (!dummyForm) {
             auto* dh = RE::TESDataHandler::GetSingleton();
@@ -1162,11 +1353,6 @@ namespace OIF::Effects
     
         if (spellsData.empty()) {
             logger::error("SpawnLeveledSpellOnItem: No spells to spawn");
-            return;
-        }
-    
-        if (!ctx.source || ctx.source->IsDeleted()) {
-            logger::warn("SpawnLeveledSpellOnItem: No valid source to cast the spell");
             return;
         }
     
@@ -1318,11 +1504,6 @@ namespace OIF::Effects
             return;
         }
 
-        if (!ctx.source || ctx.source->IsDeleted()) {
-            logger::warn("ApplyIngestible: No valid source to apply ingestible");
-            return;
-        }
-
         auto* baseObject = ctx.target->GetBaseObject();
         if (!baseObject) {
             logger::error("ApplyIngestible: Target has no base object");
@@ -1420,11 +1601,6 @@ namespace OIF::Effects
 
         if (ingestiblesData.empty()) {
             logger::error("ApplyOtherIngestible: No ingestibles to apply");
-            return;
-        }
-
-        if (!ctx.source || ctx.source->IsDeleted()) {
-            logger::warn("ApplyOtherIngestible: No valid source to apply ingestible");
             return;
         }
 
@@ -1709,11 +1885,6 @@ namespace OIF::Effects
             return;
         }
 
-        if (!ctx.source || ctx.source->IsDeleted() || ctx.source->IsDead()) {
-            logger::error("SpawnEffectShader: No source to spawn effect shaders");
-            return;
-        }
-
         if (effectShadersData.empty()) {
             logger::error("SpawnEffectShader: No effect shaders to spawn");
             return;
@@ -1724,7 +1895,7 @@ namespace OIF::Effects
             logger::error("SpawnEffectShader: TES singleton is null");
             return;
         }
-            
+        
         for (const auto& effectShaderData : effectShadersData) {
             if (!effectShaderData.effectShader) continue;
     
@@ -1782,5 +1953,214 @@ namespace OIF::Effects
                 }
             }
         }
+    }
+
+    void ToggleNode(const RuleContext& ctx, const std::vector<NodeData>& nodeData)
+    {
+        if (!ctx.target || ctx.target->IsDeleted()) {
+            logger::error("ToggleNode: No target to toggle node on");
+            return;
+        }
+
+        if (!ctx.target->Get3D()) {
+            ctx.target->Load3D(true);
+        }
+
+        auto* rootObj = ctx.target->Get3D();
+        if (!rootObj) {
+            logger::error("ToggleNode: Target has no 3D");
+            return;
+        }
+
+        auto* rootNode = rootObj->AsNode();
+        if (!rootNode) {
+            logger::error("ToggleNode: Root 3D is not NiNode");
+            return;
+        }
+
+        for (const auto& data : nodeData) {
+            std::vector<RE::NiNode*> matches;
+            CollectNodes(rootNode, data.nodeNames, matches);
+            if (matches.empty()) {
+                logger::warn("ToggleNode: No BSnode found for {} names", data.nodeNames.size());
+                continue;
+            }
+            
+            for (RE::NiNode* node : matches) {
+                if (!node) continue;
+
+                try {
+                    if (data.mode == 0) {
+                        node->local.scale = 0.00001f;
+                    } else {
+                        node->local.scale = 1.0f;
+                    }
+                }
+                catch (...) {
+                    logger::error("ToggleNode: Exception while trying to toggle '{}'", node->name.c_str());
+                }
+            }
+        }
+    }
+                
+    /*void ToggleShaderFlag(const RuleContext& ctx, const std::vector<ShaderFlagData>& shaderFlagsData)
+    {
+        if (!ctx.target || ctx.target->IsDeleted()) {
+            logger::error("ToggleShaderFlag: No target to modify shader flags on");
+            return;
+        }
+    
+        if (!ctx.target->Get3D()) {
+            ctx.target->Load3D(true);
+        }
+    
+        auto* original3D = ctx.target->Get3D();
+        if (!original3D) {
+            logger::error("ToggleShaderFlag: Target has no 3D");
+            return;
+        }
+    
+        auto* cloned3D = original3D->Clone();
+        if (!cloned3D) {
+            logger::error("ToggleShaderFlag: Clone3D failed");
+            return;
+        }
+    
+        auto* rootNode = cloned3D->AsNode();
+        if (!rootNode) {
+            logger::error("ToggleShaderFlag: Root 3D is not NiNode");
+            return;
+        }
+    
+        for (const auto& data : shaderFlagsData) {
+            std::vector<RE::BSGeometry*> matches;
+            CollectTriShapes(rootNode, data.triShapeNames, matches);
+    
+            if (matches.empty()) {
+                logger::warn("ToggleShaderFlag: No TriShape found");
+                continue;
+            }
+    
+            for (RE::BSGeometry* geometry : matches) {
+                if (!geometry) continue;
+    
+                using State = RE::BSGeometry::States;
+                
+                auto effect = geometry->GetGeometryRuntimeData().properties[State::kEffect].get();
+                if (!effect) {
+                    logger::warn("ToggleShaderFlag: TriShape '{}' has no effect property", geometry->name.c_str());
+                    continue;
+                }
+                
+                auto lightingShader = netimmerse_cast<RE::BSLightingShaderProperty*>(effect);
+                if (!lightingShader) {
+                    logger::warn("ToggleShaderFlag: TriShape '{}' does not have BSLightingShaderProperty", geometry->name.c_str());
+                    continue;
+                }
+
+                for (const auto& flagName : data.flagNames) {
+                    auto it = g_shaderFlagMap.find(flagName);
+                    if (it == g_shaderFlagMap.end()) {
+                        continue;
+                    }
+
+                    RE::BSShaderProperty::EShaderPropertyFlag flag = it->second;
+
+                    if (flag == RE::BSShaderProperty::EShaderPropertyFlag::kOwnEmit ||
+                        flag == RE::BSShaderProperty::EShaderPropertyFlag::kGlowMap ||
+                        flag == RE::BSShaderProperty::EShaderPropertyFlag::kEffectLighting ||
+                        flag == RE::BSShaderProperty::EShaderPropertyFlag::kExternalEmittance) {
+
+                        lightingShader->flags.reset(RE::BSShaderProperty::EShaderPropertyFlag::kOwnEmit);
+                        lightingShader->flags.reset(RE::BSShaderProperty::EShaderPropertyFlag::kGlowMap);
+                        lightingShader->flags.reset(RE::BSShaderProperty::EShaderPropertyFlag::kEffectLighting);
+                        lightingShader->flags.reset(RE::BSShaderProperty::EShaderPropertyFlag::kExternalEmittance);
+                        
+                        if (lightingShader->emissiveColor) {
+                            delete lightingShader->emissiveColor;
+                            lightingShader->emissiveColor = nullptr;
+                        }
+                        lightingShader->emissiveMult = 0.0f;
+                    }
+
+                    lightingShader->lastRenderPassState = (std::numeric_limits<std::int32_t>::max)();
+                    
+                    lightingShader->DoClearRenderPasses();
+
+                    logger::info("Before: flags = 0x{:X}, lastRenderPassState = {}", 
+                        lightingShader->flags.underlying(), lightingShader->lastRenderPassState);
+                    
+                    if (data.mode == 0) {
+                        lightingShader->flags.reset(flag);
+                        logger::info("ToggleShaderFlag: Disabled flag '{}' on TriShape '{}'", flagName, geometry->name.c_str());
+                    } else {
+                        lightingShader->flags.set(flag);
+                        logger::info("ToggleShaderFlag: Enabled flag '{}' on TriShape '{}'", flagName, geometry->name.c_str());
+                        if (flag == RE::BSShaderProperty::EShaderPropertyFlag::kOwnEmit ||
+                            flag == RE::BSShaderProperty::EShaderPropertyFlag::kGlowMap ||
+                            flag == RE::BSShaderProperty::EShaderPropertyFlag::kEffectLighting ||
+                            flag == RE::BSShaderProperty::EShaderPropertyFlag::kExternalEmittance) {
+                            if (!lightingShader->emissiveColor) {
+                                lightingShader->emissiveColor = new RE::NiColor(1.0f, 1.0f, 1.0f);
+                            }
+                            lightingShader->emissiveMult = 1.0f;
+                        }
+                    }
+
+                    logger::info("After: flags = 0x{:X}, lastRenderPassState = {}", 
+                        lightingShader->flags.underlying(), lightingShader->lastRenderPassState);
+    
+                    lightingShader->SetupGeometry(geometry);
+                    lightingShader->FinishSetupGeometry(geometry);
+                }
+            }
+        }
+    
+        ctx.target->Set3D(nullptr, false);
+        ctx.target->Set3D(cloned3D, true);
+        ctx.target->Load3D(true);
+        ctx.target->Disable();
+        ctx.target->Enable(false);
+        ctx.target->formFlags |= static_cast<std::uint32_t>(RE::TESObjectREFR::RecordFlags::kNeverFades);
+    }*/
+
+    void UnlockItem(const RuleContext& ctx)
+    {
+        if (!ctx.target || ctx.target->IsDeleted()) {
+            logger::error("UnlockItem: No target to open");
+            return;
+        }
+
+        auto* openCloseForm = ctx.target->GetBaseObject()->As<RE::BGSOpenCloseForm>();
+        if (!openCloseForm) {
+            return;
+        }
+
+        auto state = RE::BGSOpenCloseForm::GetOpenState(ctx.target);
+        if (state == RE::BGSOpenCloseForm::OPEN_STATE::kOpen || state == RE::BGSOpenCloseForm::OPEN_STATE::kOpening) {
+            return;
+        }
+
+        RE::BGSOpenCloseForm::SetOpenState(ctx.target, true, false);
+    }
+
+    void LockItem(const RuleContext& ctx)
+    {
+        if (!ctx.target || ctx.target->IsDeleted()) {
+            logger::error("LockItem: No target to close");
+            return;
+        }
+
+        auto* openCloseForm = ctx.target->GetBaseObject()->As<RE::BGSOpenCloseForm>();
+        if (!openCloseForm) {
+            return;
+        }
+
+        auto state = RE::BGSOpenCloseForm::GetOpenState(ctx.target);
+        if (state == RE::BGSOpenCloseForm::OPEN_STATE::kClosed || state == RE::BGSOpenCloseForm::OPEN_STATE::kClosing) {
+            return;
+        }
+
+        RE::BGSOpenCloseForm::SetOpenState(ctx.target, false, false);
     }
 }

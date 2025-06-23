@@ -12,6 +12,7 @@ namespace OIF::Effects
     void SpawnSpellOnItem(const RuleContext& ctx, const std::vector<SpellSpawnData>& spellsData);
     void SpawnActor(const RuleContext& ctx, const std::vector<ActorSpawnData>& actorsData);
     void SpawnImpact(const RuleContext& ctx, const std::vector<ImpactSpawnData>& impactsData);
+    void SpawnImpactDataSet(const RuleContext& ctx, const std::vector<ImpactDataSetSpawnData>& impactsData);
     void SpawnExplosion(const RuleContext& ctx, const std::vector<ExplosionSpawnData>& explosionsData);
     void SwapItem(const RuleContext& ctx, const std::vector<ItemSpawnData>& itemsData);
     void PlaySound(const RuleContext& ctx, const std::vector<SoundSpawnData>& soundsData);
@@ -32,4 +33,8 @@ namespace OIF::Effects
     void PlayIdle(const RuleContext& ctx, const std::vector<PlayIdleData>& idleData);
     void SpawnEffectShader(const RuleContext& ctx, const std::vector<EffectShaderSpawnData>& effectShadersData);
     void SpawnEffectShaderOnItem(const RuleContext& ctx, const std::vector<EffectShaderSpawnData>& effectShadersData);
+    void ToggleNode(const RuleContext& ctx, const std::vector<NodeData>& nodeData);
+    //void ToggleShaderFlag(const RuleContext& ctx, const std::vector<ShaderFlagData>& shaderFlagsData);
+    void UnlockItem(const RuleContext& ctx);
+    void LockItem(const RuleContext& ctx);
 }

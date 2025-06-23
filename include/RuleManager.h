@@ -7,26 +7,29 @@ namespace OIF
 	// ---------------------- Enums ----------------------
 	enum class EventType { 
 		kActivate, 
-		kHit,
+		kHit, // TESHitEvent + TESMagicEffectApplyEvent + ExplosionHook
 		kGrab,
 		kRelease,
 		kThrow,
 		kTelekinesis,
 		kCellAttach,
 		kCellDetach,
-		kDestroy
+		kWeatherChange
 	};
 
 	enum class EffectType { 
 		kRemoveItem, kDisableItem, kEnableItem,
 		kSpawnItem, kSpawnSpell, kSpawnSpellOnItem, 
-		kSpawnActor, kSpawnImpact, kSpawnExplosion, 
-		kSwapItem, kPlaySound, kSpillInventory, 
-		kSwapActor, kSpawnLeveledItem, kSwapLeveledItem,
-		kSpawnLeveledSpell, kSpawnLeveledSpellOnItem, kSpawnLeveledActor,
-		kSwapLeveledActor, kApplyIngestible, kApplyOtherIngestible,
-		kSpawnLight, kRemoveLight, kEnableLight, kDisableLight,
-		kPlayIdle, kSpawnEffectShader, kSpawnEffectShaderOnItem
+		kSpawnActor, kSpawnImpact, kSpawnImpactDataSet, 
+		kSpawnExplosion, kSwapItem, kPlaySound, 
+		kSpillInventory, kSwapActor, kSpawnLeveledItem,
+		kSwapLeveledItem, kSpawnLeveledSpell, kSpawnLeveledSpellOnItem, 
+		kSpawnLeveledActor, kSwapLeveledActor, kApplyIngestible, 
+		kApplyOtherIngestible, kSpawnLight, kRemoveLight,
+		kEnableLight, kDisableLight, kPlayIdle, 
+		kSpawnEffectShader, kSpawnEffectShaderOnItem, kAttachNode, 
+		kToggleNode, //kToggleShaderFlag,
+		kUnlockItem, kLockItem
 	};
 
 	// ---------------------- Filer ----------------------
@@ -48,19 +51,19 @@ namespace OIF
 
 	struct Filter {
 		// General filters
-		std::unordered_set<RE::FormType> formTypes;           	 			// filter by base form type
-		std::unordered_set<std::uint32_t> formIDs;           	  			// full FormIDs to match
-		std::unordered_set<std::uint32_t> formIDsNot;       	  			// full FormIDs to avoid
+		std::unordered_set<RE::FormType> formTypes;           	 			// base form type to match
+		std::unordered_set<RE::FormType> formTypesNot;       				// base form type to avoid
+		std::unordered_set<std::uint32_t> formIDs;           	  			// FormIDs to match
+		std::unordered_set<std::uint32_t> formIDsNot;       	  			// FormIDs to avoid
 		std::vector<FormListEntry> formLists; 								// formlists contents to match
 		std::vector<FormListEntry> formListsNot; 							// formlists contents to avoid 
 		std::unordered_set<RE::BGSKeyword*> keywords;        	  			// must have ANY of these keywords
 		std::unordered_set<RE::BGSKeyword*> keywordsNot;      				// must NOT have ANY of these keywords
-		std::uint32_t questItemStatus{ 0 };									// 0 - not a quest item, 1 - an important item, 2 - a quest item, 3 - all/undefined
-		float chance{ 100.f };         							   			// the chance of 0‑100 %
-		std::uint32_t interactions{1};										// number of interactions required to satisfy filter
+		std::uint32_t questItemStatus{ 0 };									// 0 - not a quest item, 1 - an item with an alias, 2 - a quest item, 3 - all/undefined
+		float chance{ 100.f };         							   			// the chance of 0‑100 % for the event to trigger
+		std::uint32_t interactions{ 1 };									// number of interactions required to satisfy filter
 		std::uint32_t limit = 0; 											// number of interactions to stop the effect
-		std::unordered_set<std::uint32_t> perks;           					// perks to match
-		std::unordered_set<std::uint32_t> perksNot;       					// perks to avoid 
+		std::uint32_t isInitiallyDisabled{ 2 }; 							// 0 - not initially disabled, 1 - initially disabled, 2 - all/undefined
 		
 		// New hit-specific filters
 		std::unordered_set<std::string> weaponsTypes;          	 			// weapon type categories
@@ -71,10 +74,15 @@ namespace OIF
 		std::unordered_set<RE::TESForm*> weaponsNot;       					// specific weapons or spells to avoid
 		std::vector<FormListEntry> weaponsLists;           					// specific weapons or spells lists
 		std::vector<FormListEntry> weaponsListsNot;       					// specific weapons or spells lists to avoid
-		std::unordered_set<RE::BGSProjectile*> projectiles;  	  			// specific projectiles
-		std::unordered_set<RE::BGSProjectile*> projectilesNot; 				// specific projectiles to avoid
+		std::uint32_t allowProjectiles{ 1 }; 								// 0 - no projectiles, 1 - allow projectiles
+		std::unordered_set<RE::TESForm*> projectiles;  	  					// specific projectiles
+		std::unordered_set<RE::TESForm*> projectilesNot; 					// specific projectiles to avoid
+		std::vector<FormListEntry> projectilesLists; 						// specific projectiles lists
+		std::vector<FormListEntry> projectilesListsNot; 					// specific projectiles lists to avoid
 		std::unordered_set<std::string> attackTypes;           				// attack types
 		std::unordered_set<std::string> attackTypesNot;       				// attack types to avoid
+		std::unordered_set<std::string> deliveryTypes;           			// delivery types
+		std::unordered_set<std::string> deliveryTypesNot;       			// delivery types to avoid
 
 		// Location and weather filters
 		std::set<RE::FormID> locationIDs; 									// location IDs
@@ -87,6 +95,8 @@ namespace OIF
 		std::vector<RE::FormID> weatherListsNot; 							// weather lists to avoid
 
 		// Actor values and inventory filters
+		std::unordered_set<std::uint32_t> perks;           					// perks to match
+		std::unordered_set<std::uint32_t> perksNot;       					// perks to avoid 
 		std::set<RE::FormID> hasItem; 										// has any of these items
 		std::set<RE::FormID> hasItemNot; 									// does not have any of these items
 		std::vector<LevelCondition> level; 									// level conditions, e.g. {">=", 10}
@@ -119,7 +129,7 @@ namespace OIF
 
 	// ---------------------- Effect ----------------------
 	struct EffectExtendedData {
-		RE::TESForm* form{ nullptr };  							   			// the thing to spawn/cast/play
+		RE::TESForm* formID{ nullptr };  							   		// the thing to spawn/cast/play
 		std::vector<FormListEntry> formLists; 								// formlists contents to spawn/cast/play
 		std::uint32_t count{ 1 };      							   			// the amount of items to spawn/cast/play
 		float chance{ 100.f };         							   			// the chance of 0‑100 %
@@ -131,6 +141,10 @@ namespace OIF
 		std::uint32_t nonDeletable{ 0 }; 									// 1 if the form should not be deleted after disabling
 		std::uint32_t spawnType{ 4 };										// the type of spawn
 		std::uint32_t fade{ 1 };											// 0 if the effect should not fade, 1 if it should fade out
+		std::uint32_t mode{ 0 };											// the type of search for the node, 0 - by name, 1 - by type
+		std::vector<std::string> nodeNames;									// the name of the node to change
+		std::vector<std::string> triShapeNames;								// the name of the triShape node to change
+		std::vector<std::string> flagNames;									// the name of the shader flags to toggle
 		bool isFormList = false;											// true if the form is a BGSListForm
 		int index = -1;														// index of the form in the list
 	};
@@ -150,10 +164,14 @@ namespace OIF
 		
 		// Hit-specific context
 		RE::TESForm* attackSource{ nullptr };
-		RE::BGSProjectile* projectile{ nullptr };
+		RE::TESForm* projectileSource{ nullptr };
 		std::string weaponType;
 		std::string attackType;
+		std::string deliveryType;
 		bool isHitEvent{ false };
+
+		// Additional context
+		RE::TESWeather* weather{ nullptr };
 	};
 
 	struct ItemSpawnData {
@@ -163,7 +181,6 @@ namespace OIF
 		std::uint32_t fade{ 1 };
 		float scale;
 		std::uint32_t nonDeletable{ 0 };
-		std::uint32_t formID;
 		float chance{ 100.f };
 	};
 
@@ -171,7 +188,6 @@ namespace OIF
 		RE::SpellItem* spell;
 		std::uint32_t count;
 		float radius;
-		std::uint32_t formID;
 		float chance{ 100.f };
 	};
 
@@ -182,7 +198,6 @@ namespace OIF
 		std::uint32_t fade{ 1 };
 		float scale;
 		std::uint32_t nonDeletable{ 0 };
-		std::uint32_t formID;
 		float chance{ 100.f };
 	};
 
@@ -193,7 +208,6 @@ namespace OIF
 		std::uint32_t fade{ 1 };
 		float scale;
 		std::uint32_t nonDeletable{ 0 };
-		std::uint32_t formID;
 		float chance{ 100.f };
 	};
 
@@ -201,7 +215,6 @@ namespace OIF
 		RE::TESLevSpell* spell;
 		std::uint32_t count;
 		float radius;
-		std::uint32_t formID;
 		float chance{ 100.f };
 	};
 
@@ -212,14 +225,18 @@ namespace OIF
 		std::uint32_t fade{ 1 };
 		float scale;
 		std::uint32_t nonDeletable{ 0 };
-		std::uint32_t formID;
 		float chance{ 100.f };
 	};
 
 	struct ImpactSpawnData {
+		RE::BGSImpactData* impact;
+		std::uint32_t count;
+		float chance{ 100.f };
+	};
+
+	struct ImpactDataSetSpawnData {
 		RE::BGSImpactDataSet* impact;
 		std::uint32_t count;
-		std::uint32_t formID;
 		float chance{ 100.f };
 	};
 
@@ -228,14 +245,12 @@ namespace OIF
 		std::uint32_t count;
 		std::uint32_t spawnType{ 4 };
 		std::uint32_t fade{ 1 };
-		std::uint32_t formID;
 		float chance{ 100.f };
 	};
 
 	struct SoundSpawnData {
 		RE::BGSSoundDescriptorForm* sound;
 		std::uint32_t count;
-		std::uint32_t formID;
 		float chance{ 100.f };
 	};
 
@@ -243,8 +258,7 @@ namespace OIF
 		RE::MagicItem* ingestible;
 		std::uint32_t count;
 		float radius;
-		std::uint32_t formID;
-		float chance{100.f};
+		float chance{ 100.f };
 	};
 
 	struct LightSpawnData {
@@ -253,32 +267,42 @@ namespace OIF
 		std::uint32_t spawnType{ 4 };
 		std::uint32_t fade{ 1 };
 		float scale;
-		std::uint32_t formID;
-		float chance{100.f};
+		float chance{ 100.f };
 	};
 
 	struct LightRemoveData {
 		RE::TESObjectLIGH* light;
 		float radius;
-		std::uint32_t formID;
-		float chance{100.f};
+		float chance{ 100.f };
 	};
 
 	struct PlayIdleData {
         RE::Actor* actor;
         std::string string;
-        float duration{1.0f};
-		float chance{100.f};
+        float duration{ 1.0f };
+		float chance{ 100.f };
     };
 
 	struct EffectShaderSpawnData {
 		RE::TESEffectShader* effectShader;
 		std::uint32_t count;
 		float radius;
-		float duration{-1.0f};
-		std::uint32_t formID;
+		float duration{ -1.0f };
 		float chance{ 100.f };
 	};	
+
+	struct NodeData {
+		std::uint32_t mode;
+		std::vector<std::string> nodeNames; 
+		float chance{ 100.f };
+	};
+
+	struct ShaderFlagData {
+		std::uint32_t mode;
+		std::vector<std::string> flagNames;
+		std::vector<std::string> triShapeNames;
+		float chance{ 100.f };
+	};
 
 	struct Rule {
 		std::vector<EventType> events;
@@ -306,6 +330,7 @@ namespace OIF
 
 		void LoadRules();
 		void Trigger(const RuleContext& ctx);
+		void CleanupCounters();
 		
 		void ResetInteractionCounts();
 		void OnSave(SKSE::SerializationInterface* intf);
@@ -314,19 +339,6 @@ namespace OIF
 
 		bool ShouldTriggerExplosion(const RuleContext& ctx);
 		void TriggerExplosion(RE::TESObjectREFR* target, RE::Actor* source);
-
-		static inline std::vector<std::future<void>> asyncTasks;
-		static inline std::mutex asyncTasksMutex;
-
-		static void CleanupAsyncTasks() {
-			std::lock_guard<std::mutex> lock(asyncTasksMutex);
-			for (auto& task : asyncTasks) {
-				if (task.valid()) {
-					task.wait();
-				}
-			}
-			asyncTasks.clear();
-		}
 
 	private:
 		RuleManager(const RuleManager&) = delete;
@@ -340,10 +352,15 @@ namespace OIF
 
 		template <class T = RE::TESForm>
 		static T* GetFormFromIdentifier(const std::string& identifier);
+		template <class T = RE::TESForm>
+		static T* GetFormFromEditorID(const std::string& editorID);
 
 		std::vector<Rule> _rules;
 		mutable std::shared_mutex _ruleMutex;
 		std::map<Key, std::uint32_t> _limitCounts;
 		std::map<Key, std::uint32_t> _interactionsCounts;
+
+		std::unordered_map<std::uint32_t, std::chrono::steady_clock::time_point> recentlyProcessedItems;
+        std::chrono::steady_clock::time_point lastCleanupTime;
 	};
 }

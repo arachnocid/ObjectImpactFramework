@@ -3,6 +3,23 @@
 
 namespace OIF
 {
+    class EventSinkBase
+    {
+    public:
+        static const std::unordered_set<RE::FormType> relevantFormTypes;
+        
+        static bool IsRelevantObject(RE::TESForm* form) {
+            if (!form) return false;
+            return relevantFormTypes.contains(form->GetFormType());
+        }
+        
+        static bool IsRelevantObjectRef(RE::TESObjectREFR* ref) {
+            if (!ref || ref->IsDeleted()) return false;
+            auto* baseObj = ref->GetBaseObject();
+            return IsRelevantObject(baseObj);
+        }
+    };
+
     class ActivateSink : public RE::BSTEventSink<RE::TESActivateEvent>
     {
     public:
@@ -30,6 +47,32 @@ namespace OIF
             const RE::TESHitEvent* evn,
             RE::BSTEventSource<RE::TESHitEvent>*) override;
     };
+
+    class MagicEffectApplySink : public RE::BSTEventSink<RE::TESMagicEffectApplyEvent>
+    {
+    public:
+        static MagicEffectApplySink* GetSingleton()
+        {
+            static MagicEffectApplySink sink;
+            return &sink;
+        }
+        
+        RE::BSEventNotifyControl ProcessEvent(
+            const RE::TESMagicEffectApplyEvent* evn,
+            RE::BSTEventSource<RE::TESMagicEffectApplyEvent>*) override;
+    };
+
+    struct ExplosionHook {
+        static void thunk(RE::Explosion* a_this);
+        static inline REL::Relocation<decltype(thunk)> func;
+        static inline constexpr std::size_t size = 0xA2;
+    };
+
+    struct WeatherChangeHook {
+        static void thunk(RE::TESWeather* a_currentWeather);
+        static inline REL::Relocation<decltype(thunk)> func;
+        static inline RE::TESWeather* currentWeather{ nullptr };
+    };       
 
     class GrabReleaseSink : public RE::BSTEventSink<RE::TESGrabReleaseEvent>
     {
@@ -63,7 +106,7 @@ namespace OIF
         static constexpr std::uint32_t HK_PROPERTY_GRABTHROWNOBJECT{ 628318 };
     };
 
-    class InputHandler : public RE::BSTEventSink<RE::InputEvent*>
+    class InputHandler
     {
     public:
         static InputHandler* GetSingleton()
@@ -71,22 +114,20 @@ namespace OIF
             static InputHandler handler;
             return &handler;
         }
-
-        virtual RE::BSEventNotifyControl ProcessEvent(RE::InputEvent* const* a_event, RE::BSTEventSource<RE::InputEvent*>* a_eventSource) override;
-        
-        void Register();
-        void Unregister();
         
         bool WasKeyJustReleased() const { return KeyJustReleased; }
-        void ResetKeyState() { 
-            KeyJustReleased = false; 
-        }
-
+        void SetKeyJustReleased() { KeyJustReleased = true; }
+        void ResetKeyState() { KeyJustReleased = false; }
+    
     private:
-        bool KeyWasPressed = false;
         bool KeyJustReleased = false;
-        
-        static constexpr std::uint32_t R_KEY_CODE = 19;
+    };
+
+    // Taken and adapted from Grab and Throw source code
+    struct ReadyWeaponHook {
+        static void thunk(RE::ReadyWeaponHandler* a_this, RE::ButtonEvent* a_event, RE::PlayerControlsData* a_data);
+        static inline REL::Relocation<decltype(thunk)> func;
+        static inline constexpr std::size_t size = 0x4;
     };
 
     class CellAttachDetachSink : public RE::BSTEventSink<RE::TESCellAttachDetachEvent>
@@ -104,4 +145,5 @@ namespace OIF
     };
 
     void RegisterSinks();
+    void InstallHooks();
 }
