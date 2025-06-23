@@ -32,6 +32,7 @@ Each rule in your JSON file defines a specific behavior for the mod. Rules are w
   - `"Throw"`: Triggered when a grabbed object is thrown (requires the **Grab And Throw** mod by powerofthree).
   - `"CellAttach"`: Triggered when an object is attached to a cell (works on location re-enter as well).
   - `"CellDetach"`: Triggered when an object is detached from a cell.
+  - `"WeatherChange"`: Triggered on weather change.
   
 - **`filter`**: Defines the conditions under which the rule applies. This is an object that specifies which objects or interactions the rule targets. At least one of `formTypes`, `formIDs`, `formLists`, or `keywords` must be provided to identify target objects.
 
@@ -85,6 +86,9 @@ The `filter` object determines which objects and interactions trigger a rule. It
   - `"static"`: Non-movable world objects (e.g., statues).
   - `"moveablestatic"`: Movable static objects.
   - `"tree"`: Trees.
+  - `"light"`: Lights with 3D models (e.g., torches).
+ 
+- **`formTypesNot`** (optional): An array of strings specifying the types of objects that the rule should *not* apply to, in the same format as `formTypes`.
 
 - **`formIDs`** (optional): An array of strings identifying specific objects by their Form ID in the format `"modName:formID"`. Examples:
   - `"Skyrim.esm:0x123456"` (for esp/esm plugins).
@@ -94,8 +98,13 @@ The `filter` object determines which objects and interactions trigger a rule. It
 
 - **`formIDsNot`** (optional): An array of strings identifying specific objects that the rule should *not* apply to, in the same format as `formIDs`.
 
+- **`editorIDs`** (optional): An array of strings identifying specific objects by their Editor ID in the format `"EditorIDName"`. Example: `"VendorItemClutter"`.
+
+- **`editorIDsNot`** (optional): An array of strings identifying specific objects that the rule should *not* apply to, in the same format as `editorIDs`.
+
 - **`formLists`** (optional): An array of objects referencing formlists (lists of forms defined in a mod). Each entry has:
-  - **`formID`**: The formlist ID in `"modName:formID"` format (required).
+  - **`formID`**: The formlist's form ID in `"modName:formID"` format (required (or editorID)).
+  - **`editorID`**: The formlist's editor ID in `"EditorIDName"` format (required (or formID)).
   - **`index`** (optional): An integer specifying which item in the formlist to use. Example:
  
     ```json
@@ -118,6 +127,11 @@ The `filter` object determines which objects and interactions trigger a rule. It
   - `1`: Object must be a quest alias only.
   - `2`: Object must be a full-fledged quest item.
   - `3`: All objects allowed.
+ 
+- **`isInitiallyDisabled`** (optional): An integer specifying whether the object has the `kInitiallyDisabled` flag. **Note:** upon re-entering the cell, a freshly disabled item may acquire this flag.
+  - `0`: Object is not initially disabled.
+  - `1`: Object is initially disabled.
+  - `2`: All objects allowed (default).
 
 - **`locations`** (optional): An array of Form IDs or formlist Form IDs referencing cells, locations, or worldspaces where the rule should apply. Format: `"modName:formID"`.
 
@@ -173,6 +187,7 @@ For rules with the `"Hit"` event, additional filters can refine which attacks tr
   - `"staff"`: Staves.
   - `"handtohand"`: Unarmed attacks.
   - `"spell"`: Spells.
+  - `"scroll"`: Scrolls.
   - `"shout"`: Shouts.
   - `"ability"`: Racial or other abilities.
   - `"power"`: Greater powers.
@@ -194,20 +209,42 @@ For rules with the `"Hit"` event, additional filters can refine which attacks tr
 
 - **`weaponsKeywordsNot`** (optional): An array of keywords the weapon or spell must *not* have.
 
-- **`attacks`** (optional): An array of attack types. Possible values:
+- **`attacksTypes`** or **`attacks`** (optional): An array of attack types. Possible values:
   - `"regular"`: Standard attacks.
   - `"power"`: Power attacks.
   - `"bash"`: Shield or weapon bashes.
   - `"projectile"`: Ranged projectile attacks (e.g., arrows).
   - `"charge"`: Charging attacks (e.g., sprinting strikes).
   - `"rotating"`: Continuous spinning attacks.
-  - `"continuous"`: Sustained attacks (e.g., spell streams).
+  - `"continuous"`: Concentration type spells (e.g., flames, frostbite).
+  - `"constant"`: Contant type spells.
+  - `"fireandforget"`: Fire-and-forget type spells.
+  - `"ignoreweapon"`: Attacks that bypass weapon-specific mechanics.
+  - `"overridedata"`: Attacks that override default data.
 
-- **`attacksNot`** (optional): An array of attack types that must *not* be used, in the same format as `attacks`.
+- **`attacksTypesNot`** or **`attacksNot`** (optional): An array of attack types that must *not* be used, in the same format as `attacksTypes`.
+
+- **`deliveryTypes`** (optional): An array of spell delivery types. Possible values:
+  - `"self"`: Self-targeted spells.
+  - `"aimed"`: Aimed spells requiring targeting.
+  - `"targetactor"`: Actor-targeted spells.
+  - `"targetlocation"`: Location-targeted spells.
+  - `"touch"`: Touch-based spells.
+  - `"total"`: All delivery types.
+ 
+- **`deliveryTypesNot`** (optional): An array of spell delivery types that must *not* be used, in the same format as `deliveryTypes`.
+
+- **`allowProjectiles`** (optional): Controls whether projectiles are allowed. Possible values:
+  - `0`: Projectiles are not allowed.
+  - `1`: Projectiles are allowed (default).
 
 - **`projectiles`** (optional): An array of specific projectile Form IDs in `"modName:formID"` format (e.g., `"Skyrim.esm:0xDEF123"`).
 
 - **`projectilesNot`** (optional): An array of specific projectile Form IDs that must *not* be used, in the same format as `projectiles`.
+
+- **`projectilesFormLists`** (optional): An array of formlist Form IDs, containing specific projectiles, in `"modName:formID"` format.
+
+- **`projectilesFormListsNot`** (optional): An array of formlist Form IDs, containing specific projectiles that must *not* be used, in the same format as `projectilesFormLists`.
 
 ---
 
@@ -228,6 +265,12 @@ Here are all possible `type` values and their supported fields:
 - **`DisableItem`**: Disables the target object.
   - No `items` array required.
  
+- **`UnlockItem`**: Unlocks the target object (with animation).
+  - No `items` array required.
+ 
+- **`LockItem`**: Locks the target object (with animation).
+  - No `items` array required.
+  
 - **`SpillInventory`**: Spills the contents of a container.
   - No `items` array required.
 
@@ -303,14 +346,20 @@ Here are all possible `type` values and their supported fields:
 - **`EnableLight`**: Enables previously disabled lights.
   - Supported fields: `formID`, `formList`, `chance`, `radius`.
 
+- **``**: Toggles nodes on and off (scales to 0.00001 or 1.0).
+  - Supported fields: `mode`, `nodeNames`.
+
 ### Configuring Effects with `items`
 
 For effect types that support an `items` array, you can specify detailed configurations. Each item in the array can include:
 
-- **`formID`** (optional): A specific Form ID in `"modName:formID"` format (e.g., `"Skyrim.esm:0xF"` for a gold coin). Can be used alone or with `formList`. Not used for `ApplyIngestible`, `DisableLight`, `EnableLight`, and `PlayIdle`.
+- **`formID`** (optional): A specific Form ID in `"modName:formID"` format (e.g., `"Skyrim.esm:0xF"` for a gold coin).
 
-- **`formList`** (optional): An array of formlist entries. Not used for `ApplyIngestible`, `DisableLight`, `EnableLight`, and `PlayIdle`.
-  - **`formID`**: The formlist ID in `"modName:formID"` format.
+- **`editorID`** (optional): A specific Editor ID in `"EditorIDName` format (e.g., `"VendorItemClutter"` for clutter).
+
+- **`formList`** (optional): An array of formlist entries.
+  - **`formID`**: The formlist's form ID in `"modName:formID"` format.
+  - **`editorID`**: The formlist's editor ID in `"EditorIDName"` format.
   - **`index`** (optional): An integer specifying which item in the formlist to use:
     - `-1` (default): All items at once.
     - `-2`: Parallel relationship for mirrored formlists.
@@ -327,14 +376,20 @@ For effect types that support an `items` array, you can specify detailed configu
 
 - **`chance`** (optional): A number between 0 and 100 for the percentage chance this item is used. Defaults to 100.
 
-- **`count`** (optional): An integer specifying how many instances to spawn or swap. Defaults to 1. Not used for `ApplyIngestible`, `RemoveLight`, `DisableLight`, `EnableLight`, and `PlayIdle`.
+- **`count`** (optional): An integer specifying how many instances to spawn or swap. Defaults to 1.
 
 - **`radius`** (optional): Specifies the radius in game units for effect application. Defaults vary by effect type.
 
 - **`duration`** (optional): Used for `PlayIdle`, `SpawnEffectShader`, and `SpawnEffectShaderOnItem` effects. For `PlayIdle`, defaults to 1.0 (lower values make animation faster). For effect shaders, specifies how long the effect lasts.
 
-- **`string`** (optional): Used for `PlayIdle` effect to specify animation name (e.g., `"AnimationName"`). [List of available animation names](https://forums.nexusmods.com/topic/11007808-le-list-of-animation-events-for-debugsendanimationevent/?do=findComment&comment=105617168).
+- **`string`** (optional): Used for various effects. Takes one entry. Currently used for `PlayIdle` effect to specify animation name (e.g., `"AnimationName"`). [List of available animation names](https://forums.nexusmods.com/topic/11007808-le-list-of-animation-events-for-debugsendanimationevent/?do=findComment&comment=105617168).
 
+- **`strings`** (optional): Used for various effects. Takes multiple entries. Currently used for `ToggleNode` effect to specify node names substrings.
+
+- **`mode`** (optional): Used for various effects. Currently used for `ToggleNode` effect to specify the disable or enable mode.
+  - `0`: Disable (default).
+  - `1`: Enable.
+ 
 - **`nonDeletable`** (optional): Used for **swap** functions only. During swap, the original object is deactivated and a new one appears in its place. This value determines whether the original object is deleted (`0`) or only disabled (`1`).
 
 - **`scale`** (optional): Used for **spawn/swap** functions only. Allows you to select the scale of the spawned item. By default, it is copied from the target object.
