@@ -346,7 +346,7 @@ Here are all possible `type` values and their supported fields:
 - **`EnableLight`**: Enables previously disabled lights.
   - Supported fields: `formID`, `formList`, `chance`, `radius`.
 
-- **``**: Toggles nodes on and off (scales to 0.00001 or 1.0).
+- **`ToggleNode`**: Toggles nodes on and off (scales to 0.00001 or 1.0).
   - Supported fields: `mode`, `nodeNames`.
 
 ### Configuring Effects with `items`
