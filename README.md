@@ -110,7 +110,7 @@ The `filter` object determines which objects and interactions trigger a rule. It
     ```json
     "formLists": [
         {"formID": "Skyrim.esm:0x123456", "index": 0},
-        {"formID": "MyMod.esp:0x789ABC"}
+        {"editorID": "ExampleFormList"}
     ]
     ```
     - **Index `-1`** is default, means that all the items at once will be used. 
