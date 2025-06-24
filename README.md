@@ -29,7 +29,7 @@ This guide explains how to set up those JSON files so you can customize the mod 
 - [Effects: What Happens When the Rule Triggers](#effects-what-happens-when-the-rule-triggers)
   - [Effect Types](#object-management)
   - [Configuring Effects with items](#configuring-effects-with-items)
-  - [Examples](#examples)
+- [Examples](#examples)
 
 ---
 
@@ -382,6 +382,8 @@ Here are all possible `type` values and their supported fields:
 
 - **`EnableLight`**: Enables previously disabled lights.
   - Supported fields: `formID`, `formList`, `chance`, `radius`.
+ 
+---
 
 ### Configuring Effects with `items`
 
@@ -445,7 +447,9 @@ For effect types that support an `items` array, you can specify detailed configu
 
   **NOTE**: If you want to spawn **explosions**, use `0` or `4` only.
 
-### Examples
+---
+
+## Examples
 
 1. **Spawn a Gold Coin on Activation**
    ```json
