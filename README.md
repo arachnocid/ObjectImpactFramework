@@ -286,9 +286,6 @@ Here are all possible `type` values and their supported fields:
 
 - **`ActivateItem`**: Activates the target object. Behaves the same as pressing `E` for all form types.
   - No `items` array required.
-
-- **`ToggleNode`**: Toggles nodes on and off (scales to 0.00001 or 1.0).
-  - Supported fields: `mode`, `nodeNames`.
  
 ### Inventory Management
 - **`SpillInventory`**: Spills the contents of a container.
@@ -352,6 +349,12 @@ Here are all possible `type` values and their supported fields:
   - Supported fields: `formID`, `formList`, `chance`, `radius`.
 
 ### Visual & Audio Effects
+- **`PlaySound`**: Plays a sound descriptor.
+  - Supported fields: `formID`, `formList`, `chance`, `count`.
+
+- **`PlayIdle`**: Plays an animation on an actor who interacted with the object.
+  - Supported fields: `string`, `duration`.
+ 
 - **`SpawnImpactDataSet`**: Plays an impact data set (not to be confused with impacts).
   - Supported fields: `formID`, `formList`, `chance`, `count`.
 
@@ -363,12 +366,9 @@ Here are all possible `type` values and their supported fields:
 
 - **`SpawnEffectShaderOnItem`**: Spawns effect shaders on the target object.
   - Supported fields: `formID`, `formList`, `chance`, `count`, `duration`.
-
-- **`PlaySound`**: Plays a sound descriptor.
-  - Supported fields: `formID`, `formList`, `chance`, `count`.
-
-- **`PlayIdle`**: Plays an animation on an actor who interacted with the object.
-  - Supported fields: `string`, `duration`.
+ 
+- **`ToggleNode`**: Toggles nodes on and off (scales to 0.00001 or 1.0).
+  - Supported fields: `mode`, `nodeNames`.
 
 ### Lighting Effects
 - **`SpawnLight`**: Spawns a light at the object's location.
