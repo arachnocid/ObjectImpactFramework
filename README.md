@@ -27,7 +27,7 @@ This guide explains how to set up those JSON files so you can customize the mod 
   - [General Filters](#general-filters)
   - [Hit-Specific Filters](#hit-specific-filters)
 - [Effects: What Happens When the Rule Triggers](#effects-what-happens-when-the-rule-triggers)
-  - [Effect Types](#effect-types)
+  - [Effect Types](#object-management)
   - [Configuring Effects with items](#configuring-effects-with-items)
   - [Examples](#examples)
 
