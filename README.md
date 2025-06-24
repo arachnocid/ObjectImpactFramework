@@ -284,7 +284,7 @@ Here are all possible `type` values and their supported fields:
 - **`LockItem`**: Locks the target object (with animation).
   - No `items` array required.
 
-- **`ActivateItem`**: Activates the target object. Behaves the same as pressing `E` for all form types.
+- **`ActivateItem`**: Activates the target object. Behaves the same as pressing `E` for all form types. Does *not* work with the `Activate` event to avoid collisions.
   - No `items` array required.
  
 ### Inventory Management
