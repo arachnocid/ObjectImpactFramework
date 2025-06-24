@@ -1802,7 +1802,7 @@ namespace OIF {
                 {"spawnspell", EffectType::kSpawnSpell},
                 {"spawnspellonitem", EffectType::kSpawnSpellOnItem},
                 {"spawnactor", EffectType::kSpawnActor},
-                {"spawnimpact", EffectType::kSpawnImpact},
+                //{"spawnimpact", EffectType::kSpawnImpact},
                 {"spawnimpactdataset", EffectType::kSpawnImpactDataSet},
                 {"spawnexplosion", EffectType::kSpawnExplosion},
                 {"swapitem", EffectType::kSwapItem},
@@ -1827,7 +1827,12 @@ namespace OIF {
                 {"togglenode", EffectType::kToggleNode},
                 //{"toggleshaderflag", EffectType::kToggleShaderFlag},
                 {"unlockitem", EffectType::kUnlockItem},
-                {"lockitem", EffectType::kLockItem}
+                {"lockitem", EffectType::kLockItem},
+                {"activateitem", EffectType::kActivateItem},
+                {"addcontaineritem", EffectType::kAddContainerItem},
+                {"addactoritem", EffectType::kAddActorItem},
+                {"removecontaineritem", EffectType::kRemoveContainerItem},
+                {"removeactoritem", EffectType::kRemoveActorItem}
             };
 
             for (const auto& effj : effectArray) {
@@ -1851,7 +1856,8 @@ namespace OIF {
                     EffectType::kEnableItem,
                     EffectType::kSpillInventory,
                     EffectType::kUnlockItem,
-                    EffectType::kLockItem
+                    EffectType::kLockItem,
+                    EffectType::kActivateItem
                 };
 
                 bool needsItems = std::find(effectsWithoutItems.begin(), effectsWithoutItems.end(), eff.type) == effectsWithoutItems.end();
@@ -1944,7 +1950,8 @@ namespace OIF {
                                 EffectType::kToggleNode,
                                 //EffectType::kToggleShaderFlag,
                                 EffectType::kUnlockItem,
-                                EffectType::kLockItem         
+                                EffectType::kLockItem,
+                                EffectType::kActivateItem
                             };
 
                             bool needsForm = std::find(effectsWithoutForm.begin(), effectsWithoutForm.end(), eff.type) == effectsWithoutForm.end();
@@ -2429,6 +2436,10 @@ namespace OIF {
                             Effects::LockItem(ctx);
                             break;
 
+                        case EffectType::kActivateItem:
+                            Effects::ActivateItem(ctx);
+                            break;
+
                         case EffectType::kSpawnItem:
                         {
                             std::vector<ItemSpawnData> itemsData;
@@ -2625,7 +2636,7 @@ namespace OIF {
                         }
                         break;
                         
-                        case EffectType::kSpawnImpact:
+                        /*case EffectType::kSpawnImpact:
                         {
                             std::vector<ImpactSpawnData> impactsData;
                             for (const auto& [form, extData] : eff.items) {
@@ -2670,7 +2681,7 @@ namespace OIF {
                                 Effects::SpawnImpact(ctx, impactsData);
                             }
                         }
-                        break;
+                        break;*/
 
                         case EffectType::kSpawnImpactDataSet:
                         {
@@ -3538,6 +3549,69 @@ namespace OIF {
                             }
                         }
                         break;*/
+
+                        case EffectType::kAddContainerItem:
+                        case EffectType::kAddActorItem:
+                        case EffectType::kRemoveContainerItem:
+                        case EffectType::kRemoveActorItem:
+                        {
+                            std::vector<InventoryData> itemsData;
+                            for (const auto& [form, extData] : eff.items) {
+                                if (!form) continue;
+                                float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
+                                if (roll > extData.chance) continue;
+
+                                if (extData.isFormList) {
+                                    auto* list = form->As<RE::BGSListForm>();
+                                    if (!list) continue;
+
+                                    int idx = extData.index;
+                                    bool processAll = false;
+
+                                    if (idx == -3) {
+                                        idx = std::uniform_int_distribution<int>(0, static_cast<int>(list->forms.size()) - 1)(rng);
+                                    } else if (idx == -2) {
+                                        idx = currentRule.dynamicIndex;
+                                    } else if (idx == -1) {
+                                        processAll = true;
+                                    }
+                                    if (processAll) {
+                                        for (auto* el : list->forms) {
+                                            if (!el) continue;
+                                            if (auto* item = el->As<RE::TESBoundObject>()) {
+                                                itemsData.emplace_back(item, extData.count, extData.chance);
+                                            }
+                                        }
+                                    } else if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
+                                        auto* el = list->forms[idx];
+                                        if (el) {
+                                            if (auto* item = el->As<RE::TESBoundObject>()) {
+                                                itemsData.emplace_back(item, extData.count, extData.chance);
+                                            }
+                                        }
+                                    }
+                                } else if (auto* item = form->As<RE::TESBoundObject>()) {
+                                    itemsData.emplace_back(item, extData.count, extData.chance);
+                                }
+                            }
+                            if (!itemsData.empty()) {
+                                switch (eff.type) {
+                                    case EffectType::kAddContainerItem:
+                                        Effects::AddContainerItem(ctx, itemsData);
+                                        break;
+                                    case EffectType::kAddActorItem:
+                                        Effects::AddActorItem(ctx, itemsData);
+                                        break;
+                                    case EffectType::kRemoveContainerItem:
+                                        Effects::RemoveContainerItem(ctx, itemsData);
+                                        break;
+                                    case EffectType::kRemoveActorItem:
+                                        Effects::RemoveActorItem(ctx, itemsData);
+                                        break;
+                                }
+                            }
+                        }
+                        break;
                                 
                     default:
                         logger::warn("Unknown effect type {}", static_cast<int>(eff.type));
@@ -3605,7 +3679,6 @@ namespace OIF {
         logger::warn("AttackType: '{}'", ctx.attackType);
         logger::warn("DeliveryType: '{}'", ctx.deliveryType);
         logger::warn("IsHitEvent: {}", ctx.isHitEvent);
-        logger::warn("Region: {}", ctx.region ? ctx.region->GetFormID() : 0);
         logger::warn("Weather: {}", ctx.weather ? ctx.weather->GetFormID() : 0);*/
 
         std::unique_lock lock(_ruleMutex);

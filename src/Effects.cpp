@@ -1,5 +1,6 @@
 #include "Effects.h"
 #include <future>
+#include "RuleManager.h"
 
 namespace OIF::Effects
 {
@@ -644,7 +645,7 @@ namespace OIF::Effects
         if (!ctx.target->IsDisabled()) ctx.target->Disable();
         ctx.target->SetDelete(true); 
     }
-
+    
     void DisableItem(const RuleContext& ctx)
     {
         if (!ctx.target || ctx.target->IsDeleted()) {
@@ -652,17 +653,134 @@ namespace OIF::Effects
             return;
         }
 
-        if (!ctx.target->IsDisabled()) ctx.target->Disable();
+        auto* base = ctx.target->GetBaseObject();
+        if (!base) {
+            logger::error("DisableItem: Target has no base object");
+            return;
+        }
+    
+        auto* modInfo = base->GetFile();
+        if (!modInfo) {
+            logger::error("DisableItem: Cannot get mod info for base object");
+            return;
+        }
+        
+        // Workaround for kInintiallyDisabled assigned by the engine to freshly disabled items on cell re-enter
+        std::string modName = std::string(modInfo->GetFilename());
+        std::uint32_t formID = base->GetLocalFormID();
+
+        std::stringstream ss;
+        ss << modName << ":" << std::hex << std::uppercase << std::setfill('0') << std::setw(8) << formID;
+        std::string identifier = ss.str();
+        std::string displayName = "orig:" + identifier;
+    
+        auto pos = ctx.target->GetPosition();
+        auto scale = ctx.target->GetScale();
+    
+        static RE::TESBoundObject* dummyForm = nullptr;
+        if (!dummyForm) {
+            auto* dh = RE::TESDataHandler::GetSingleton();
+            auto* form = dh ? dh->LookupForm(0x000B79FF, "Skyrim.esm") : nullptr;
+            dummyForm = form ? form->As<RE::TESBoundObject>() : nullptr;
+        }
+
+        if (!dummyForm) {
+            logger::error("DisableItem: Cannot create dummy (required for respawning)");
+            return;
+        }
+
+        auto dummy = ctx.target->PlaceObjectAtMe(dummyForm, true);
+        if (!dummy) {
+            logger::error("DisableItem: Failed to create dummy (required for respawning)");
+            return;
+        }
+    
+        dummy->SetPosition(pos);
+        dummy->data.angle = ctx.target->data.angle;
+        SetObjectScale(dummy.get(), scale);
+
+        dummy->SetDisplayName(displayName, true);
+    
+        ctx.target->Disable();
+        ctx.target->SetDelete(true);
     }
 
     void EnableItem(const RuleContext& ctx)
     {
-        if (!ctx.target || ctx.target->IsDeleted()) {
-            logger::error("EnableItem: No target to enable");
+        auto* cell = ctx.target ? ctx.target->GetParentCell() : nullptr;
+        if (!cell) {
+            logger::error("EnableItem: No cell to search for dummy");
             return;
         }
 
-        if (ctx.target->IsDisabled()) ctx.target->Enable(false);
+        RE::TESObjectREFR* foundDummy = nullptr;
+        std::string origIdentifier = "";
+
+        static RE::TESBoundObject* dummyForm = nullptr;
+        if (!dummyForm) {
+            auto* dh = RE::TESDataHandler::GetSingleton();
+            auto* form = dh ? dh->LookupForm(0x000B79FF, "Skyrim.esm") : nullptr;
+            dummyForm = form ? form->As<RE::TESBoundObject>() : nullptr;
+        }
+
+        cell->ForEachReference([&](RE::TESObjectREFR* ref) {
+            if (!ref || ref->IsDeleted())
+                return RE::BSContainer::ForEachResult::kContinue;
+
+            if (dummyForm && ref->GetBaseObject() != dummyForm) {
+                return RE::BSContainer::ForEachResult::kContinue;
+            }
+
+            std::string name = ref->GetDisplayFullName() ? ref->GetDisplayFullName() : "";
+            if (name.empty() || name.rfind("orig:", 0) != 0) {
+                return RE::BSContainer::ForEachResult::kContinue;
+            }
+
+            if (ref->IsDeleted()) {
+                return RE::BSContainer::ForEachResult::kContinue;
+            }
+
+            try {
+                origIdentifier = name.substr(5);
+                foundDummy = ref;
+                return RE::BSContainer::ForEachResult::kStop;
+            } catch (...) {
+                logger::warn("EnableItem: Failed to parse FormID from dummy DisplayName: {}", name);
+                return RE::BSContainer::ForEachResult::kContinue;
+            }
+        });
+
+        if (!foundDummy) {
+            logger::debug("EnableItem: No dummy object found in cell");
+            return;
+        }
+
+        if (origIdentifier.empty()) {
+            logger::error("EnableItem: Couldn't extract original FormID from dummy name");
+            return;
+        }
+
+        RE::TESForm* origForm = RuleManager::GetFormFromIdentifier<RE::TESForm>(origIdentifier);
+        if (!origForm) {
+            logger::error("EnableItem: Failed to lookup original form by identifier '{}'", origIdentifier);
+            return;
+        }
+
+        auto pos = foundDummy->GetPosition();
+        auto scale = foundDummy->GetScale();
+
+        auto orig = foundDummy->PlaceObjectAtMe(origForm ? origForm->As<RE::TESBoundObject>() : nullptr, true);
+        if (!orig) {
+            logger::error("EnableItem: Failed to recreate original object");
+            return;
+        }
+
+        orig->SetPosition(pos);
+        orig->data.angle = foundDummy->data.angle;
+        SetObjectScale(orig.get(), scale);
+
+        foundDummy->Disable();
+        foundDummy->SetDelete(true);
     }
 
     void SpawnItem(const RuleContext& ctx, const std::vector<ItemSpawnData>& itemsData)
@@ -880,11 +998,11 @@ namespace OIF::Effects
     }
 
     // A placeholder. Haven't find a decent way to spawn pure impacts yet
-    void SpawnImpact(const RuleContext& ctx, const std::vector<ImpactSpawnData>& impactsData) {
+    /*void SpawnImpact(const RuleContext& ctx, const std::vector<ImpactSpawnData>& impactsData) {
         (void)ctx;
         (void)impactsData;
         return;
-    }
+    }*/
     
     void SpawnImpactDataSet(const RuleContext& ctx, const std::vector<ImpactDataSetSpawnData>& impactsData)
     {
@@ -1036,10 +1154,14 @@ namespace OIF::Effects
         }
 
         if (anyItemSpawned && ctx.target) {
-            if (!ctx.target->IsDisabled()) ctx.target->Disable();
             for (const auto& itemData : itemsData) {
-                if (!itemData.nonDeletable && ctx.target) {
-                    ctx.target->SetDelete(true);
+                if (ctx.target) {
+                    if (itemData.nonDeletable) {
+                        DisableItem(ctx);
+                    } else {
+                        if (!ctx.target->IsDisabled()) ctx.target->Disable();
+                        ctx.target->SetDelete(true);
+                    }
                 }
             }
         }
@@ -1155,10 +1277,14 @@ namespace OIF::Effects
         }
 
         if (anyActorSpawned && ctx.target) {
-            if (!ctx.target->IsDisabled()) ctx.target->Disable();
             for (const auto& itemData : actorsData) {
-                if (!itemData.nonDeletable && ctx.target) {
-                    ctx.target->SetDelete(true);
+                if (ctx.target) {
+                    if (itemData.nonDeletable) {
+                        DisableItem(ctx);
+                    } else {
+                        if (!ctx.target->IsDisabled()) ctx.target->Disable();
+                        ctx.target->SetDelete(true);
+                    }
                 }
             }
         }
@@ -1237,10 +1363,14 @@ namespace OIF::Effects
         }
         
         if (spawned && ctx.target) {
-            if (!ctx.target->IsDisabled()) ctx.target->Disable();
             for (const auto& itemData : itemsData) {
-                if (!itemData.nonDeletable && ctx.target) {
-                    ctx.target->SetDelete(true);
+                if (ctx.target) {
+                    if (itemData.nonDeletable) {
+                        DisableItem(ctx);
+                    } else {
+                        if (!ctx.target->IsDisabled()) ctx.target->Disable();
+                        ctx.target->SetDelete(true);
+                    }
                 }
             }        
         }
@@ -1483,10 +1613,14 @@ namespace OIF::Effects
         }
 
         if (spawned && ctx.target) {
-            if (!ctx.target->IsDisabled()) ctx.target->Disable();
             for (const auto& itemData : actorsData) {
-                if (!itemData.nonDeletable && ctx.target) {
-                    ctx.target->SetDelete(true);
+                if (ctx.target) {
+                    if (itemData.nonDeletable) {
+                        DisableItem(ctx);
+                    } else {
+                        if (!ctx.target->IsDisabled()) ctx.target->Disable();
+                        ctx.target->SetDelete(true);
+                    }
                 }
             }        
         }
@@ -2162,5 +2296,113 @@ namespace OIF::Effects
         }
 
         RE::BGSOpenCloseForm::SetOpenState(ctx.target, false, false);
+    }
+
+    void ActivateItem(const RuleContext& ctx)
+    {
+        if (ctx.event == EventType::kActivate) {
+            logger::debug("ActivateItem: Event is kActivate, skipping activation");
+            return;
+        }
+
+        if (!ctx.target || ctx.target->IsDeleted()) {
+            logger::error("ActivateItem: No target to activate");
+            return;
+        }
+
+        ctx.target->ActivateRef(ctx.source, 0, nullptr, 1, false);
+    }
+
+    void AddContainerItem(const RuleContext& ctx, const std::vector<InventoryData>& itemsData)
+    {
+        if (!ctx.target || ctx.target->IsDeleted()) {
+            logger::error("AddInventoryItem: No target to add items to");
+            return;
+        }
+
+        if (itemsData.empty()) {
+            logger::error("AddInventoryItem: No items to add");
+            return;
+        }
+    
+        for (const auto& itemData : itemsData) {
+            if (!itemData.item) continue;
+    
+            ctx.target->AddObjectToContainer(itemData.item, nullptr, itemData.count, ctx.target);
+        }
+    }  
+
+    void AddActorItem(const RuleContext& ctx, const std::vector<InventoryData>& itemsData)
+    {
+        if (!ctx.target || ctx.target->IsDeleted()) {
+            logger::error("AddActorItem: No target to add items from");
+            return;
+        }
+
+        if (!ctx.source || ctx.source->IsDeleted()) {
+            logger::error("AddActorItem: No source actor to add items to");
+            return;
+        }
+
+        if (itemsData.empty()) {
+            logger::error("AddActorItem: No items to add");
+            return;
+        }
+
+        for (const auto& itemData : itemsData) {
+            if (!itemData.item) continue;
+
+            ctx.source->AddObjectToContainer(itemData.item, nullptr, itemData.count, ctx.target);
+        }
+    }
+
+    void RemoveContainerItem(const RuleContext& ctx, const std::vector<InventoryData>& itemsData)
+    {
+        if (!ctx.target || ctx.target->IsDeleted()) {
+            logger::error("RemoveContainerItem: No target to remove items from");
+            return;
+        }
+        if (itemsData.empty()) {
+            logger::error("RemoveContainerItem: No items to remove");
+            return;
+        }
+
+        auto inventory = ctx.target->GetInventory();
+        for (const auto& itemData : itemsData) {
+            if (!itemData.item) continue;
+
+            auto it = inventory.find(itemData.item);
+            if (it == inventory.end() || it->second.first <= 0) {
+                continue;
+            }
+            std::int32_t removeCount = std::min<int32_t>(itemData.count, it->second.first);
+
+            ctx.target->RemoveItem(itemData.item, removeCount, RE::ITEM_REMOVE_REASON::kRemove, nullptr, nullptr);
+        }
+    }
+
+    void RemoveActorItem(const RuleContext& ctx, const std::vector<InventoryData>& itemsData)
+    {
+        if (!ctx.source || ctx.source->IsDeleted()) {
+            logger::error("RemoveActorItem: No source actor to remove items from");
+            return;
+        }
+        if (itemsData.empty()) {
+            logger::error("RemoveActorItem: No items to remove");
+            return;
+        }
+
+        auto inventory = ctx.source->GetInventory();
+        for (const auto& itemData : itemsData) {
+            if (!itemData.item) continue;
+
+            auto it = inventory.find(itemData.item);
+            if (it == inventory.end() || it->second.first <= 0) {
+                continue;
+            }
+            std::int32_t removeCount = std::min<int32_t>(itemData.count, it->second.first);
+
+            ctx.source->RemoveItem(itemData.item, removeCount, RE::ITEM_REMOVE_REASON::kRemove, nullptr, nullptr);
+        }
     }
 }

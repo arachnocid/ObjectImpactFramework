@@ -64,8 +64,7 @@ namespace OIF
         Constant,
         FireAndForget,
         IgnoreWeapon,
-        OverrideData,
-        Other    
+        OverrideData    
     }; 
 
     enum class DeliveryType {
@@ -408,7 +407,7 @@ namespace OIF
             RE::TESForm* attackSource = magicEffect;
             RE::TESForm* projectileSource = nullptr;
             WeaponType weaponType = WeaponType::Other;
-            AttackType attackType = AttackType::Other;
+            AttackType attackType = AttackType::Regular;
             DeliveryType deliveryType = DeliveryType::None;
             bool isShout = false;
             bool isSpell = false;
