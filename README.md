@@ -142,7 +142,7 @@ The `filter` object determines which objects and interactions trigger a rule. It
   - `2`: Object must be a full-fledged quest item.
   - `3`: All objects allowed.
  
-- **`isInitiallyDisabled`** (optional): An integer specifying whether the object has the `kInitiallyDisabled` flag. **Note:** upon re-entering the cell, a freshly disabled item may acquire this flag.
+- **`isInitiallyDisabled`** (optional): An integer specifying whether the object has the `kInitiallyDisabled` flag.
   - `0`: Object is not initially disabled.
   - `1`: Object is initially disabled.
   - `2`: All objects allowed (default).
@@ -266,10 +266,9 @@ For rules with the `"Hit"` event, additional filters can refine which attacks tr
 
 The `effect` field defines the outcome when a rule is triggered. It can be a single effect (an object) or multiple effects (an array of objects). Each effect has a mandatory `type` field and, for most types, an optional `items` array.
 
-### Effect Types
-
 Here are all possible `type` values and their supported fields:
 
+### Object Management
 - **`RemoveItem`**: Deletes the target object.
   - No `items` array required.
 
@@ -278,16 +277,36 @@ Here are all possible `type` values and their supported fields:
 
 - **`DisableItem`**: Disables the target object.
   - No `items` array required.
- 
+
 - **`UnlockItem`**: Unlocks the target object (with animation).
   - No `items` array required.
  
 - **`LockItem`**: Locks the target object (with animation).
   - No `items` array required.
-  
+
+- **`ActivateItem`**: Activates the target object. Behaves the same as pressing `E` for all form types.
+  - No `items` array required.
+
+- **`ToggleNode`**: Toggles nodes on and off (scales to 0.00001 or 1.0).
+  - Supported fields: `mode`, `nodeNames`.
+ 
+### Inventory Management
 - **`SpillInventory`**: Spills the contents of a container.
   - No `items` array required.
 
+- **`AddContainerItem`**: Adds specified items to the contents of a container.
+  - Supported fields: `formID`, `formList`, `chance`.
+ 
+- **`AddActorItem`**: Adds specified items to the inventory of an actor who interacted with the object.
+  - Supported fields: `formID`, `formList`, `chance`.
+ 
+- **`RemoveContainerItem`**: Removes specified items from the contents of a container.
+  - Supported fields: `formID`, `formList`, `chance`.
+ 
+- **`RemoveActorItem`**: Removes specified items from the inventory of an actor who interacted with the object.
+  - Supported fields: `formID`, `formList`, `chance`.
+
+### Item Spawning & Swapping
 - **`SpawnItem`**: Spawns specific items at the object's location.
   - Supported fields: `formID`, `formList`, `chance`, `count`, `scale`, `fade`, `spawnType`.
 
@@ -300,18 +319,7 @@ Here are all possible `type` values and their supported fields:
 - **`SwapLeveledItem`**: Replaces the target object with a random leveled item.
   - Supported fields: `formID`, `chance`, `count`, `nonDeletable`, `scale`, `fade`, `spawnType`.
 
-- **`SpawnSpell`**: Casts spells on nearby actors.
-  - Supported fields: `formID`, `formList`, `chance`, `count`, `radius`.
-
-- **`SpawnLeveledSpell`**: Casts random leveled spells on nearby actors.
-  - Supported fields: `formID`, `chance`, `count`, `radius`.
-
-- **`SpawnSpellOnItem`**: Casts spells on the target object.
-  - Supported fields: `formID`, `formList`, `count`, `chance`.
-
-- **`SpawnLeveledSpellOnItem`**: Casts random leveled spells on the target object.
-  - Supported fields: `formID`, `chance`, `count`.
-
+### Actor Spawning & Swapping
 - **`SpawnActor`**: Spawns specific actors at the object's location.
   - Supported fields: `formID`, `formList`, `chance`, `count`, `scale`, `fade`, `spawnType`.
 
@@ -324,7 +332,27 @@ Here are all possible `type` values and their supported fields:
 - **`SwapLeveledActor`**: Replaces the target object with random leveled actors.
   - Supported fields: `formID`, `chance`, `count`, `nonDeletable`, `scale`, `fade`, `spawnType`.
 
-- **`SpawnImpact`**: Plays an Impact Data Set (e.g., visual effects like sparks).
+### Magic Effects
+- **`SpawnSpell`**: Casts spells on nearby actors.
+  - Supported fields: `formID`, `formList`, `chance`, `count`, `radius`.
+
+- **`SpawnLeveledSpell`**: Casts random leveled spells on nearby actors.
+  - Supported fields: `formID`, `chance`, `count`, `radius`.
+
+- **`SpawnSpellOnItem`**: Casts spells on the target object.
+  - Supported fields: `formID`, `formList`, `count`, `chance`.
+
+- **`SpawnLeveledSpellOnItem`**: Casts random leveled spells on the target object.
+  - Supported fields: `formID`, `chance`, `count`.
+
+- **`ApplyIngestible`**: Applies the target object's effects (if it's an ingredient or ingestible) to nearby actors.
+  - Supported fields: `chance`, `radius`.
+
+- **`ApplyOtherIngestible`**: Applies effects from specified ingestibles to nearby actors. Can be used with any form type.
+  - Supported fields: `formID`, `formList`, `chance`, `radius`.
+
+### Visual & Audio Effects
+- **`SpawnImpactDataSet`**: Plays an impact data set (not to be confused with impacts).
   - Supported fields: `formID`, `formList`, `chance`, `count`.
 
 - **`SpawnExplosion`**: Triggers an explosion at the object's location.
@@ -342,12 +370,7 @@ Here are all possible `type` values and their supported fields:
 - **`PlayIdle`**: Plays an animation on an actor who interacted with the object.
   - Supported fields: `string`, `duration`.
 
-- **`ApplyIngestible`**: Applies the target object's effects (if it's an ingredient or ingestible) to nearby actors.
-  - Supported fields: `chance`, `radius`.
-
-- **`ApplyOtherIngestible`**: Applies effects from specified ingestibles to nearby actors. Can be used with any form type.
-  - Supported fields: `formID`, `formList`, `chance`, `radius`.
-
+### Lighting Effects
 - **`SpawnLight`**: Spawns a light at the object's location.
   - Supported fields: `formID`, `formList`, `chance`, `count`, `fade`, `spawnType`.
 
@@ -359,9 +382,6 @@ Here are all possible `type` values and their supported fields:
 
 - **`EnableLight`**: Enables previously disabled lights.
   - Supported fields: `formID`, `formList`, `chance`, `radius`.
-
-- **`ToggleNode`**: Toggles nodes on and off (scales to 0.00001 or 1.0).
-  - Supported fields: `mode`, `nodeNames`.
 
 ### Configuring Effects with `items`
 
