@@ -209,14 +209,6 @@ Below are all possible filter parameters:
 
 ### Source-Actor Filters
 
-- **`actorValues`** (optional): An array of actor value conditions that the event source actor must meet. Format: `["Health >= 10", "Aggression = 0"]`.
-
-- **`actorValuesNot`** (optional): An array of actor value conditions that the event source actor must *not* meet. Same format as `actorValues`.
-
-- **`level`** (optional): An array of level conditions that the event source actor must meet. Format: `[">= 10", "= 20"]`.
-
-- **`levelNot`** (optional): An array of level conditions that the event source actor must *not* meet. Same format as `level`.
-
 - **`perks`** (optional): An array of perks that the event source actor must have. Format: `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`), `"EditorIDName"` (e.g., `"VendorItemFood"`), or a formlist's formID/editorID.
 
 - **`perksNot`** (optional): An array of perks that the event source actor must *not* have. Same format as `perks`.
@@ -236,6 +228,14 @@ Below are all possible filter parameters:
 - **`actorRaces`** (optional): An array of races that the event source actor must have in their inventory. Format: `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`), `"EditorIDName"` (e.g., `"VendorItemFood"`), or a formlist's formID/editorID.
 
 - **`actorRacesNot`** (optional): An array of keywords that the event source actor must *not* have. Same format as `actorRaces`.
+
+- **`actorValues`** (optional): An array of actor value conditions that the event source actor must meet. Format: `["Health >= 10", "Aggression = 0"]`.
+
+- **`actorValuesNot`** (optional): An array of actor value conditions that the event source actor must *not* meet. Same format as `actorValues`.
+
+- **`level`** (optional): An array of level conditions that the event source actor must meet. Format: `[">= 10", "= 20"]`.
+
+- **`levelNot`** (optional): An array of level conditions that the event source actor must *not* meet. Same format as `level`.
 
 - **`isSneaking`** (optional): An integer specifying whether the event source actor is in this state.
 - **`isSwimming`**:
