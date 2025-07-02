@@ -26,7 +26,7 @@ This guide explains how to set up those JSON files so you can customize the mod 
 - [Filters: Choosing Which Objects to Affect and How](#filters-choosing-which-objects-to-affect-and-how)
   - [General Filters](#general-filters)
   - [Time‑Based Filters](#time-based-filters)
-  - [Proximity Filters](#proximity-based-filters)
+  - [Proximity-Based Filters](#proximity-based-filters)
   - [Source‑Actor Filters](#source-actor-filters)
   - [Hit-Specific Filters](#hit-specific-filters)
 - [Effects: What Happens When the Rule Triggers](#effects-what-happens-when-the-rule-triggers)
