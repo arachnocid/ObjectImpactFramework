@@ -182,7 +182,7 @@ Below are all possible filter parameters:
   - `Year`
   - `GameTime`
  
-- **`timeNot`** (optional): An array of time conditions that must *not* be active, in the same format as `time`.
+- **`timeNot`** (optional): An array of time conditions that must *not* be active. Same format as `time`.
 
 ### Proximity-Based Filters
 
