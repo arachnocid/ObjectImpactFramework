@@ -25,6 +25,9 @@ This guide explains how to set up those JSON files so you can customize the mod 
 - [Basic Rule Structure](#basic-rule-structure)
 - [Filters: Choosing Which Objects to Affect and How](#filters-choosing-which-objects-to-affect-and-how)
   - [General Filters](#general-filters)
+  - [Time‑Based Filters](#time-based-filters)
+  - [Proximity Filters](#proximity-based-filters)
+  - [Source‑Actor Filters](#source-actor-filters)
   - [Hit-Specific Filters](#hit-specific-filters)
 - [Effects: What Happens When the Rule Triggers](#effects-what-happens-when-the-rule-triggers)
   - [Effect Types](#object-management)
@@ -47,8 +50,9 @@ Each rule in your JSON file defines a specific behavior for the mod. Rules are w
   - `"CellAttach"`: Triggered when an object is attached to a cell (works on location re-enter as well).
   - `"CellDetach"`: Triggered when an object is detached from a cell.
   - `"WeatherChange"`: Triggered on weather change.
+  - `"OnUpdate"`: Triggered every 250 milliseconds.
   
-- **`filter`**: Defines the conditions under which the rule applies. This is an object that specifies which objects or interactions the rule targets. At least one of `formTypes`, `formIDs`, `formLists`, or `keywords` must be provided to identify target objects.
+- **`filter`**: Defines the conditions under which the rule applies. This is an object that specifies which objects or interactions the rule targets. At least one of `formTypes`, `formIDs`, `editorIDs`, `formLists`, or `keywords` must be provided to identify target objects.
 
 - **`effect`**: Describes what happens when the rule is triggered. This can be a single effect (an object) or multiple effects (an array of objects). Each effect has a `type` and, for most types, an optional `items` array specifying what to spawn, swap, or apply.
 
@@ -75,7 +79,11 @@ This rule triggers when an activator (e.g., a lever) is activated or hit, spawni
 
 ## Filters: Choosing Which Objects to Affect and How
 
-The `filter` object determines which objects and interactions trigger a rule. It's highly customizable, allowing precise control over when effects occur. Below are all possible filter parameters:
+The `filter` object determines which objects and interactions trigger a rule. It's highly customizable, allowing precise control over when effects occur.
+
+Each filter that takes forms 
+
+Below are all possible filter parameters:
 
 ### General Filters
 
@@ -102,7 +110,7 @@ The `filter` object determines which objects and interactions trigger a rule. It
   - `"tree"`: Trees.
   - `"light"`: Lights with 3D models (e.g., torches).
  
-- **`formTypesNot`** (optional): An array of strings specifying the types of objects that the rule should *not* apply to, in the same format as `formTypes`.
+- **`formTypesNot`** (optional): An array of strings specifying the types of objects that the rule should *not* apply to. Same format as `formTypes`.
 
 - **`formIDs`** (optional): An array of strings identifying specific objects by their Form ID in the format `"modName:formID"`. Examples:
   - `"Skyrim.esm:0x123456"` (for esp/esm plugins).
@@ -110,11 +118,11 @@ The `filter` object determines which objects and interactions trigger a rule. It
   - `"Dawnguard.esm:00123456"` (alternate format with leading zeros (esp/esm)).
   - `"MyMod.esp:FE000800"` (alternate format with leading FE prefix (esl/espfe)).
 
-- **`formIDsNot`** (optional): An array of strings identifying specific objects that the rule should *not* apply to, in the same format as `formIDs`.
+- **`formIDsNot`** (optional): An array of strings identifying specific objects that the rule should *not* apply to. Same format as `formIDs`.
 
 - **`editorIDs`** (optional): An array of strings identifying specific objects by their Editor ID in the format `"EditorIDName"`. Example: `"VendorItemClutter"`.
 
-- **`editorIDsNot`** (optional): An array of strings identifying specific objects that the rule should *not* apply to, in the same format as `editorIDs`.
+- **`editorIDsNot`** (optional): An array of strings identifying specific objects that the rule should *not* apply to. Same format as `editorIDs`.
 
 - **`formLists`** (optional): An array of objects referencing formlists (lists of forms defined in a mod). Each entry has:
   - **`formID`**: The formlist's form ID in `"modName:formID"` format (required (or editorID)).
@@ -130,11 +138,17 @@ The `filter` object determines which objects and interactions trigger a rule. It
     - **Index `-1`** is default, means that all the items at once will be used. 
     - **Index `-2`** defines the parrallel relationship for mirrored formlists: matching positions between filter and items formlists correspond directly, allowing ordered transformations (raw meat at position 0 in formlist 1 becomes cooked meat at position 0 in formlist 2).
 
-- **`formListsNot`** (optional): An array of formlist objects that the rule should *not* apply to, in the same format as `formLists`.
+- **`formListsNot`** (optional): An array of formlist objects that the rule should *not* apply to. Same format as `formLists`.
 
-- **`keywords`** (optional): An array of keywords that the object must have. Format can be `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`) or a keyword name (e.g., `"VendorItemFood"`). Ignored for containers, doors, statics, movable statics, and trees.
+- **`keywords`** (optional): An array of keywords or formists of keywords that the object must have. Format: `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`), `"EditorIDName"` (e.g., `"VendorItemFood"`), or a formlist's formID/editorID.
 
-- **`keywordsNot`** (optional): An array of keywords the object must *not* have, in the same format as `keywords`.
+- **`keywordsNot`** (optional): An array of keywords or formists of keyword the object must *not* have. Same format as `keywords`.
+
+- **`chance`** (optional): A number between 0 and 100 representing the percentage chance the rule triggers. Defaults to 100 if omitted.
+
+- **`interactions`** (optional): An integer specifying how many interactions (e.g., hits or activations) are required before the effect triggers. Defaults to 1. Now works with all event types.
+
+- **`limit`** (optional): An integer setting the maximum number of times the rule can trigger per object. No limit if omitted. Now works with all event types.
 
 - **`questItemStatus`** (optional): An integer specifying quest item status requirements. Only works with **ACTIVE** player quests:
   - `0`: Object must not be a quest item (default).
@@ -146,31 +160,7 @@ The `filter` object determines which objects and interactions trigger a rule. It
   - `0`: Object is not initially disabled.
   - `1`: Object is initially disabled.
   - `2`: All objects allowed (default).
-
-- **`locations`** (optional): An array of Form IDs or formlist Form IDs referencing cells, locations, or worldspaces where the rule should apply. Format: `"modName:formID"`.
-
-- **`locationsNot`** (optional): An array of Form IDs or formlist Form IDs referencing cells, locations, or worldspaces where the rule should not apply. Same format as `locations`.
-
-- **`weathers`** (optional): An array of weather Form IDs or formlist Form IDs containing weathers that must be active for the rule to apply. Format: `"modName:formID"`.
-
-- **`weathersNot`** (optional): An array of weather Form IDs or formlist Form IDs that must *not* be active, in the same format as `weathers`.
-
-- **`perks`** (optional): An array of perk Form IDs that the event source actor must have. Format: `"modName:formID"`.
-
-- **`perksNot`** (optional): An array of perk Form IDs that the event source actor must *not* have, in the same format as `perks`.
-
-- **`actorValues`** (optional): An array of actor value conditions that the event source actor must meet. Format: `["Health >= 10", "Aggression = 0"]`.
-
-- **`actorValuesNot`** (optional): An array of actor value conditions that the event source actor must *not* meet, in the same format as `actorValues`.
-
-- **`level`** (optional): An array of level conditions that the event source actor must meet. Format: `[">= 10", "= 20"]`.
-
-- **`levelNot`** (optional): An array of level conditions that the event source actor must *not* meet, in the same format as `level`.
-
-- **`hasItem`** (optional): An array of item Form IDs that the event source actor must have in their inventory. Format: `"modName:formID"`.
-
-- **`hasItemNot`** (optional): An array of item Form IDs that the event source actor must *not* have, in the same format as `hasItem`.
-
+ 
 - **`isPluginInstalled`** (optional): An array of plugin names (e.g., `"MyMod.esp"`, `"Skyrim.esm"`) that must be loaded for the rule to apply.
 
 - **`isPluginNotInstalled`** (optional): An array of plugin names that must *not* be loaded.
@@ -179,11 +169,84 @@ The `filter` object determines which objects and interactions trigger a rule. It
 
 - **`isDllNotInstalled`** (optional): An array of DLL filenames that must *not* be present.
 
-- **`chance`** (optional): A number between 0 and 100 representing the percentage chance the rule triggers. Defaults to 100 if omitted.
+### Time-Based Filters
 
-- **`interactions`** (optional): An integer specifying how many interactions (e.g., hits or activations) are required before the effect triggers. Defaults to 1. Now works with all event types.
+- **`timer`** (optional): A defined number of seconds before triggering the effect.
 
-- **`limit`** (optional): An integer setting the maximum number of times the rule can trigger per object. No limit if omitted. Now works with all event types.
+- **`time`** (optional): An array of time conditions that must be active for the rule to apply. Format: `["Hour >= 10", "DayOfWeek = 1"]`. Available entries:
+  - `Minute`
+  - `Hour`
+  - `Day`
+  - `DayOfWeek`
+  - `Month`
+  - `Year`
+  - `GameTime`
+ 
+- **`timeNot`** (optional): An array of time conditions that must *not* be active, in the same format as `time`.
+
+### Proximity-Based Filters
+
+- **`nearbyObjects`** (optional): An array of objects that must be in a certain radius around the target object for the rule should apply. Each entry has:
+  - **`formID`**: The form ID in `"modName:formID"` format (required (or editorID)).
+  - **`editorID`**: The editor ID in `"EditorIDName"` format (required (or formID)).
+  - **`radius`**: An integer specifying in what radius to search. Example:
+ 
+    ```json
+    "nearbyObjects": [
+        {"formID": "Skyrim.esm:0x123456", "radius": 150},
+        {"editorID": "Player", "radius": 300}
+    ]
+    ```
+- **`nearbyObjectsNot`** (optional): An array of objects that must *not* be in a certain radius around the target object. Same format as `nearbyObjects`.
+
+- **`locations`** (optional): An array of cells, locations, or worldspaces where the rule should apply. Format: `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`), `"EditorIDName"` (e.g., `"VendorItemFood"`), or a formlist's formID/editorID.
+
+- **`locationsNot`** (optional): An array of cells, locations, or worldspaces where the rule should *not* apply. Same format as `locations`.
+
+- **`weathers`** (optional): An array of weathers that must be active for the rule to apply. Format: `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`), `"EditorIDName"` (e.g., `"VendorItemFood"`), or a formlist's formID/editorID.
+
+- **`weathersNot`** (optional): An array of weathers that must *not* be active. Same format as `weathers`.
+
+### Source-Actor Filters
+
+- **`actorValues`** (optional): An array of actor value conditions that the event source actor must meet. Format: `["Health >= 10", "Aggression = 0"]`.
+
+- **`actorValuesNot`** (optional): An array of actor value conditions that the event source actor must *not* meet. Same format as `actorValues`.
+
+- **`level`** (optional): An array of level conditions that the event source actor must meet. Format: `[">= 10", "= 20"]`.
+
+- **`levelNot`** (optional): An array of level conditions that the event source actor must *not* meet. Same format as `level`.
+
+- **`perks`** (optional): An array of perks that the event source actor must have. Format: `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`), `"EditorIDName"` (e.g., `"VendorItemFood"`), or a formlist's formID/editorID.
+
+- **`perksNot`** (optional): An array of perks that the event source actor must *not* have. Same format as `perks`.
+
+- **`spells`** (optional): An array of spells that the event source actor must have. Format: `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`), `"EditorIDName"` (e.g., `"VendorItemFood"`), or a formlist's formID/editorID.
+
+- **`spellsNot`** (optional): An array of spells that the event source actor must *not* have. Same format as `spells`.
+
+- **`hasItem`** (optional): An array of items that the event source actor must have in their inventory. Format: `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`), `"EditorIDName"` (e.g., `"VendorItemFood"`), or a formlist's formID/editorID.
+
+- **`hasItemNot`** (optional): An array of items that the event source actor must *not* have. Same format as `hasItem`.
+
+- **`actorKeywords`** (optional): An array of keywords that the event source actor must have in their inventory. Format: `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`), `"EditorIDName"` (e.g., `"VendorItemFood"`), or a formlist's formID/editorID.
+
+- **`actorKeywordsNot`** (optional): An array of keywords that the event source actor must *not* have. Same format as `actorKeywords`.
+
+- **`actorRaces`** (optional): An array of races that the event source actor must have in their inventory. Format: `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`), `"EditorIDName"` (e.g., `"VendorItemFood"`), or a formlist's formID/editorID.
+
+- **`actorRacesNot`** (optional): An array of keywords that the event source actor must *not* have. Same format as `actorRaces`.
+
+- **`isSneaking`** (optional): An integer specifying whether the event source actor is in this state.
+- **`isSwimming`**:
+- **`isInCombat`**:
+- **`isMounted`**:
+- **`isDualCasting`**:
+- **`isSprinting`**:
+- **`isWeaponDrawn`**:
+  - `0`: Object is not initially disabled.
+  - `1`: Object is initially disabled.
+  - `2`: All objects allowed (default).
 
 ### Hit-Specific Filters
 
@@ -210,19 +273,15 @@ For rules with the `"Hit"` event, additional filters can refine which attacks tr
   - `"total"`: Yet to discover. Supposedly matches all weapon types.
   - `"other"`: Miscellaneous types not covered above.
  
-- **`weaponsTypesNot`** (optional): An array of weapon or spell types that must *not* be used, in the same format as `weaponsTypes`.
+- **`weaponsTypesNot`** (optional): An array of weapon or spell types that must *not* be used. Same format as `weaponsTypes`.
 
-- **`weapons`** (optional): An array of specific weapon or spell Form IDs in `"modName:formID"` format (e.g., `"Skyrim.esm:0x1A2B3C"`).
+- **`weapons`** (optional): An array of specific weapons or spells. Format: `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`), `"EditorIDName"` (e.g., `"VendorItemFood"`), or a formlist's formID/editorID.
 
-- **`weaponsNot`** (optional): An array of specific weapon or spell Form IDs that must *not* be used, in the same format as `weapons`.
+- **`weaponsNot`** (optional): An array of specific weapons or spells that must *not* be used. Same format as `weapons`.
 
-- **`weaponsFormLists`** (optional): An array of formlist Form IDs, containing specific weapons or spells in `"modName:formID"` format (e.g., `"Skyrim.esm:0x1A2B3C"`).
+- **`weaponsKeywords`** (optional): An array of keywords the weapon or spell must have. Format: `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`), `"EditorIDName"` (e.g., `"VendorItemFood"`), or a formlist's formID/editorID.
 
-- **`weaponsFormListsNot`** (optional): An array of formlist Form IDs, containing specific weapons or spells that must *not* be used, in the same format as `weaponsFormLists`.
-
-- **`weaponsKeywords`** (optional): An array of keywords the weapon or spell must have, in `"modName:formID"` or `"KeywordName"` format.
-
-- **`weaponsKeywordsNot`** (optional): An array of keywords the weapon or spell must *not* have.
+- **`weaponsKeywordsNot`** (optional): An array of keywords the weapon or spell must *not* have. Same format as `weaponsKeywords`.
 
 - **`attacksTypes`** or **`attacks`** (optional): An array of attack types. Possible values:
   - `"regular"`: Standard attacks.
@@ -236,7 +295,7 @@ For rules with the `"Hit"` event, additional filters can refine which attacks tr
   - `"ignoreweapon"`: Attacks that bypass weapon-specific mechanics.
   - `"overridedata"`: Attacks that override default data.
 
-- **`attacksTypesNot`** or **`attacksNot`** (optional): An array of attack types that must *not* be used, in the same format as `attacksTypes`.
+- **`attacksTypesNot`** or **`attacksNot`** (optional): An array of attack types that must *not* be used. Same format as `attacksTypes`.
 
 - **`deliveryTypes`** (optional): An array of spell delivery types. Possible values:
   - `"self"`: Self-targeted spells.
@@ -246,19 +305,15 @@ For rules with the `"Hit"` event, additional filters can refine which attacks tr
   - `"touch"`: Touch-based spells.
   - `"total"`: All delivery types.
  
-- **`deliveryTypesNot`** (optional): An array of spell delivery types that must *not* be used, in the same format as `deliveryTypes`.
+- **`deliveryTypesNot`** (optional): An array of spell delivery types that must *not* be used. Same format as `deliveryTypes`.
 
 - **`allowProjectiles`** (optional): Controls whether projectiles are allowed. Possible values:
   - `0`: Projectiles are not allowed.
   - `1`: Projectiles are allowed (default).
 
-- **`projectiles`** (optional): An array of specific projectile Form IDs in `"modName:formID"` format (e.g., `"Skyrim.esm:0xDEF123"`).
+- **`projectiles`** (optional): An array of specific projectiles. Format: `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`), `"EditorIDName"` (e.g., `"VendorItemFood"`), or a formlist's formID/editorID.
 
-- **`projectilesNot`** (optional): An array of specific projectile Form IDs that must *not* be used, in the same format as `projectiles`.
-
-- **`projectilesFormLists`** (optional): An array of formlist Form IDs, containing specific projectiles, in `"modName:formID"` format.
-
-- **`projectilesFormListsNot`** (optional): An array of formlist Form IDs, containing specific projectiles that must *not* be used, in the same format as `projectilesFormLists`.
+- **`projectilesNot`** (optional): An array of specific projectiles that must *not* be used. Same format as `projectiles`.
 
 ---
 
@@ -292,96 +347,108 @@ Here are all possible `type` values and their supported fields:
   - No `items` array required.
 
 - **`AddContainerItem`**: Adds specified items to the contents of a container.
-  - Supported fields: `formID`, `formList`, `chance`.
+  - Supported fields: `formID`, `editorID`, `formList`, `chance`.
  
 - **`AddActorItem`**: Adds specified items to the inventory of an actor who interacted with the object.
-  - Supported fields: `formID`, `formList`, `chance`.
+  - Supported fields: `formID`, `editorID`, `formList`, `chance`.
  
 - **`RemoveContainerItem`**: Removes specified items from the contents of a container.
-  - Supported fields: `formID`, `formList`, `chance`.
+  - Supported fields: `formID`, `editorID`, `formList`, `chance`.
  
 - **`RemoveActorItem`**: Removes specified items from the inventory of an actor who interacted with the object.
-  - Supported fields: `formID`, `formList`, `chance`.
+  - Supported fields: `formID`, `editorID`, `formList`, `chance`.
 
 ### Item Spawning & Swapping
 - **`SpawnItem`**: Spawns specific items at the object's location.
-  - Supported fields: `formID`, `formList`, `chance`, `count`, `scale`, `fade`, `spawnType`.
+  - Supported fields: `formID`, `editorID`, `formList`, `chance`, `count`, `scale`, `fade`, `spawnType`.
 
 - **`SpawnLeveledItem`**: Spawns random leveled items based on the player's level.
-  - Supported fields: `formID`, `chance`, `count`, `scale`, `fade`, `spawnType`.
+  - Supported fields: `formID`, `editorID`, `chance`, `count`, `scale`, `fade`, `spawnType`.
 
 - **`SwapItem`**: Replaces the target object with another specific item.
-  - Supported fields: `formID`, `formList`, `chance`, `count`, `nonDeletable`, `scale`, `fade`, `spawnType`.
+  - Supported fields: `formID`, `editorID`, `formList`, `chance`, `count`, `nonDeletable`, `scale`, `fade`, `spawnType`.
 
 - **`SwapLeveledItem`**: Replaces the target object with a random leveled item.
-  - Supported fields: `formID`, `chance`, `count`, `nonDeletable`, `scale`, `fade`, `spawnType`.
+  - Supported fields: `formID`, `editorID`, `chance`, `count`, `nonDeletable`, `scale`, `fade`, `spawnType`.
 
 ### Actor Spawning & Swapping
 - **`SpawnActor`**: Spawns specific actors at the object's location.
-  - Supported fields: `formID`, `formList`, `chance`, `count`, `scale`, `fade`, `spawnType`.
+  - Supported fields: `formID`, `editorID`, `formList`, `chance`, `count`, `scale`, `fade`, `spawnType`.
 
 - **`SpawnLeveledActor`**: Spawns random leveled actors.
-  - Supported fields: `formID`, `chance`, `count`, `scale`, `fade`, `spawnType`.
+  - Supported fields: `formID`, `editorID`, `chance`, `count`, `scale`, `fade`, `spawnType`.
 
 - **`SwapActor`**: Replaces the target object with specific actors.
-  - Supported fields: `formID`, `formList`, `chance`, `count`, `nonDeletable`, `scale`, `fade`, `spawnType`.
+  - Supported fields: `formID`, `editorID`, `formList`, `chance`, `count`, `nonDeletable`, `scale`, `fade`, `spawnType`.
 
 - **`SwapLeveledActor`**: Replaces the target object with random leveled actors.
-  - Supported fields: `formID`, `chance`, `count`, `nonDeletable`, `scale`, `fade`, `spawnType`.
+  - Supported fields: `formID`, `editorID`, `chance`, `count`, `nonDeletable`, `scale`, `fade`, `spawnType`.
 
 ### Magic Effects
 - **`SpawnSpell`**: Casts spells on nearby actors.
-  - Supported fields: `formID`, `formList`, `chance`, `count`, `radius`.
+  - Supported fields: `formID`, `editorID`, `formList`, `chance`, `count`, `radius`.
 
 - **`SpawnLeveledSpell`**: Casts random leveled spells on nearby actors.
-  - Supported fields: `formID`, `chance`, `count`, `radius`.
+  - Supported fields: `formID`, `editorID`, `chance`, `count`, `radius`.
 
 - **`SpawnSpellOnItem`**: Casts spells on the target object.
-  - Supported fields: `formID`, `formList`, `count`, `chance`.
+  - Supported fields: `formID`, `editorID`, `formList`, `count`, `chance`.
 
 - **`SpawnLeveledSpellOnItem`**: Casts random leveled spells on the target object.
-  - Supported fields: `formID`, `chance`, `count`.
+  - Supported fields: `formID`, `editorID`, `chance`, `count`.
 
 - **`ApplyIngestible`**: Applies the target object's effects (if it's an ingredient or ingestible) to nearby actors.
   - Supported fields: `chance`, `radius`.
 
 - **`ApplyOtherIngestible`**: Applies effects from specified ingestibles to nearby actors. Can be used with any form type.
-  - Supported fields: `formID`, `formList`, `chance`, `radius`.
+  - Supported fields: `formID`, `editorID`, `formList`, `chance`, `radius`.
+ 
+- **`AddActorSpell`**: Adds specified spells to the source actor.
+  - Supported fields: `formID`, `editorID`, `formList`, `chance`.
+
+- **`RemoveActorSpell`**: Removes specified spells from the source actor.
+  - Supported fields: `formID`, `editorID`, `formList`, `chance`.
+
+- **`AddActorPerk`**: Adds specified perks to the source actor.
+  - Supported fields: `formID`, `editorID`, `formList`, `chance`, `rank`.
+
+- **`RemoveActorPerk`**: Removes specified perks from the source actor (regardless of the perk rank).
+  - Supported fields: `formID`, `editorID`, `formList`, `chance`.
 
 ### Visual & Audio Effects
 - **`PlaySound`**: Plays a sound descriptor.
-  - Supported fields: `formID`, `formList`, `chance`, `count`.
+  - Supported fields: `formID`, `editorID`, `formList`, `chance`, `count`.
 
 - **`PlayIdle`**: Plays an animation on an actor who interacted with the object.
   - Supported fields: `string`, `duration`.
  
 - **`SpawnImpactDataSet`**: Plays an impact data set (not to be confused with impacts).
-  - Supported fields: `formID`, `formList`, `chance`, `count`.
+  - Supported fields: `formID`, `editorID`, `formList`, `chance`, `count`.
 
 - **`SpawnExplosion`**: Triggers an explosion at the object's location.
-  - Supported fields: `formID`, `formList`, `chance`, `count`, `fade`, `spawnType`.
+  - Supported fields: `formID`, `editorID`, `formList`, `chance`, `count`, `fade`, `spawnType`.
 
 - **`SpawnEffectShader`**: Spawns effect shaders on nearby actors.
-  - Supported fields: `formID`, `formList`, `chance`, `count`, `radius`, `duration`.
+  - Supported fields: `formID`, `editorID`, `formList`, `chance`, `count`, `radius`, `duration`.
 
 - **`SpawnEffectShaderOnItem`**: Spawns effect shaders on the target object.
-  - Supported fields: `formID`, `formList`, `chance`, `count`, `duration`.
+  - Supported fields: `formID`, `editorID`, `formList`, `chance`, `count`, `duration`.
  
 - **`ToggleNode`**: Toggles nodes on and off (scales to 0.00001 or 1.0).
   - Supported fields: `mode`, `nodeNames`.
 
 ### Lighting Effects
 - **`SpawnLight`**: Spawns a light at the object's location.
-  - Supported fields: `formID`, `formList`, `chance`, `count`, `fade`, `spawnType`.
+  - Supported fields: `formID`, `editorID`, `formList`, `chance`, `count`, `fade`, `spawnType`.
 
 - **`RemoveLight`**: Deletes lights.
-  - Supported fields: `formID`, `formList`, `chance`, `radius`.
+  - Supported fields: `formID`, `editorID`, `formList`, `chance`, `radius`.
 
 - **`DisableLight`**: Disables lights.
-  - Supported fields: `formID`, `formList`, `chance`, `radius`.
+  - Supported fields: `formID`, `editorID`, `formList`, `chance`, `radius`.
 
 - **`EnableLight`**: Enables previously disabled lights.
-  - Supported fields: `formID`, `formList`, `chance`, `radius`.
+  - Supported fields: `formID`, `editorID`, `formList`, `chance`, `radius`.
  
 ---
 
