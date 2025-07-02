@@ -8,7 +8,7 @@ using namespace std::chrono;
 namespace OIF
 {
     // ------------------ Constants ------------------
-    const std::unordered_set<RE::FormType> OIF::EventSinkBase::relevantFormTypes = {
+    const std::unordered_set<RE::FormType> EventSinkBase::relevantFormTypes = {
         RE::FormType::Activator,
         RE::FormType::TalkingActivator,
         RE::FormType::Weapon,
@@ -181,6 +181,42 @@ namespace OIF
             case DeliveryType::None:           return "none";
             default:                           return "none";
         }
+    }
+
+    void ScanCell(RE::Actor* source, std::vector<RE::TESObjectREFR*>* foundObjects = nullptr, bool triggerEvents = false, EventType eventType = EventType::kNone, RE::TESWeather* weather = nullptr)
+    {
+        if (!source) return;
+
+        auto* cell = source->GetParentCell();
+        if (!cell) return;
+
+        cell->ForEachReference([&](RE::TESObjectREFR* ref) -> RE::BSContainer::ForEachResult {
+            if (!ref || ref->IsDeleted() || !ref->GetFormID() || !ref->GetBaseObject()) return RE::BSContainer::ForEachResult::kContinue;
+
+            if (triggerEvents) {
+                if (!EventSinkBase::IsRelevantObjectRef(ref)) return RE::BSContainer::ForEachResult::kContinue;
+
+                RuleContext ctx{
+                    eventType,
+                    source, 
+                    ref,
+                    ref->GetBaseObject(), 
+                    nullptr,
+                    nullptr,
+                    "",
+                    "",
+                    "",
+                    false,
+                    weather
+                };
+                
+                RuleManager::GetSingleton()->Trigger(ctx);
+            } else {
+                if (foundObjects) foundObjects->push_back(ref);
+            }
+
+            return RE::BSContainer::ForEachResult::kContinue;
+        });
     }
 
     // ------------------ Sinks ------------------
@@ -863,7 +899,7 @@ namespace OIF
                 // Its unlikely that anyone will need to look for the closest actors for this "static" event anyway
 
                 if (attached) {
-                    RuleContext ctx{
+                    RuleContext ctx {
                         EventType::kCellAttach,
                         RE::PlayerCharacter::GetSingleton()->As<RE::Actor>(),
                         targetRef.get(),
@@ -871,7 +907,7 @@ namespace OIF
                     };
                     RuleManager::GetSingleton()->Trigger(ctx);
                 } else {
-                    RuleContext ctx{
+                    RuleContext ctx {
                         EventType::kCellDetach,
                         RE::PlayerCharacter::GetSingleton()->As<RE::Actor>(),
                         targetRef.get(),
@@ -890,7 +926,6 @@ namespace OIF
         func(a_currentWeather);
         
         if (!a_currentWeather) return;
-        
         if (a_currentWeather == currentWeather) return;
         
         currentWeather = a_currentWeather;
@@ -899,34 +934,37 @@ namespace OIF
             auto* player = RE::PlayerCharacter::GetSingleton();
             if (!player) return;
 
-            auto* cell = player->GetParentCell();
-            if (!cell) return;
-
-            cell->ForEachReference([&](RE::TESObjectREFR* ref) -> RE::BSContainer::ForEachResult {
-
-                if (!ref || ref->IsDeleted() || !ref->GetFormID() || !ref->GetBaseObject()) return RE::BSContainer::ForEachResult::kContinue;
-
-                if (!EventSinkBase::IsRelevantObjectRef(ref)) return RE::BSContainer::ForEachResult::kContinue;
-                
-                RuleContext ctx{
-                    EventType::kWeatherChange,
-                    player, 
-                    ref,
-                    ref->GetBaseObject(), 
-                    nullptr,
-                    nullptr,
-                    "",
-                    "",
-                    "",
-                    false,
-                    a_currentWeather
-                };
-                
-                RuleManager::GetSingleton()->Trigger(ctx);
-
-                return RE::BSContainer::ForEachResult::kContinue;
-            });
+            ScanCell(player, nullptr, true, EventType::kWeatherChange, a_currentWeather);
         });
+    }
+
+    void UpdateHook::thunk(RE::PlayerCharacter* a_this)
+    {
+        func(a_this);
+        if (!a_this || a_this->IsDead()) return;
+
+        static auto lastUpdateTime = std::chrono::steady_clock::now();
+        auto currentTime = std::chrono::steady_clock::now();
+        auto deltaTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastUpdateTime);
+
+        if (deltaTime.count() < 250) return;
+        lastUpdateTime = currentTime;
+
+        auto* ruleManager = RuleManager::GetSingleton();
+        if (!ruleManager) return;
+
+        bool hasAnyUpdateRules = false;
+    
+        {
+            std::shared_lock lock(ruleManager->_ruleMutex);
+            const auto& updateRules = ruleManager->GetUpdateRules();
+            if (updateRules.empty()) return;
+            hasAnyUpdateRules = !updateRules.empty();
+        }
+    
+        if (hasAnyUpdateRules) {
+            ScanCell(a_this, nullptr, true, EventType::kOnUpdate, nullptr);
+        }
     }
 
     void RegisterSinks()
@@ -945,5 +983,6 @@ namespace OIF
         ::stl::write_thunk_call<WeatherChangeHook>(weatherChangeHook.address());
         ::stl::write_vfunc<RE::ReadyWeaponHandler, ReadyWeaponHook>();
         ::stl::write_vfunc<RE::Explosion, ExplosionHook>();
+        ::stl::write_vfunc<RE::PlayerCharacter, UpdateHook>();
     }
 }

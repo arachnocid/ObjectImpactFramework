@@ -144,6 +144,13 @@ namespace OIF
             RE::BSTEventSource<RE::TESCellAttachDetachEvent>*) override;
     };
 
+    struct UpdateHook
+    {
+        static void thunk(RE::PlayerCharacter* a_this);
+        static inline REL::Relocation<decltype(thunk)> func;
+        static constexpr std::size_t size = 0xAD;
+    };
+
     void RegisterSinks();
     void InstallHooks();
 }

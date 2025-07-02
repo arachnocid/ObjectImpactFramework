@@ -199,14 +199,13 @@ namespace OIF::Effects
         delete script;
     }
 
-    // CommonlibSSE-NG doesn't have a SetScale function, that's a workaround
-    void SetObjectScale(RE::TESObjectREFR* ref, float scale) {
-        if (!ref) return;
-        ExecuteCommand("setscale " + std::to_string(scale), ref);
-        ExecuteCommand("", nullptr);
+    void SetObjectScale(RE::TESObjectREFR* ref, float scale)
+    {
+        using func_t = void(RE::TESObjectREFR*, float);
+        static REL::Relocation<func_t> func{ RELOCATION_ID(19239, 19665) };
+        func(ref, scale);
     }
 
-    // Same as above, but for playing idle animations on actors
     void PlayIdleOnActor(RE::Actor* actor, const std::string& idleName) {
         if (!actor) return;
         ExecuteCommand("sendanimevent " + idleName, actor);
@@ -803,8 +802,10 @@ namespace OIF::Effects
                 auto item = Spawn(ctx.target, itemData.item, itemData.spawnType, itemData.fade);
                 if (item && ctx.target) {
                     CopyOwnership(ctx.target, item.get());
-                    if (itemData.scale > -1.0f && ctx.target) {
+                    if (itemData.scale == -1.0f) {
                         SetObjectScale(item.get(), ctx.target->GetScale());
+                    } else {
+                        SetObjectScale(item.get(), itemData.scale);
                     }
                 }
             }
@@ -989,8 +990,10 @@ namespace OIF::Effects
             for (std::uint32_t i = 0; i < actorData.count; ++i) {
                 auto actor = Spawn(ctx.target, actorData.npc, actorData.spawnType, actorData.fade);
                 if (actor && ctx.target) {
-                    if (actorData.scale > -1.0f) {
+                    if (actorData.scale == -1.0f) {
                         SetObjectScale(actor.get(), ctx.target->GetScale());
+                    } else {
+                        SetObjectScale(actor.get(), actorData.scale);
                     }
                 }
             }
@@ -1045,22 +1048,75 @@ namespace OIF::Effects
             return;
         }
 
-        if (auto targetObject = ctx.target->Get3D()) {
-            if (auto node = targetObject->AsNode()) {
-                dummy->MoveToNode(ctx.target, node);
-            }
-        }
-
         RE::NiPoint3 hitPos;
         bool hitPosFound = false;
         
         if (sourceActor->IsPlayerRef()) {
-            auto* crosshairData = RE::CrosshairPickData::GetSingleton();
-            if (crosshairData && crosshairData->target->get().get() == ctx.target) {
-                auto crosshairHitPos = *crosshairData->collisionPoint;
-                if (crosshairHitPos != RE::NiPoint3{0.0f, 0.0f, 0.0f}) {
-                    hitPos = crosshairHitPos;
-                    hitPosFound = true;
+            auto* cam = RE::PlayerCamera::GetSingleton();
+            if (cam && cam->currentState && cam->currentState->camera) {
+                const auto start = cam->currentState->camera->cameraRoot->world.translate;
+                auto dir = cam->currentState->camera->cameraRoot->world.rotate * RE::NiPoint3{0.f, 1.f, 0.f};
+                dir.Unitize();
+                
+                const float kSearchRadius = 4096.0f;
+                auto end = start + dir * kSearchRadius;
+
+                auto* cell = sourceActor->GetParentCell();
+                if (cell) {
+                    auto* world = cell->GetbhkWorld();
+                    if (world) {
+                        static std::vector<RE::COL_LAYER> targetLayers = {
+                            RE::COL_LAYER::kCollisionBox,
+                            RE::COL_LAYER::kStatic,
+                            RE::COL_LAYER::kAnimStatic,
+                            RE::COL_LAYER::kClutter,
+                            RE::COL_LAYER::kClutterLarge,
+                            RE::COL_LAYER::kTrap,
+                            RE::COL_LAYER::kProps,
+                            RE::COL_LAYER::kTerrain,
+                            RE::COL_LAYER::kWeapon,
+                            RE::COL_LAYER::kBiped,
+                            RE::COL_LAYER::kTrees,
+                            RE::COL_LAYER::kGround,
+                            RE::COL_LAYER::kDoorDetection,
+                            RE::COL_LAYER::kDebrisSmall,
+                            RE::COL_LAYER::kDebrisLarge,
+                            RE::COL_LAYER::kItemPicker,
+                            RE::COL_LAYER::kDroppingPick
+                        };
+
+                        RE::bhkPickData pick;
+                        const auto scale = RE::bhkWorld::GetWorldScale();
+                        
+                        pick.rayInput.from = start * scale;
+                        pick.rayInput.to = end * scale;
+
+                        uint32_t filterInfo = 0;
+                        sourceActor->GetCollisionFilterInfo(filterInfo);
+
+                        bool foundHit = false;
+                        RE::TESObjectREFR* hitRef = nullptr;
+                        
+                        for (RE::COL_LAYER layer : targetLayers) {
+                            pick.rayInput.filterInfo = (filterInfo & 0xFFFF0000) | static_cast<uint32_t>(layer);
+                            world->PickObject(pick);
+                            
+                            if (pick.rayOutput.HasHit()) {
+                                auto* niObj = RE::TESHavokUtilities::FindCollidableObject(*pick.rayOutput.rootCollidable);
+                                if (niObj) {
+                                    hitRef = static_cast<RE::TESObjectREFR*>(niObj->GetUserData());
+                                    if (hitRef == ctx.target) {
+                                        auto rayDirection = pick.rayInput.to - pick.rayInput.from;
+                                        auto hitPoint = pick.rayInput.from + rayDirection * pick.rayOutput.hitFraction;
+                                        hitPos = RE::NiPoint3(hitPoint.quad.m128_f32[0], hitPoint.quad.m128_f32[1], hitPoint.quad.m128_f32[2]) / scale;
+                                        hitPosFound = true;
+                                        foundHit = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -1082,9 +1138,17 @@ namespace OIF::Effects
             }
         }
 
-        auto dummyPos = dummy->GetPosition();
-        dummyPos.z = hitPos.z;
-        dummy->SetPosition(dummyPos);
+        if (hitPosFound) {
+            dummy->SetPosition(hitPos);
+        } else if (auto targetObject = ctx.target->Get3D()) {
+            if (auto node = targetObject->AsNode()) {
+                dummy->MoveToNode(ctx.target, node);
+            }
+        }
+
+        //auto dummyPos = dummy->GetPosition();
+        //dummyPos.z = hitPos.z;
+        //dummy->SetPosition(dummyPos);
 
         auto finalHitPos = dummy->GetPosition();
 
@@ -1146,8 +1210,10 @@ namespace OIF::Effects
                 if (item && ctx.target) {
                     anyItemSpawned = true;
                     CopyOwnership(ctx.target, item.get());
-                    if (itemData.scale > -1.0f) {
+                    if (itemData.scale == -1.0f) {
                         SetObjectScale(item.get(), ctx.target->GetScale());
+                    } else {
+                        SetObjectScale(item.get(), itemData.scale);
                     }
                 }
             }
@@ -1269,8 +1335,10 @@ namespace OIF::Effects
                 auto actor = Spawn(ctx.target, actorData.npc, actorData.spawnType, actorData.fade);
                 if (actor && ctx.target) {
                     anyActorSpawned = true;
-                    if (actorData.scale > -1.0f && ctx.target) {
+                    if (actorData.scale == -1.0f) {
                         SetObjectScale(actor.get(), ctx.target->GetScale());
+                    } else {
+                        SetObjectScale(actor.get(), actorData.scale);
                     }
                 }
             }
@@ -1315,8 +1383,10 @@ namespace OIF::Effects
                 auto item = Spawn(ctx.target, obj, itemData.spawnType, itemData.fade);
                 if (item && ctx.target) {
                     CopyOwnership(ctx.target, item.get());
-                    if (itemData.scale > -1.0f && ctx.target) {
+                    if (itemData.scale == -1.0f) {
                         SetObjectScale(item.get(), ctx.target->GetScale());
+                    } else {
+                        SetObjectScale(item.get(), itemData.scale);
                     }
                 } else {
                     logger::warn("SpawnLeveledItem: place failed for {:X}", obj ? obj->GetFormID() : 0);
@@ -1353,8 +1423,10 @@ namespace OIF::Effects
                 if (item && ctx.target) {
                     spawned = true;
                     CopyOwnership(ctx.target, item.get());
-                    if (itemData.scale > -1.0f && ctx.target) {
+                    if (itemData.scale == -1.0f) {
                         SetObjectScale(item.get(), ctx.target->GetScale());
+                    } else {
+                        SetObjectScale(item.get(), itemData.scale);
                     }
                 } else {
                     logger::warn("SwapLeveledItem: place failed for {:X}", obj ? obj->GetFormID() : 0);
@@ -1570,8 +1642,10 @@ namespace OIF::Effects
 
                 auto actor = Spawn(ctx.target, npcBase, actorData.spawnType, actorData.fade);
                 if (actor && ctx.target) {
-                    if (actorData.scale > -1.0f && ctx.target) {
+                    if (actorData.scale == -1.0f) {
                         SetObjectScale(actor.get(), ctx.target->GetScale());
+                    } else {
+                        SetObjectScale(actor.get(), actorData.scale);
                     }
                 }
             }
@@ -1605,8 +1679,10 @@ namespace OIF::Effects
                 auto actor = Spawn(ctx.target, npcBase, actorData.spawnType, actorData.fade);
                 if (actor && ctx.target) {
                     spawned = true;
-                    if (actorData.scale > -1.0f && ctx.target) {
+                    if (actorData.scale == -1.0f) {
                         SetObjectScale(actor.get(), ctx.target->GetScale());
+                    } else {
+                        SetObjectScale(actor.get(), actorData.scale);
                     }
                 } 
             }
@@ -1840,8 +1916,10 @@ namespace OIF::Effects
                 auto light = Spawn(ctx.target, lightData.light, lightData.spawnType, lightData.fade);
                 if (light && ctx.target) {
                     light->Enable(false);
-                    if (lightData.scale > -1.0f && ctx.target) {
+                    if (lightData.scale == -1.0f) {
                         SetObjectScale(light.get(), ctx.target->GetScale());
+                    } else {
+                        SetObjectScale(light.get(), lightData.scale);
                     }
                 }
             }
@@ -2116,7 +2194,7 @@ namespace OIF::Effects
             std::vector<RE::NiNode*> matches;
             CollectNodes(rootNode, data.strings, matches);
             if (matches.empty()) {
-                logger::warn("ToggleNode: No BSnode found for {} names", data.strings.size());
+                logger::warn("ToggleNode: No nodes found for {} names", data.strings.size());
                 continue;
             }
             
@@ -2403,6 +2481,101 @@ namespace OIF::Effects
             std::int32_t removeCount = std::min<int32_t>(itemData.count, it->second.first);
 
             ctx.source->RemoveItem(itemData.item, removeCount, RE::ITEM_REMOVE_REASON::kRemove, nullptr, nullptr);
+        }
+    }
+
+    void AddActorSpell(const RuleContext& ctx, const std::vector<SpellSpawnData>& spellsData)
+    {
+        if (!ctx.source || ctx.source->IsDeleted()) {
+            logger::error("AddActorSpell: No source actor to add spells to");
+            return;
+        }
+
+        if (spellsData.empty()) {
+            logger::error("AddActorSpell: No spells to add");
+            return;
+        }
+
+        for (const auto& spellData : spellsData) {
+            if (!spellData.spell) continue;
+
+            if (!ctx.source->HasSpell(spellData.spell)) {
+                ctx.source->AddSpell(spellData.spell);
+            }
+        }
+    }
+
+    void RemoveActorSpell(const RuleContext& ctx, const std::vector<SpellSpawnData>& spellsData)
+    {
+        if (!ctx.source || ctx.source->IsDeleted()) {
+            logger::error("RemoveActorSpell: No source actor to remove spells from");
+            return;
+        }
+
+        if (spellsData.empty()) {
+            logger::error("RemoveActorSpell: No spells to remove");
+            return;
+        }
+
+        for (const auto& spellData : spellsData) {
+            if (!spellData.spell) continue;
+
+            if (ctx.source->HasSpell(spellData.spell)) {
+                ctx.source->RemoveSpell(spellData.spell);            
+            }
+        }
+    }
+
+    void AddActorPerk(const RuleContext& ctx, const std::vector<PerkData>& perksData)
+    {
+        if (!ctx.source || ctx.source->IsDeleted()) {
+            logger::error("AddActorPerk: No source actor to add perks to");
+            return;
+        }
+
+        auto* npc = ctx.source->GetActorBase();
+        if (!npc) return;
+
+        if (perksData.empty()) {
+            logger::error("AddActorPerk: No perks to add");
+            return;
+        }
+
+        for (const auto& perkData : perksData) {
+            if (!perkData.perk) continue;
+
+            std::int8_t currentRank = -1;
+            if (auto idx = npc->GetPerkIndex(perkData.perk); idx) {
+                const auto& perks = npc->perks;
+                if (perks) {
+                    currentRank = perks[*idx].currentRank;
+                }
+            }
+    
+            if (currentRank < 0 || currentRank <  static_cast<std::int8_t>(perkData.rank)) {
+                ctx.source->AddPerk(perkData.perk, perkData.rank);
+            }
+        }
+    }
+
+    void RemoveActorPerk(const RuleContext& ctx, const std::vector<PerkData>& perksData)
+    {
+        if (!ctx.source || ctx.source->IsDeleted()) {
+            logger::error("RemoveActorPerk: No source actor to remove perks from");
+            return;
+        }
+
+        if (perksData.empty()) {
+            logger::error("RemoveActorPerk: No perks to remove");
+            return;
+        }
+
+        for (const auto& perkData : perksData) {
+            if (!perkData.perk) continue;
+
+            if (ctx.source->HasPerk(perkData.perk)) {
+                ctx.source->RemovePerk(perkData.perk);            
+            }
         }
     }
 }

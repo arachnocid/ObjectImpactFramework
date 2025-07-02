@@ -42,4 +42,8 @@ namespace OIF::Effects
     void AddActorItem(const RuleContext& ctx, const std::vector<InventoryData>& itemsData);
     void RemoveContainerItem(const RuleContext& ctx, const std::vector<InventoryData>& itemsData);
     void RemoveActorItem(const RuleContext& ctx, const std::vector<InventoryData>& itemsData);
+    void AddActorSpell(const RuleContext& ctx, const std::vector<SpellSpawnData>& spellsData);
+    void RemoveActorSpell(const RuleContext& ctx, const std::vector<SpellSpawnData>& spellsData);
+    void AddActorPerk(const RuleContext& ctx, const std::vector<PerkData>& perksData);
+    void RemoveActorPerk(const RuleContext& ctx, const std::vector<PerkData>& perksData);
 }
