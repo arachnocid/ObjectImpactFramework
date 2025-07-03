@@ -125,8 +125,8 @@ Below are all possible filter parameters:
 - **`editorIDsNot`** (optional): An array of strings identifying specific objects that the rule should *not* apply to. Same format as `editorIDs`.
 
 - **`formLists`** (optional): An array of objects referencing formlists (lists of forms defined in a mod). Each entry has:
-  - **`formID`**: The formlist's form ID in `"modName:formID"` format (required (or editorID)).
-  - **`editorID`**: The formlist's editor ID in `"EditorIDName"` format (required (or formID)).
+  - **`formID`**: The formlist's form ID in `"modName:formID"` format (use this or `editorID`).
+  - **`editorID`**: The formlist's editor ID in `"EditorIDName"` format (use this or `formID`).
   - **`index`** (optional): An integer specifying which item in the formlist to use. Example:
  
     ```json
@@ -187,8 +187,8 @@ Below are all possible filter parameters:
 ### Proximity-Based Filters
 
 - **`nearbyObjects`** (optional): An array of objects that must be in a certain radius around the target object for the rule should apply. Each entry has:
-  - **`formID`**: The object formID or a formlist's formID in `"modName:formID"` format (required (or editorID)). Accepts formlists' formIDs as well.
-  - **`editorID`**: The editorID in `"EditorIDName"` format (required (or formID)). Accepts formlists' editorIDs as well.
+  - **`formID`**: The object formID or a formlist's formID in `"modName:formID"` format (use this or `editorID`). Accepts formlists' formIDs as well.
+  - **`editorID`**: The editorID in `"EditorIDName"` format (use this or `formID`). Accepts formlists' editorIDs as well.
   - **`radius`**: An integer specifying in what radius to search. Example:
  
     ```json
