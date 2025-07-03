@@ -187,8 +187,8 @@ Below are all possible filter parameters:
 ### Proximity-Based Filters
 
 - **`nearbyObjects`** (optional): An array of objects that must be in a certain radius around the target object for the rule should apply. Each entry has:
-  - **`formID`**: The form ID in `"modName:formID"` format (required (or editorID)).
-  - **`editorID`**: The editor ID in `"EditorIDName"` format (required (or formID)).
+  - **`formID`**: The object formID or a formlist's formID in `"modName:formID"` format (required (or editorID)). Accepts formlists' formIDs as well.
+  - **`editorID`**: The editorID in `"EditorIDName"` format (required (or formID)). Accepts formlists' editorIDs as well.
   - **`radius`**: An integer specifying in what radius to search. Example:
  
     ```json
