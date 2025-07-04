@@ -149,7 +149,7 @@ Below are all possible filter parameters:
 - **`limit`**: An integer setting the maximum number of times the rule can trigger per object. No limit if omitted. Now works with all event types.
 
 - **`questItemStatus`**: An integer specifying quest item status requirements. Only works with **ACTIVE** player quests:
-  - `0`: Object must not be a quest item (default).
+  - `0` (default): Object must not be a quest item.
   - `1`: Object must be a quest alias only.
   - `2`: Object must be a full-fledged quest item.
   - `3`: All objects allowed.
@@ -157,7 +157,7 @@ Below are all possible filter parameters:
 - **`isInitiallyDisabled`**: An integer specifying whether the object has the `kInitiallyDisabled` flag.
   - `0`: Object is not initially disabled.
   - `1`: Object is initially disabled.
-  - `2`: All objects allowed (default).
+  - `2` (default): All objects allowed.
  
 - **`isPluginInstalled`**: An array of plugin names (e.g., `"MyMod.esp"`, `"Skyrim.esm"`) that must be loaded for the rule to apply.
 
@@ -244,7 +244,7 @@ Below are all possible filter parameters:
 - **`isWeaponDrawn`**:
   - `0`: Object is not initially disabled.
   - `1`: Object is initially disabled.
-  - `2`: All objects allowed (default).
+  - `2` (default): All objects allowed.
 
 ### Hit-Specific Filters
 
@@ -307,7 +307,7 @@ For rules with the `"Hit"` event, additional filters can refine which attacks tr
 
 - **`allowProjectiles`**: Controls whether projectiles are allowed. Possible values:
   - `0`: Projectiles are not allowed.
-  - `1`: Projectiles are allowed (default).
+  - `1` (default): Projectiles are allowed.
 
 - **`projectiles`**: An array of specific projectiles. Format: `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`), `"EditorIDName"` (e.g., `"VendorItemFood"`), or a formlist's formID/editorID.
 
@@ -454,11 +454,11 @@ Here are all possible `type` values and their supported fields:
 
 For effect types that support an `items` array, you can specify detailed configurations. Each item in the array can include:
 
-- **`formID`** (one of the required fields to choose from): A specific Form ID in `"modName:formID"` format (e.g., `"Skyrim.esm:0xF"` for a gold coin).
+- **`formID`**: A specific Form ID in `"modName:formID"` format (e.g., `"Skyrim.esm:0xF"` for a gold coin).
 
-- **`editorID`** (one of the required fields to choose from): A specific Editor ID in `"EditorIDName` format (e.g., `"VendorItemClutter"` for clutter).
+- **`editorID`**: A specific Editor ID in `"EditorIDName` format (e.g., `"VendorItemClutter"` for clutter).
 
-- **`formList`** (one of the required fields to choose from): An array of formlist entries.
+- **`formList`**: An array of formlist entries.
   - **`formID`**: The formlist's form ID in `"modName:formID"` format (use this or `editorID`).
   - **`editorID`**: The formlist's editor ID in `"EditorIDName"` format (use this or `formID`).
   - **`index`** (optional): An integer specifying which item in the formlist to use:
@@ -488,7 +488,7 @@ For effect types that support an `items` array, you can specify detailed configu
 - **`strings`**: Used for various effects. Takes multiple entries. Currently used for `ToggleNode` effect to specify node names substrings.
 
 - **`mode`**: Used for various effects. Currently used for `ToggleNode` effect to specify the disable or enable mode.
-  - `0`: Disable (default).
+  - `0` (default): Disable.
   - `1`: Enable.
  
 - **`nonDeletable`**: Used for **swap** functions only. During swap, the original object is deactivated and a new one appears in its place. This value determines whether the original object is deleted (`0`) or only disabled (`1`).
