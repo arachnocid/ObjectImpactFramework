@@ -244,7 +244,7 @@ Below are all possible filter parameters:
 - **`isWeaponDrawn`**:
   - `0`: Source actor is *not* in this state.
   - `1`: Source actor is in this state.
-  - `2` (default): Does not matter.
+  - `2` (default): All states allowed.
 
 ### Hit-Specific Filters
 
