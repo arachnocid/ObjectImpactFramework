@@ -81,8 +81,6 @@ This rule triggers when an activator (e.g., a lever) is activated or hit, spawni
 
 The `filter` object determines which objects and interactions trigger a rule. It's highly customizable, allowing precise control over when effects occur.
 
-Each filter that takes forms 
-
 Below are all possible filter parameters:
 
 ### General Filters
