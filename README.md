@@ -11,7 +11,7 @@ This guide explains how to set up those JSON files so you can customize the mod 
 
 ## Mod Authors Info
 
-- **Filter Note**: An object must be defined by at least one of the three parameters - `formIDs`, `editorIDs`, `formLists`, `formTypes`, `keywords` - for the event to work.
+- **Filter Note**: An object must be defined by at least one of the three parameters - `formIDs`, `editorIDs`, `formLists`, `formTypes`, `keywords` - for the event to work. **Warning:** Equivalents with the `Not` ending do *not* count.
 - **FormIDs Note**: If you are not using the standard `0x` prefix and are copying from CK or SSEEdit, make sure you put `00` instead of the load order digits.
 - **Identifiers Must Match**: Make sure the `formID` or `editorID` fits the effect (e.g., a spell ID for `"SpawnSpell"`, an item ID for `"SpawnItem"`).
 - **Keywords Note**: For containers, doors, statics, movable statics, and trees, the `keywords` filter is ignored since they don't use keywords.
