@@ -454,13 +454,13 @@ Here are all possible `type` values and their supported fields:
 
 For effect types that support an `items` array, you can specify detailed configurations. Each item in the array can include:
 
-- **`formID`** (optional): A specific Form ID in `"modName:formID"` format (e.g., `"Skyrim.esm:0xF"` for a gold coin).
+- **`formID`** (one of the required fields to choose from): A specific Form ID in `"modName:formID"` format (e.g., `"Skyrim.esm:0xF"` for a gold coin).
 
-- **`editorID`** (optional): A specific Editor ID in `"EditorIDName` format (e.g., `"VendorItemClutter"` for clutter).
+- **`editorID`** (one of the required fields to choose from): A specific Editor ID in `"EditorIDName` format (e.g., `"VendorItemClutter"` for clutter).
 
-- **`formList`** (optional): An array of formlist entries.
-  - **`formID`**: The formlist's form ID in `"modName:formID"` format.
-  - **`editorID`**: The formlist's editor ID in `"EditorIDName"` format.
+- **`formList`** (one of the required fields to choose from): An array of formlist entries.
+  - **`formID`**: The formlist's form ID in `"modName:formID"` format (use this or `editorID`).
+  - **`editorID`**: The formlist's editor ID in `"EditorIDName"` format (use this or `formID`).
   - **`index`** (optional): An integer specifying which item in the formlist to use:
     - `-1` (default): All items at once.
     - `-2`: Parallel relationship for mirrored formlists.
@@ -475,31 +475,31 @@ For effect types that support an `items` array, you can specify detailed configu
     ]
     ```
 
-- **`chance`** (optional): A number between 0 and 100 for the percentage chance this item is used. Defaults to 100.
+- **`chance`**: A number between 0 and 100 for the percentage chance this item is used. Defaults to 100.
 
-- **`count`** (optional): An integer specifying how many instances to spawn or swap. Defaults to 1.
+- **`count`**: An integer specifying how many instances to spawn or swap. Defaults to 1.
 
-- **`radius`** (optional): Specifies the radius in game units for effect application. Defaults vary by effect type.
+- **`radius`**: Specifies the radius in game units for effect application. Defaults vary by effect type.
 
-- **`duration`** (optional): Used for `PlayIdle`, `SpawnEffectShader`, and `SpawnEffectShaderOnItem` effects. For `PlayIdle`, defaults to 1.0 (lower values make animation faster). For effect shaders, specifies how long the effect lasts.
+- **`duration`**: Used for `PlayIdle`, `SpawnEffectShader`, and `SpawnEffectShaderOnItem` effects. For `PlayIdle`, defaults to 1.0 (lower values make animation faster). For effect shaders, specifies how long the effect lasts.
 
-- **`string`** (optional): Used for various effects. Takes one entry. Currently used for `PlayIdle` effect to specify animation name (e.g., `"AnimationName"`). [List of available animation names](https://forums.nexusmods.com/topic/11007808-le-list-of-animation-events-for-debugsendanimationevent/?do=findComment&comment=105617168).
+- **`string`**: Used for various effects. Takes one entry. Currently used for `PlayIdle` effect to specify animation name (e.g., `"AnimationName"`). [List of available animation names](https://forums.nexusmods.com/topic/11007808-le-list-of-animation-events-for-debugsendanimationevent/?do=findComment&comment=105617168).
 
-- **`strings`** (optional): Used for various effects. Takes multiple entries. Currently used for `ToggleNode` effect to specify node names substrings.
+- **`strings`**: Used for various effects. Takes multiple entries. Currently used for `ToggleNode` effect to specify node names substrings.
 
-- **`mode`** (optional): Used for various effects. Currently used for `ToggleNode` effect to specify the disable or enable mode.
+- **`mode`**: Used for various effects. Currently used for `ToggleNode` effect to specify the disable or enable mode.
   - `0`: Disable (default).
   - `1`: Enable.
  
-- **`nonDeletable`** (optional): Used for **swap** functions only. During swap, the original object is deactivated and a new one appears in its place. This value determines whether the original object is deleted (`0`) or only disabled (`1`).
+- **`nonDeletable`**: Used for **swap** functions only. During swap, the original object is deactivated and a new one appears in its place. This value determines whether the original object is deleted (`0`) or only disabled (`1`).
 
-- **`scale`** (optional): Used for **spawn/swap** functions only. Allows you to select the scale of the spawned item. By default, it is copied from the target object.
+- **`scale`**: Used for **spawn/swap** functions only. Allows you to select the scale of the spawned item. By default, it is copied from the target object.
 
-- **`fade`** (optional): Used for **spawn/swap** functions only. Determines whether the object will have a fade effect upon creation:
+- **`fade`**: Used for **spawn/swap** functions only. Determines whether the object will have a fade effect upon creation:
   - `0`: Without fade effect (do **not** use with **explosions**).
   - `1` (default): With fade effect.
 
-- **`spawnType`** (optional): Used for **spawn/swap** functions only. Allows you to select the type of how the object should be spawned. Options:
+- **`spawnType`**: Used for **spawn/swap** functions only. Allows you to select the type of how the object should be spawned. Options:
   - `0`: Common PlaceAtMe().
   - `1`: PlaceAtMe() spawning the object at the center of the original.
   - `2`: PlaceAtMe() spawning at the top of the original.
