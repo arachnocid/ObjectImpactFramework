@@ -85,7 +85,7 @@ Below are all possible filter parameters:
 
 ### General Filters
 
-- **`formTypes`** (optional): An array of strings specifying the types of objects the rule applies to. Possible values:
+- **`formTypes`** (one of the required fields to choose from): An array of strings specifying the types of objects the rule applies to. Possible values:
   - `"activator"`: Standard activators (e.g., levers, buttons).
   - `"talkingactivator"`: Activators that can "speak" (e.g., some quest-related objects).
   - `"weapon"`: Weapons like swords or bows (lying around in the world).
@@ -108,21 +108,21 @@ Below are all possible filter parameters:
   - `"tree"`: Trees.
   - `"light"`: Lights with 3D models (e.g., torches).
  
-- **`formTypesNot`** (optional): An array of strings specifying the types of objects that the rule should *not* apply to. Same format as `formTypes`.
+- **`formTypesNot`**: An array of strings specifying the types of objects that the rule should *not* apply to. Same format as `formTypes`.
 
-- **`formIDs`** (optional): An array of strings identifying specific objects by their Form ID in the format `"modName:formID"`. Examples:
+- **`formIDs`** (one of the required fields to choose from): An array of strings identifying specific objects by their Form ID in the format `"modName:formID"`. Examples:
   - `"Skyrim.esm:0x123456"` (for esp/esm plugins).
   - `"MyMod.esl:0x456"` (for esl/espfe plugins).
   - `"Dawnguard.esm:00123456"` (alternate format with leading zeros (esp/esm)).
   - `"MyMod.esp:FE000800"` (alternate format with leading FE prefix (esl/espfe)).
 
-- **`formIDsNot`** (optional): An array of strings identifying specific objects that the rule should *not* apply to. Same format as `formIDs`.
+- **`formIDsNot`**: An array of strings identifying specific objects that the rule should *not* apply to. Same format as `formIDs`.
 
-- **`editorIDs`** (optional): An array of strings identifying specific objects by their Editor ID in the format `"EditorIDName"`. Example: `"VendorItemClutter"`.
+- **`editorIDs`** (one of the required fields to choose from): An array of strings identifying specific objects by their Editor ID in the format `"EditorIDName"`. Example: `"VendorItemClutter"`.
 
-- **`editorIDsNot`** (optional): An array of strings identifying specific objects that the rule should *not* apply to. Same format as `editorIDs`.
+- **`editorIDsNot`**: An array of strings identifying specific objects that the rule should *not* apply to. Same format as `editorIDs`.
 
-- **`formLists`** (optional): An array of objects referencing formlists (lists of forms defined in a mod). Each entry has:
+- **`formLists`** (one of the required fields to choose from): An array of objects referencing formlists (lists of forms defined in a mod). Each entry has:
   - **`formID`**: The formlist's form ID in `"modName:formID"` format (use this or `editorID`).
   - **`editorID`**: The formlist's editor ID in `"EditorIDName"` format (use this or `formID`).
   - **`index`** (optional): An integer specifying which item in the formlist to use. Example:
@@ -136,42 +136,42 @@ Below are all possible filter parameters:
     - **Index `-1`** is default, means that all the items at once will be used. 
     - **Index `-2`** defines the parrallel relationship for mirrored formlists: matching positions between filter and items formlists correspond directly, allowing ordered transformations (raw meat at position 0 in formlist 1 becomes cooked meat at position 0 in formlist 2).
 
-- **`formListsNot`** (optional): An array of formlist objects that the rule should *not* apply to. Same format as `formLists`.
+- **`formListsNot`**: An array of formlist objects that the rule should *not* apply to. Same format as `formLists`.
 
-- **`keywords`** (optional): An array of keywords or formists of keywords that the object must have. Format: `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`), `"EditorIDName"` (e.g., `"VendorItemFood"`), or a formlist's formID/editorID.
+- **`keywords`** (one of the required fields to choose from): An array of keywords or formists of keywords that the object must have. Format: `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`), `"EditorIDName"` (e.g., `"VendorItemFood"`), or a formlist's formID/editorID.
 
-- **`keywordsNot`** (optional): An array of keywords or formists of keyword the object must *not* have. Same format as `keywords`.
+- **`keywordsNot`**: An array of keywords or formists of keyword the object must *not* have. Same format as `keywords`.
 
-- **`chance`** (optional): A number between 0 and 100 representing the percentage chance the rule triggers. Defaults to 100 if omitted.
+- **`chance`**: A number between 0 and 100 representing the percentage chance the rule triggers. Defaults to 100 if omitted.
 
-- **`interactions`** (optional): An integer specifying how many interactions (e.g., hits or activations) are required before the effect triggers. Defaults to 1. Now works with all event types.
+- **`interactions`**: An integer specifying how many interactions (e.g., hits or activations) are required before the effect triggers. Defaults to 1. Now works with all event types.
 
-- **`limit`** (optional): An integer setting the maximum number of times the rule can trigger per object. No limit if omitted. Now works with all event types.
+- **`limit`**: An integer setting the maximum number of times the rule can trigger per object. No limit if omitted. Now works with all event types.
 
-- **`questItemStatus`** (optional): An integer specifying quest item status requirements. Only works with **ACTIVE** player quests:
+- **`questItemStatus`**: An integer specifying quest item status requirements. Only works with **ACTIVE** player quests:
   - `0`: Object must not be a quest item (default).
   - `1`: Object must be a quest alias only.
   - `2`: Object must be a full-fledged quest item.
   - `3`: All objects allowed.
  
-- **`isInitiallyDisabled`** (optional): An integer specifying whether the object has the `kInitiallyDisabled` flag.
+- **`isInitiallyDisabled`**: An integer specifying whether the object has the `kInitiallyDisabled` flag.
   - `0`: Object is not initially disabled.
   - `1`: Object is initially disabled.
   - `2`: All objects allowed (default).
  
-- **`isPluginInstalled`** (optional): An array of plugin names (e.g., `"MyMod.esp"`, `"Skyrim.esm"`) that must be loaded for the rule to apply.
+- **`isPluginInstalled`**: An array of plugin names (e.g., `"MyMod.esp"`, `"Skyrim.esm"`) that must be loaded for the rule to apply.
 
-- **`isPluginNotInstalled`** (optional): An array of plugin names that must *not* be loaded.
+- **`isPluginNotInstalled`**: An array of plugin names that must *not* be loaded.
 
-- **`isDllInstalled`** (optional): An array of DLL filenames (e.g., `"MyPlugin.dll"`) that must be present in `Data/SKSE/Plugins/`.
+- **`isDllInstalled`**: An array of DLL filenames (e.g., `"MyPlugin.dll"`) that must be present in `Data/SKSE/Plugins/`.
 
-- **`isDllNotInstalled`** (optional): An array of DLL filenames that must *not* be present.
+- **`isDllNotInstalled`**: An array of DLL filenames that must *not* be present.
 
 ### Time-Based Filters
 
-- **`timer`** (optional): A defined number of seconds before triggering the effect.
+- **`timer`**: A defined number of seconds before triggering the effect.
 
-- **`time`** (optional): An array of time conditions that must be active for the rule to apply. Format: `["Hour >= 10", "DayOfWeek = 1"]`. Available entries:
+- **`time`**: An array of time conditions that must be active for the rule to apply. Format: `["Hour >= 10", "DayOfWeek = 1"]`. Available entries:
   - `Minute`
   - `Hour`
   - `Day`
@@ -180,11 +180,11 @@ Below are all possible filter parameters:
   - `Year`
   - `GameTime`
  
-- **`timeNot`** (optional): An array of time conditions that must *not* be active. Same format as `time`.
+- **`timeNot`**: An array of time conditions that must *not* be active. Same format as `time`.
 
 ### Proximity-Based Filters
 
-- **`nearbyObjects`** (optional): An array of objects that must be in a certain radius around the target object for the rule should apply. Each entry has:
+- **`nearbyObjects`**: An array of objects that must be in a certain radius around the target object for the rule should apply. Each entry has:
   - **`formID`**: The object formID or a formlist's formID in `"modName:formID"` format (use this or `editorID`). Accepts formlists' formIDs as well.
   - **`editorID`**: The editorID in `"EditorIDName"` format (use this or `formID`). Accepts formlists' editorIDs as well.
   - **`radius`**: An integer specifying in what radius to search. Example:
@@ -195,47 +195,47 @@ Below are all possible filter parameters:
         {"editorID": "Player", "radius": 300}
     ]
     ```
-- **`nearbyObjectsNot`** (optional): An array of objects that must *not* be in a certain radius around the target object. Same format as `nearbyObjects`.
+- **`nearbyObjectsNot`**: An array of objects that must *not* be in a certain radius around the target object. Same format as `nearbyObjects`.
 
-- **`locations`** (optional): An array of cells, locations, or worldspaces where the rule should apply. Format: `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`), `"EditorIDName"` (e.g., `"VendorItemFood"`), or a formlist's formID/editorID.
+- **`locations`**: An array of cells, locations, or worldspaces where the rule should apply. Format: `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`), `"EditorIDName"` (e.g., `"VendorItemFood"`), or a formlist's formID/editorID.
 
-- **`locationsNot`** (optional): An array of cells, locations, or worldspaces where the rule should *not* apply. Same format as `locations`.
+- **`locationsNot`**: An array of cells, locations, or worldspaces where the rule should *not* apply. Same format as `locations`.
 
-- **`weathers`** (optional): An array of weathers that must be active for the rule to apply. Format: `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`), `"EditorIDName"` (e.g., `"VendorItemFood"`), or a formlist's formID/editorID.
+- **`weathers`**: An array of weathers that must be active for the rule to apply. Format: `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`), `"EditorIDName"` (e.g., `"VendorItemFood"`), or a formlist's formID/editorID.
 
-- **`weathersNot`** (optional): An array of weathers that must *not* be active. Same format as `weathers`.
+- **`weathersNot`**: An array of weathers that must *not* be active. Same format as `weathers`.
 
 ### Source-Actor Filters
 
-- **`perks`** (optional): An array of perks that the event source actor must have. Format: `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`), `"EditorIDName"` (e.g., `"VendorItemFood"`), or a formlist's formID/editorID.
+- **`perks`**: An array of perks that the event source actor must have. Format: `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`), `"EditorIDName"` (e.g., `"VendorItemFood"`), or a formlist's formID/editorID.
 
-- **`perksNot`** (optional): An array of perks that the event source actor must *not* have. Same format as `perks`.
+- **`perksNot`**: An array of perks that the event source actor must *not* have. Same format as `perks`.
 
-- **`spells`** (optional): An array of spells that the event source actor must have. Format: `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`), `"EditorIDName"` (e.g., `"VendorItemFood"`), or a formlist's formID/editorID.
+- **`spells`**: An array of spells that the event source actor must have. Format: `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`), `"EditorIDName"` (e.g., `"VendorItemFood"`), or a formlist's formID/editorID.
 
-- **`spellsNot`** (optional): An array of spells that the event source actor must *not* have. Same format as `spells`.
+- **`spellsNot`**: An array of spells that the event source actor must *not* have. Same format as `spells`.
 
-- **`hasItem`** (optional): An array of items that the event source actor must have in their inventory. Format: `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`), `"EditorIDName"` (e.g., `"VendorItemFood"`), or a formlist's formID/editorID.
+- **`hasItem`**: An array of items that the event source actor must have in their inventory. Format: `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`), `"EditorIDName"` (e.g., `"VendorItemFood"`), or a formlist's formID/editorID.
 
-- **`hasItemNot`** (optional): An array of items that the event source actor must *not* have. Same format as `hasItem`.
+- **`hasItemNot`**: An array of items that the event source actor must *not* have. Same format as `hasItem`.
 
-- **`actorKeywords`** (optional): An array of keywords that the event source actor must have in their inventory. Format: `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`), `"EditorIDName"` (e.g., `"VendorItemFood"`), or a formlist's formID/editorID.
+- **`actorKeywords`**: An array of keywords that the event source actor must have in their inventory. Format: `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`), `"EditorIDName"` (e.g., `"VendorItemFood"`), or a formlist's formID/editorID.
 
-- **`actorKeywordsNot`** (optional): An array of keywords that the event source actor must *not* have. Same format as `actorKeywords`.
+- **`actorKeywordsNot`**: An array of keywords that the event source actor must *not* have. Same format as `actorKeywords`.
 
-- **`actorRaces`** (optional): An array of races that the event source actor must have in their inventory. Format: `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`), `"EditorIDName"` (e.g., `"VendorItemFood"`), or a formlist's formID/editorID.
+- **`actorRaces`**: An array of races that the event source actor must have in their inventory. Format: `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`), `"EditorIDName"` (e.g., `"VendorItemFood"`), or a formlist's formID/editorID.
 
-- **`actorRacesNot`** (optional): An array of keywords that the event source actor must *not* have. Same format as `actorRaces`.
+- **`actorRacesNot`**: An array of keywords that the event source actor must *not* have. Same format as `actorRaces`.
 
-- **`actorValues`** (optional): An array of actor value conditions that the event source actor must meet. Format: `["Health >= 10", "Aggression = 0"]`.
+- **`actorValues`**: An array of actor value conditions that the event source actor must meet. Format: `["Health >= 10", "Aggression = 0"]`.
 
-- **`actorValuesNot`** (optional): An array of actor value conditions that the event source actor must *not* meet. Same format as `actorValues`.
+- **`actorValuesNot`**: An array of actor value conditions that the event source actor must *not* meet. Same format as `actorValues`.
 
-- **`level`** (optional): An array of level conditions that the event source actor must meet. Format: `[">= 10", "= 20"]`.
+- **`level`**: An array of level conditions that the event source actor must meet. Format: `[">= 10", "= 20"]`.
 
-- **`levelNot`** (optional): An array of level conditions that the event source actor must *not* meet. Same format as `level`.
+- **`levelNot`**: An array of level conditions that the event source actor must *not* meet. Same format as `level`.
 
-- **`isSneaking`** (optional): An integer specifying whether the event source actor is in this state.
+- **`isSneaking`**: An integer specifying whether the event source actor is in this state.
 - **`isSwimming`**:
 - **`isInCombat`**:
 - **`isMounted`**:
@@ -250,7 +250,7 @@ Below are all possible filter parameters:
 
 For rules with the `"Hit"` event, additional filters can refine which attacks trigger the rule:
 
-- **`weaponsTypes`** (optional): An array of weapon or spell types that must be used. Possible values:
+- **`weaponsTypes`**: An array of weapon or spell types that must be used. Possible values:
   - `"onehandsword"`: One-handed swords.
   - `"twohandsword"`: Two-handed swords.
   - `"onehandaxe"`: One-handed axes.
@@ -271,17 +271,17 @@ For rules with the `"Hit"` event, additional filters can refine which attacks tr
   - `"total"`: Yet to discover. Supposedly matches all weapon types.
   - `"other"`: Miscellaneous types not covered above.
  
-- **`weaponsTypesNot`** (optional): An array of weapon or spell types that must *not* be used. Same format as `weaponsTypes`.
+- **`weaponsTypesNot`**: An array of weapon or spell types that must *not* be used. Same format as `weaponsTypes`.
 
-- **`weapons`** (optional): An array of specific weapons or spells. Format: `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`), `"EditorIDName"` (e.g., `"VendorItemFood"`), or a formlist's formID/editorID.
+- **`weapons`**: An array of specific weapons or spells. Format: `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`), `"EditorIDName"` (e.g., `"VendorItemFood"`), or a formlist's formID/editorID.
 
-- **`weaponsNot`** (optional): An array of specific weapons or spells that must *not* be used. Same format as `weapons`.
+- **`weaponsNot`**: An array of specific weapons or spells that must *not* be used. Same format as `weapons`.
 
-- **`weaponsKeywords`** (optional): An array of keywords the weapon or spell must have. Format: `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`), `"EditorIDName"` (e.g., `"VendorItemFood"`), or a formlist's formID/editorID.
+- **`weaponsKeywords`**: An array of keywords the weapon or spell must have. Format: `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`), `"EditorIDName"` (e.g., `"VendorItemFood"`), or a formlist's formID/editorID.
 
-- **`weaponsKeywordsNot`** (optional): An array of keywords the weapon or spell must *not* have. Same format as `weaponsKeywords`.
+- **`weaponsKeywordsNot`**: An array of keywords the weapon or spell must *not* have. Same format as `weaponsKeywords`.
 
-- **`attacksTypes`** or **`attacks`** (optional): An array of attack types. Possible values:
+- **`attacksTypes`** or **`attacks`**: An array of attack types. Possible values:
   - `"regular"`: Standard attacks.
   - `"power"`: Power attacks.
   - `"bash"`: Shield or weapon bashes.
@@ -293,9 +293,9 @@ For rules with the `"Hit"` event, additional filters can refine which attacks tr
   - `"ignoreweapon"`: Attacks that bypass weapon-specific mechanics.
   - `"overridedata"`: Attacks that override default data.
 
-- **`attacksTypesNot`** or **`attacksNot`** (optional): An array of attack types that must *not* be used. Same format as `attacksTypes`.
+- **`attacksTypesNot`** or **`attacksNot`**: An array of attack types that must *not* be used. Same format as `attacksTypes`.
 
-- **`deliveryTypes`** (optional): An array of spell delivery types. Possible values:
+- **`deliveryTypes`**: An array of spell delivery types. Possible values:
   - `"self"`: Self-targeted spells.
   - `"aimed"`: Aimed spells requiring targeting.
   - `"targetactor"`: Actor-targeted spells.
@@ -303,15 +303,15 @@ For rules with the `"Hit"` event, additional filters can refine which attacks tr
   - `"touch"`: Touch-based spells.
   - `"total"`: All delivery types.
  
-- **`deliveryTypesNot`** (optional): An array of spell delivery types that must *not* be used. Same format as `deliveryTypes`.
+- **`deliveryTypesNot`**: An array of spell delivery types that must *not* be used. Same format as `deliveryTypes`.
 
-- **`allowProjectiles`** (optional): Controls whether projectiles are allowed. Possible values:
+- **`allowProjectiles`**: Controls whether projectiles are allowed. Possible values:
   - `0`: Projectiles are not allowed.
   - `1`: Projectiles are allowed (default).
 
-- **`projectiles`** (optional): An array of specific projectiles. Format: `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`), `"EditorIDName"` (e.g., `"VendorItemFood"`), or a formlist's formID/editorID.
+- **`projectiles`**: An array of specific projectiles. Format: `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`), `"EditorIDName"` (e.g., `"VendorItemFood"`), or a formlist's formID/editorID.
 
-- **`projectilesNot`** (optional): An array of specific projectiles that must *not* be used. Same format as `projectiles`.
+- **`projectilesNot`**: An array of specific projectiles that must *not* be used. Same format as `projectiles`.
 
 ---
 
