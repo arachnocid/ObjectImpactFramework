@@ -134,7 +134,7 @@ Below are all possible filter parameters:
     ]
     ```
     - **Index `-1`** is default, means that all the items at once will be used. 
-    - **Index `-2`** defines the parrallel relationship for mirrored formlists: matching positions between filter and items formlists correspond directly, allowing ordered transformations (raw meat at position 0 in formlist 1 becomes cooked meat at position 0 in formlist 2).
+    - **Index `-2`** defines the parrallel relationship for mirrored formlists: matching positions between `filter` and effects' `items` formlists correspond directly, allowing ordered transformations (e.g., raw meat at position 0 in formlist 1 becomes cooked meat at position 0 in formlist 2).
 
 - **`formListsNot`**: An array of formlist objects that the rule should *not* apply to. Same format as `formLists`.
 
