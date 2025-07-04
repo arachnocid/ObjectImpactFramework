@@ -242,9 +242,9 @@ Below are all possible filter parameters:
 - **`isDualCasting`**:
 - **`isSprinting`**:
 - **`isWeaponDrawn`**:
-  - `0`: Object is not initially disabled.
-  - `1`: Object is initially disabled.
-  - `2` (default): All objects allowed.
+  - `0`: Source actor is *not* in this state.
+  - `1`: Source actor is in this state.
+  - `2` (default): Does not matter.
 
 ### Hit-Specific Filters
 
