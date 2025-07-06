@@ -14,7 +14,7 @@ This guide explains how to set up those JSON files so you can customize the mod 
 - **Filter Note**: An object must be defined by at least one of the three parameters - `formIDs`, `editorIDs`, `formLists`, `formTypes`, `keywords` - for the event to work. **Warning:** Equivalents with the `Not` ending do *not* count.
 - **FormIDs Note**: If you are not using the standard `0x` prefix and are copying from CK or SSEEdit, make sure you put `00` instead of the load order digits.
 - **Identifiers Must Match**: Make sure the `formID` or `editorID` fits the effect (e.g., a spell ID for `"SpawnSpell"`, an item ID for `"SpawnItem"`).
-- **Priority Note**: Place effects with `"Remove"` and `"Swap"` (unless used with `"nonDeletable": 1` flag) prefixes at the very end of the event, otherwise the removed object may not have time to call other effects on itself before gets deleted.
+- **Priority Note**: Place effects with `"Remove"` and `"Swap"` prefixes at the very end of the event, otherwise the removed object may not have time to call other effects on itself before gets deleted.
 - You can modify existing JSON files without quitting the game, edit the file and reload the save.
 
 ---
