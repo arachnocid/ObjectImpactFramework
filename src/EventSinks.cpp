@@ -183,18 +183,34 @@ namespace OIF
         }
     }
 
-    void ScanCell(RE::Actor* source, std::vector<RE::TESObjectREFR*>* foundObjects = nullptr, bool triggerEvents = false, EventType eventType = EventType::kNone, RE::TESWeather* weather = nullptr)
+    void ScanCell(RE::Actor* source, std::vector<RE::TESObjectREFR*>* foundObjects = nullptr, bool triggerEvents = false, EventType eventType = EventType::kNone, RE::TESWeather* weather = nullptr, const UpdateFilter* updateFilter = nullptr)
     {
         if (!source) return;
 
         auto* cell = source->GetParentCell();
         if (!cell) return;
 
+        std::size_t processedCount = 0;
+        std::size_t skippedCount = 0;
+
         cell->ForEachReference([&](RE::TESObjectREFR* ref) -> RE::BSContainer::ForEachResult {
-            if (!ref || ref->IsDeleted() || !ref->GetFormID() || !ref->GetBaseObject()) return RE::BSContainer::ForEachResult::kContinue;
+            if (!ref || ref->IsDeleted() || !ref->GetFormID() || !ref->GetBaseObject()) {
+                return RE::BSContainer::ForEachResult::kContinue;
+            }
 
             if (triggerEvents) {
-                if (!EventSinkBase::IsRelevantObjectRef(ref)) return RE::BSContainer::ForEachResult::kContinue;
+                if (eventType == EventType::kOnUpdate && updateFilter && !updateFilter->IsEmpty()) {
+                    if (!updateFilter->Matches(ref)) {
+                        skippedCount++;
+                        return RE::BSContainer::ForEachResult::kContinue;
+                    }
+                }
+                
+                if (!EventSinkBase::IsRelevantObjectRef(ref)) {
+                    return RE::BSContainer::ForEachResult::kContinue;
+                }
+
+                processedCount++;
 
                 RuleContext ctx{
                     eventType,
@@ -217,6 +233,10 @@ namespace OIF
 
             return RE::BSContainer::ForEachResult::kContinue;
         });
+        
+        if (eventType == EventType::kOnUpdate && updateFilter && !updateFilter->IsEmpty()) {
+            logger::debug("OnUpdate ScanCell: processed {}, skipped {} objects", processedCount, skippedCount);
+        }
     }
 
     // ------------------ Sinks ------------------
@@ -895,9 +915,6 @@ namespace OIF
         SKSE::GetTaskInterface()->AddTask([targetRef, baseObj, attached]() {
             if (targetRef && !targetRef->IsDeleted() && baseObj) {
                 
-                // Removed heavy tes->ForEachReferenceInRange, 
-                // Its unlikely that anyone will need to look for the closest actors for this "static" event anyway
-
                 if (attached) {
                     RuleContext ctx {
                         EventType::kCellAttach,
@@ -963,7 +980,8 @@ namespace OIF
         }
     
         if (hasAnyUpdateRules) {
-            ScanCell(a_this, nullptr, true, EventType::kOnUpdate, nullptr);
+            const auto& updateFilter = ruleManager->GetUpdateFilter();
+            ScanCell(a_this, nullptr, true, EventType::kOnUpdate, nullptr, &updateFilter);
         }
     }
 

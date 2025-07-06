@@ -2174,9 +2174,7 @@ namespace OIF::Effects
             return;
         }
 
-        if (!ctx.target->Get3D()) {
-            ctx.target->Load3D(true);
-        }
+        if (!ctx.target->Get3D()) ctx.target->Load3D(true);
 
         auto* rootObj = ctx.target->Get3D();
         if (!rootObj) {
@@ -2214,7 +2212,7 @@ namespace OIF::Effects
             }
         }
     }
-                
+         
     /*void ToggleShaderFlag(const RuleContext& ctx, const std::vector<ShaderFlagData>& shaderFlagsData)
     {
         if (!ctx.target || ctx.target->IsDeleted()) {

@@ -469,7 +469,7 @@ namespace OIF {
 
     bool CheckLocationFilter(const Filter& f, const RuleContext& ctx, Rule& currentRule) {
         // If there are no filters - skip the check
-        if (f.locationIDs.empty() && f.locationIDsNot.empty() && f.locationLists.empty() && f.locationListsNot.empty()) {
+        if (f.locations.empty() && f.locationsNot.empty()) {
             currentRule.filterCache.locationMatch = true;
             return true;
         }
@@ -498,11 +498,11 @@ namespace OIF {
         }
     
         // Get the current locations of the player
-        std::set<RE::FormID> currentLocationIDs;
+        std::set<RE::FormID> currentlocations;
         std::set<RE::FormID> visitedParents;
         if (auto* player = RE::PlayerCharacter::GetSingleton()) {
             if (auto* currentLocation = player->GetCurrentLocation()) {
-                currentLocationIDs.insert(currentLocation->GetFormID());
+                currentlocations.insert(currentLocation->GetFormID());
                 auto* parentLoc = currentLocation;
                 while (parentLoc && parentLoc->parentLoc) {
                     parentLoc = parentLoc->parentLoc;
@@ -511,18 +511,18 @@ namespace OIF {
                         break;
                     }
                     visitedParents.insert(parentLoc->GetFormID());
-                    currentLocationIDs.insert(parentLoc->GetFormID());
+                    currentlocations.insert(parentLoc->GetFormID());
                 }
             }
         }
     
         // Checking including filters
-        if (!f.locationIDs.empty()) {
-            bool matched = f.locationIDs.contains(currentCellID) || (currentWorldspaceID && f.locationIDs.contains(currentWorldspaceID));
+        if (!f.locations.empty()) {
+            bool matched = f.locations.contains(currentCellID) || (currentWorldspaceID && f.locations.contains(currentWorldspaceID));
 
             if (!matched) {
-                for (auto locID : currentLocationIDs) {
-                    if (f.locationIDs.contains(locID)) {
+                for (auto locID : currentlocations) {
+                    if (f.locations.contains(locID)) {
                         matched = true;
                         break;
                     }
@@ -536,12 +536,12 @@ namespace OIF {
         }
     
         // Checking excluding filters
-        if (!f.locationIDsNot.empty()) {
-            bool excluded = f.locationIDsNot.contains(currentCellID) || (currentWorldspaceID && f.locationIDsNot.contains(currentWorldspaceID));
+        if (!f.locationsNot.empty()) {
+            bool excluded = f.locationsNot.contains(currentCellID) || (currentWorldspaceID && f.locationsNot.contains(currentWorldspaceID));
 
             if (!excluded) {
-                for (auto locID : currentLocationIDs) {
-                    if (f.locationIDsNot.contains(locID)) {
+                for (auto locID : currentlocations) {
+                    if (f.locationsNot.contains(locID)) {
                         excluded = true;
                         break;
                     }
@@ -554,59 +554,13 @@ namespace OIF {
             }
         }
     
-        // Checking the including formlists
-        if (!f.locationLists.empty()) {
-            bool matched = false;
-            for (auto listFormID : f.locationLists) {
-                auto* list = RE::TESForm::LookupByID<RE::BGSListForm>(listFormID);
-                if (!list) continue;
-                
-                for (auto* el : list->forms) {
-                    if (!el) continue;
-                    auto elID = el->GetFormID();
-                    
-                    if (elID == currentCellID || 
-                        (currentWorldspaceID && elID == currentWorldspaceID) ||
-                        currentLocationIDs.contains(elID)) {
-                        matched = true;
-                        break;
-                    }
-                }
-                if (matched) break;
-            }
-            if (!matched) {
-                currentRule.filterCache.locationMatch = false;
-                return false;
-            }
-        }
-    
-        // Checking the excluding formlists
-        if (!f.locationListsNot.empty()) {
-            for (auto listFormID : f.locationListsNot) {
-                auto* list = RE::TESForm::LookupByID<RE::BGSListForm>(listFormID);
-                if (!list) continue;
-                
-                for (auto* el : list->forms) {
-                    if (!el) continue;
-                    auto elID = el->GetFormID();
-                    
-                    if (elID == currentCellID || 
-                        (currentWorldspaceID && elID == currentWorldspaceID) ||
-                        currentLocationIDs.contains(elID)) {
-                        currentRule.filterCache.locationMatch = false;
-                        return false;
-                    }
-                }
-            }
-        }
-    
         currentRule.filterCache.locationMatch = true;
         currentRule.filterCache.lastUpdate = std::chrono::steady_clock::now();
         return true;
     }
     
     bool CheckWeatherFilter(const Filter& f, Rule& currentRule) {
-        if (f.weatherIDs.empty() && f.weatherIDsNot.empty() && f.weatherLists.empty() && f.weatherListsNot.empty()) {
+        if (f.weathers.empty() && f.weathersNot.empty()) {
             currentRule.filterCache.weatherMatch = true;
             return true;
         }
@@ -617,57 +571,23 @@ namespace OIF {
     
         auto* sky = RE::Sky::GetSingleton();
         if (!sky || !sky->currentWeather) {
-            currentRule.filterCache.weatherMatch = f.weatherIDs.empty() && f.weatherLists.empty();
+            currentRule.filterCache.weatherMatch = f.weathers.empty();
             return currentRule.filterCache.weatherMatch.value();
         }
     
         RE::FormID currentWeatherID = sky->currentWeather->GetFormID();
 
-        if (!f.weatherIDs.empty()) {
-            if (!f.weatherIDs.contains(currentWeatherID)) {
+        if (!f.weathers.empty()) {
+            if (!f.weathers.contains(currentWeatherID)) {
                 currentRule.filterCache.weatherMatch = false;
                 return false;
             }
         }
 
-        if (!f.weatherIDsNot.empty()) {
-            if (f.weatherIDsNot.contains(currentWeatherID)) {
+        if (!f.weathersNot.empty()) {
+            if (f.weathersNot.contains(currentWeatherID)) {
                 currentRule.filterCache.weatherMatch = false;
                 return false;
-            }
-        }
-
-        if (!f.weatherLists.empty()) {
-            bool matched = false;
-            for (auto listFormID : f.weatherLists) {
-                auto* list = RE::TESForm::LookupByID<RE::BGSListForm>(listFormID);
-                if (!list) continue;
-                
-                for (auto* el : list->forms) {
-                    if (el && el->GetFormID() == currentWeatherID) {
-                        matched = true;
-                        break;
-                    }
-                }
-                if (matched) break;
-            }
-            if (!matched) {
-                currentRule.filterCache.weatherMatch = false;
-                return false;
-            }
-        }
-
-        if (!f.weatherListsNot.empty()) {
-            for (auto listFormID : f.weatherListsNot) {
-                auto* list = RE::TESForm::LookupByID<RE::BGSListForm>(listFormID);
-                if (!list) continue;
-                
-                for (auto* el : list->forms) {
-                    if (el && el->GetFormID() == currentWeatherID) {
-                        currentRule.filterCache.weatherMatch = false;
-                        return false;
-                    }
-                }
             }
         }
     
@@ -769,6 +689,8 @@ namespace OIF {
         } catch (const fs::filesystem_error& e) {
             logger::error("Filesystem error while loading rules: {}", e.what());
         }
+
+        InvalidateUpdateCache();
 
         logger::info("Total rules loaded: {}", _rules.size());
     }
@@ -1105,7 +1027,13 @@ namespace OIF {
                                 if (auto* kw = form->As<RE::BGSKeyword>()) {
                                     r.filter.keywords.insert(kw);
                                 } else if (auto* formList = form->As<RE::BGSListForm>()) {
-                                    r.filter.keywordsLists.push_back(form->GetFormID());
+                                    for (auto* el : formList->forms) {
+                                        if (el) {
+                                            if (auto* listKw = el->As<RE::BGSKeyword>()) {
+                                                r.filter.keywords.insert(listKw);
+                                            }
+                                        }
+                                    }
                                 } else {
                                     logger::warn("Invalid keyword form '{}' (not Keyword or FormList) in keywords filter of {}", kwStr, path.string());
                                 }
@@ -1115,7 +1043,7 @@ namespace OIF {
                             }
                         }
                     }
-                    if (!r.filter.keywords.empty() || !r.filter.keywordsLists.empty()) {
+                    if (!r.filter.keywords.empty()) {
                         hasObjectIdentifier = true;
                     }
                 }
@@ -1136,7 +1064,13 @@ namespace OIF {
                                 if (auto* kw = form->As<RE::BGSKeyword>()) {
                                     r.filter.keywordsNot.insert(kw);
                                 } else if (auto* formList = form->As<RE::BGSListForm>()) {
-                                    r.filter.keywordsListsNot.push_back(form->GetFormID());
+                                    for (auto* el : formList->forms) {
+                                        if (el) {
+                                            if (auto* listKw = el->As<RE::BGSKeyword>()) {
+                                                r.filter.keywordsNot.insert(listKw);
+                                            }
+                                        }
+                                    }
                                 } else {
                                     logger::warn("Invalid keywordsnot form '{}' (not Keyword or FormList) in keywordsnot filter of {}", kwStr, path.string());
                                 }
@@ -1191,7 +1125,13 @@ namespace OIF {
                                 if (auto* kw = form->As<RE::BGSKeyword>()) {
                                     r.filter.weaponsKeywords.insert(kw);
                                 } else if (auto* formList = form->As<RE::BGSListForm>()) {
-                                    r.filter.weaponsKeywordsLists.push_back(form->GetFormID());
+                                    for (auto* el : formList->forms) {
+                                        if (el) {
+                                            if (auto* listKw = el->As<RE::BGSKeyword>()) {
+                                                r.filter.weaponsKeywords.insert(listKw);
+                                            }
+                                        }
+                                    }
                                 } else {
                                     logger::warn("Invalid weaponskeywords form '{}' (not Keyword or FormList) in weaponskeywords filter of {}", kwStr, path.string());
                                 }
@@ -1219,7 +1159,13 @@ namespace OIF {
                                 if (auto* kw = form->As<RE::BGSKeyword>()) {
                                     r.filter.weaponsKeywordsNot.insert(kw);
                                 } else if (auto* formList = form->As<RE::BGSListForm>()) {
-                                    r.filter.weaponsKeywordsListsNot.push_back(form->GetFormID());
+                                    for (auto* el : formList->forms) {
+                                        if (el) {
+                                            if (auto* listKw = el->As<RE::BGSKeyword>()) {
+                                                r.filter.weaponsKeywordsNot.insert(listKw);
+                                            }
+                                        }
+                                    }
                                 } else {
                                     logger::warn("Invalid weaponskeywordsnot form '{}' (not Keyword or FormList) in weaponskeywordsnot filter of {}", kwStr, path.string());
                                 }
@@ -1243,12 +1189,14 @@ namespace OIF {
                             }
                             
                             if (form) {
-                                if (form->Is(RE::FormType::Weapon)) {
-                                    r.filter.weapons.insert(form);
-                                } else if (auto* formList = form->As<RE::BGSListForm>()) {
-                                    r.filter.weaponsLists.push_back(form->GetFormID());
+                                if (auto* formList = form->As<RE::BGSListForm>()) {
+                                    for (auto* el : formList->forms) {
+                                        if (el) {
+                                            r.filter.weapons.insert(el);
+                                        }
+                                    }
                                 } else {
-                                    logger::warn("Invalid weapon form '{}' (not Weapon or FormList) in weapons filter of {}", weaponStr, path.string());
+                                    r.filter.weapons.insert(form);
                                 }
                             } else {
                                 logger::warn("Invalid weapon identifier '{}' in weapons filter of {}", weaponStr, path.string());
@@ -1270,12 +1218,14 @@ namespace OIF {
                             }
                             
                             if (form) {
-                                if (form->Is(RE::FormType::Weapon)) {
-                                    r.filter.weaponsNot.insert(form);
-                                } else if (auto* formList = form->As<RE::BGSListForm>()) {
-                                    r.filter.weaponsListsNot.push_back(form->formID);
+                                if (auto* formList = form->As<RE::BGSListForm>()) {
+                                    for (auto* el : formList->forms) {
+                                        if (el) {
+                                            r.filter.weaponsNot.insert(el);
+                                        }
+                                    }
                                 } else {
-                                    logger::warn("Invalid weapon form '{}' (not Weapon or FormList) in weaponsnot filter of {}", weaponStr, path.string());
+                                    r.filter.weaponsNot.insert(form);
                                 }
                             } else {
                                 logger::warn("Invalid weapon identifier '{}' in weaponsnot filter of {}", weaponStr, path.string());
@@ -1308,7 +1258,11 @@ namespace OIF {
                                 if (form->Is(RE::FormType::Projectile)) {
                                     r.filter.projectiles.insert(form);
                                 } else if (auto* formList = form->As<RE::BGSListForm>()) {
-                                    r.filter.projectilesLists.push_back(form->GetFormID());
+                                    for (auto* el : formList->forms) {
+                                        if (el && el->Is(RE::FormType::Projectile)) {
+                                            r.filter.projectiles.insert(el);
+                                        }
+                                    }
                                 } else {
                                     logger::warn("Invalid projectile form '{}' (not Projectile or FormList) in projectiles filter of {}", projStr, path.string());
                                 }
@@ -1335,7 +1289,11 @@ namespace OIF {
                                 if (form->Is(RE::FormType::Projectile)) {
                                     r.filter.projectilesNot.insert(form);
                                 } else if (auto* formList = form->As<RE::BGSListForm>()) {
-                                    r.filter.projectilesListsNot.push_back(form->GetFormID());
+                                    for (auto* el : formList->forms) {
+                                        if (el && el->Is(RE::FormType::Projectile)) {
+                                            r.filter.projectilesNot.insert(el);
+                                        }
+                                    }
                                 } else {
                                     logger::warn("Invalid projectile form '{}' (not Projectile or FormList) in projectilesnot filter of {}", projStr, path.string());
                                 }
@@ -1422,9 +1380,13 @@ namespace OIF {
                             
                             if (form) {
                                 if (form->Is(RE::FormType::Cell) || form->Is(RE::FormType::Location) || form->Is(RE::FormType::WorldSpace)) {
-                                    r.filter.locationIDs.insert(form->GetFormID());
+                                    r.filter.locations.insert(form->GetFormID());
                                 } else if (auto* formList = form->As<RE::BGSListForm>()) {
-                                    r.filter.locationLists.push_back(form->GetFormID());
+                                    for (auto* el : formList->forms) {
+                                        if (el && (el->Is(RE::FormType::Cell) || el->Is(RE::FormType::Location) || el->Is(RE::FormType::WorldSpace))) {
+                                            r.filter.locations.insert(el->GetFormID());
+                                        }
+                                    }
                                 } else {
                                     logger::warn("Invalid location form '{}' (not Cell, Location, Worldspace or FormList) in locations filter of {}", formStr, path.string());
                                 }
@@ -1449,9 +1411,13 @@ namespace OIF {
                             
                             if (form) {
                                 if (form->Is(RE::FormType::Cell) || form->Is(RE::FormType::Location) || form->Is(RE::FormType::WorldSpace)) {
-                                    r.filter.locationIDsNot.insert(form->GetFormID());
+                                    r.filter.locationsNot.insert(form->GetFormID());
                                 } else if (auto* formList = form->As<RE::BGSListForm>()) {
-                                    r.filter.locationListsNot.push_back(form->GetFormID());
+                                    for (auto* el : formList->forms) {
+                                        if (el && (el->Is(RE::FormType::Cell) || el->Is(RE::FormType::Location) || el->Is(RE::FormType::WorldSpace))) {
+                                            r.filter.locationsNot.insert(el->GetFormID());
+                                        }
+                                    }
                                 } else {
                                     logger::warn("Invalid location form '{}' (not Cell, Location, Worldspace or FormList) in locationsnot filter of {}", formStr, path.string());
                                 }
@@ -1476,9 +1442,13 @@ namespace OIF {
                             
                             if (form) {
                                 if (form->Is(RE::FormType::Weather)) {
-                                    r.filter.weatherIDs.insert(form->GetFormID());
+                                    r.filter.weathers.insert(form->GetFormID());
                                 } else if (auto* formList = form->As<RE::BGSListForm>()) {
-                                    r.filter.weatherLists.push_back(form->GetFormID());
+                                    for (auto* el : formList->forms) {
+                                        if (el && el->Is(RE::FormType::Weather)) {
+                                            r.filter.weathers.insert(el->GetFormID());
+                                        }
+                                    }
                                 } else {
                                     logger::warn("Invalid weather form '{}' (not Weather or FormList) in weathers filter of {}", formStr, path.string());
                                 }
@@ -1503,9 +1473,13 @@ namespace OIF {
                             
                             if (form) {
                                 if (form->Is(RE::FormType::Weather)) {
-                                    r.filter.weatherIDsNot.insert(form->GetFormID());
+                                    r.filter.weathersNot.insert(form->GetFormID());
                                 } else if (auto* formList = form->As<RE::BGSListForm>()) {
-                                    r.filter.weatherListsNot.push_back(form->GetFormID());
+                                    for (auto* el : formList->forms) {
+                                        if (el && el->Is(RE::FormType::Weather)) {
+                                            r.filter.weathersNot.insert(el->GetFormID());
+                                        }
+                                    }
                                 } else {
                                     logger::warn("Invalid weathersnot form '{}' (not Weather or FormList) in weathersnot filter of {}", formStr, path.string());
                                 }
@@ -1532,7 +1506,13 @@ namespace OIF {
                                 if (auto* perkForm = form->As<RE::BGSPerk>()) {
                                     r.filter.perks.insert(perkForm->GetFormID());
                                 } else if (auto* formList = form->As<RE::BGSListForm>()) {
-                                    r.filter.perksLists.push_back(form->GetFormID());
+                                    for (auto* el : formList->forms) {
+                                        if (el) {
+                                            if (auto* listPerk = el->As<RE::BGSPerk>()) {
+                                                r.filter.perks.insert(listPerk->GetFormID());
+                                            }
+                                        }
+                                    }
                                 } else {
                                     logger::warn("Invalid perks form '{}' (not Perk or FormList) in perks filter of {}", perkStr, path.string());
                                 }
@@ -1559,7 +1539,13 @@ namespace OIF {
                                 if (auto* perkForm = form->As<RE::BGSPerk>()) {
                                     r.filter.perksNot.insert(perkForm->GetFormID());
                                 } else if (auto* formList = form->As<RE::BGSListForm>()) {
-                                    r.filter.perksListsNot.push_back(form->GetFormID());
+                                    for (auto* el : formList->forms) {
+                                        if (el) {
+                                            if (auto* listPerk = el->As<RE::BGSPerk>()) {
+                                                r.filter.perksNot.insert(listPerk->GetFormID());
+                                            }
+                                        }
+                                    }
                                 } else {
                                     logger::warn("Invalid perksnot form '{}' (not Perk or FormList) in perksnot filter of {}", perkStr, path.string());
                                 }
@@ -1586,7 +1572,13 @@ namespace OIF {
                                 if (auto* spellForm = form->As<RE::SpellItem>()) {
                                     r.filter.spells.insert(spellForm->GetFormID());
                                 } else if (auto* formList = form->As<RE::BGSListForm>()) {
-                                    r.filter.spellsLists.push_back(form->GetFormID());
+                                    for (auto* el : formList->forms) {
+                                        if (el) {
+                                            if (auto* listSpell = el->As<RE::SpellItem>()) {
+                                                r.filter.spells.insert(listSpell->GetFormID());
+                                            }
+                                        }
+                                    }
                                 } else {
                                     logger::warn("Invalid spells form '{}' (not Spell or FormList) in spells filter of {}", spellStr, path.string());
                                 }
@@ -1613,7 +1605,13 @@ namespace OIF {
                                 if (auto* spellForm = form->As<RE::SpellItem>()) {
                                     r.filter.spellsNot.insert(spellForm->GetFormID());
                                 } else if (auto* formList = form->As<RE::BGSListForm>()) {
-                                    r.filter.spellsListsNot.push_back(form->GetFormID());
+                                    for (auto* el : formList->forms) {
+                                        if (el) {
+                                            if (auto* listSpell = el->As<RE::SpellItem>()) {
+                                                r.filter.spellsNot.insert(listSpell->GetFormID());
+                                            }
+                                        }
+                                    }
                                 } else {
                                     logger::warn("Invalid spellsnot form '{}' (not Spell or FormList) in spellsnot filter of {}", spellStr, path.string());
                                 }
@@ -1638,7 +1636,11 @@ namespace OIF {
 
                             if (form) {
                                 if (auto* formList = form->As<RE::BGSListForm>()) {
-                                    r.filter.hasItemLists.push_back(form->GetFormID());
+                                    for (auto* el : formList->forms) {
+                                        if (el) {
+                                            r.filter.hasItem.insert(el->GetFormID());
+                                        }
+                                    }
                                 } else {
                                     r.filter.hasItem.insert(form->GetFormID());
                                 }
@@ -1663,9 +1665,13 @@ namespace OIF {
 
                             if (form) {
                                 if (auto* formList = form->As<RE::BGSListForm>()) {
-                                    r.filter.hasItemLists.push_back(form->GetFormID());
+                                    for (auto* el : formList->forms) {
+                                        if (el) {
+                                            r.filter.hasItemNot.insert(el->GetFormID());
+                                        }
+                                    }
                                 } else {
-                                    r.filter.hasItem.insert(form->GetFormID());
+                                    r.filter.hasItemNot.insert(form->GetFormID());
                                 }
                             } else {
                                 logger::warn("Invalid hasitemnot identifier '{}' in hasitemnot filter of {}", itemStr, path.string());
@@ -1816,7 +1822,13 @@ namespace OIF {
                                 if (auto* kw = form->As<RE::BGSKeyword>()) {
                                     r.filter.actorKeywords.insert(kw);
                                 } else if (auto* formList = form->As<RE::BGSListForm>()) {
-                                    r.filter.actorKeywordsLists.push_back(form->GetFormID());
+                                    for (auto* el : formList->forms) {
+                                        if (el) {
+                                            if (auto* listKw = el->As<RE::BGSKeyword>()) {
+                                                r.filter.actorKeywords.insert(listKw);
+                                            }
+                                        }
+                                    }
                                 } else {
                                     logger::warn("Invalid actorkeywords form '{}' (not Keyword or FormList) in actorkeywords filter of {}", kwStr, path.string());
                                 }
@@ -1843,7 +1855,13 @@ namespace OIF {
                                 if (auto* kw = form->As<RE::BGSKeyword>()) {
                                     r.filter.actorKeywordsNot.insert(kw);
                                 } else if (auto* formList = form->As<RE::BGSListForm>()) {
-                                    r.filter.actorKeywordsListsNot.push_back(form->GetFormID());
+                                    for (auto* el : formList->forms) {
+                                        if (el) {
+                                            if (auto* listKw = el->As<RE::BGSKeyword>()) {
+                                                r.filter.actorKeywordsNot.insert(listKw);
+                                            }
+                                        }
+                                    }
                                 } else {
                                     logger::warn("Invalid actorkeywordsnot form '{}' (not Keyword or FormList) in actorkeywordsnot filter of {}", kwStr, path.string());
                                 }
@@ -1870,7 +1888,13 @@ namespace OIF {
                                 if (auto* raceForm = form->As<RE::TESRace>()) {
                                     r.filter.actorRaces.insert(raceForm);
                                 } else if (auto* formList = form->As<RE::BGSListForm>()) {
-                                    r.filter.actorRacesLists.push_back(form->GetFormID());
+                                    for (auto* el : formList->forms) {
+                                        if (el) {
+                                            if (auto* listRace = el->As<RE::TESRace>()) {
+                                                r.filter.actorRaces.insert(listRace);
+                                            }
+                                        }
+                                    }
                                 } else {
                                     logger::warn("Invalid actorraces form '{}' (not Race or FormList) in actorraces filter of {}", raceStr, path.string());
                                 }
@@ -1897,7 +1921,13 @@ namespace OIF {
                                 if (auto* raceForm = form->As<RE::TESRace>()) {
                                     r.filter.actorRacesNot.insert(raceForm);
                                 } else if (auto* formList = form->As<RE::BGSListForm>()) {
-                                    r.filter.actorRacesListsNot.push_back(form->GetFormID());
+                                    for (auto* el : formList->forms) {
+                                        if (el) {
+                                            if (auto* listRace = el->As<RE::TESRace>()) {
+                                                r.filter.actorRacesNot.insert(listRace);
+                                            }
+                                        }
+                                    }
                                 } else {
                                     logger::warn("Invalid actorracesnot form '{}' (not Race or FormList) in actorracesnot filter of {}", raceStr, path.string());
                                 }
@@ -2365,66 +2395,77 @@ namespace OIF {
         if (!f.nearby.empty()) {
             if (!ctx.target || !ctx.source) return false;
             
-            bool proximityConditionMet = false;
+            std::vector<std::pair<RE::TESForm*, float>> nearbyPairs;
+            float maxRadius = 0.0f;
             
             for (const auto& nearbyEntry : f.nearby) {
                 if (!nearbyEntry.form) continue;
-                
-                float radius = nearbyEntry.radius;
-                
-                auto* tes = RE::TES::GetSingleton();
-                if (!tes) continue;
-                
-                bool foundNearbyForm = false;
-                tes->ForEachReferenceInRange(ctx.target, radius, [&](RE::TESObjectREFR* ref) -> RE::BSContainer::ForEachResult {
-                    if (!ref || ref->IsDeleted()) return RE::BSContainer::ForEachResult::kContinue;
-                    
-                    auto* baseObj = ref->GetBaseObject();
-                    if (!baseObj) return RE::BSContainer::ForEachResult::kContinue;
-                    
-                    if (baseObj->GetFormID() == nearbyEntry.form->GetFormID()) {
-                        foundNearbyForm = true;
-                        return RE::BSContainer::ForEachResult::kStop;
-                    }
-                    
-                    return RE::BSContainer::ForEachResult::kContinue;
-                });
-                
-                if (foundNearbyForm) {
-                    proximityConditionMet = true;
-                    break;
-                }
+                nearbyPairs.emplace_back(nearbyEntry.form, nearbyEntry.radius);
+                maxRadius = (std::max)(maxRadius, nearbyEntry.radius);
             }
             
+            if (nearbyPairs.empty()) return false;
+            
+            bool proximityConditionMet = false;
+            auto* tes = RE::TES::GetSingleton();
+            if (!tes) return false;
+        
+            tes->ForEachReferenceInRange(ctx.target, maxRadius, [&](RE::TESObjectREFR* ref) -> RE::BSContainer::ForEachResult {
+                if (!ref || ref->IsDeleted()) return RE::BSContainer::ForEachResult::kContinue;
+                
+                auto* baseObj = ref->GetBaseObject();
+                if (!baseObj) return RE::BSContainer::ForEachResult::kContinue;
+                
+                float distance = ctx.target->GetPosition().GetDistance(ref->GetPosition());
+                
+                for (const auto& [form, radius] : nearbyPairs) {
+                    if (baseObj->GetFormID() == form->GetFormID() && distance <= radius) {
+                        proximityConditionMet = true;
+                        return RE::BSContainer::ForEachResult::kStop;
+                    }
+                }
+                
+                return RE::BSContainer::ForEachResult::kContinue;
+            });
+                
             if (!proximityConditionMet) return false;
         }
         
         if (!f.nearbyNot.empty()) {
             if (!ctx.target || !ctx.source) return false;
+        
+            std::vector<std::pair<RE::TESForm*, float>> nearbyNotPairs;
+            float maxRadius = 0.0f;
             
             for (const auto& nearbyEntry : f.nearbyNot) {
                 if (!nearbyEntry.form) continue;
-                
-                float radius = nearbyEntry.radius;
-                
+                nearbyNotPairs.emplace_back(nearbyEntry.form, nearbyEntry.radius);
+                maxRadius = (std::max)(maxRadius, nearbyEntry.radius);
+            }
+            
+            if (!nearbyNotPairs.empty()) {
                 auto* tes = RE::TES::GetSingleton();
-                if (!tes) continue;
-                
+                if (!tes) return false;
+        
                 bool foundExcludedForm = false;
-                tes->ForEachReferenceInRange(ctx.target, radius, [&](RE::TESObjectREFR* ref) -> RE::BSContainer::ForEachResult {
+                tes->ForEachReferenceInRange(ctx.target, maxRadius, [&](RE::TESObjectREFR* ref) -> RE::BSContainer::ForEachResult {
                     if (!ref || ref->IsDeleted()) return RE::BSContainer::ForEachResult::kContinue;
                     
                     auto* baseObj = ref->GetBaseObject();
                     if (!baseObj) return RE::BSContainer::ForEachResult::kContinue;
                     
-                    if (baseObj->GetFormID() == nearbyEntry.form->GetFormID()) {
-                        foundExcludedForm = true;
-                        return RE::BSContainer::ForEachResult::kStop;
+                    float distance = ctx.target->GetPosition().GetDistance(ref->GetPosition());
+                    
+                    for (const auto& [form, radius] : nearbyNotPairs) {
+                        if (baseObj->GetFormID() == form->GetFormID() && distance <= radius) {
+                            foundExcludedForm = true;
+                            return RE::BSContainer::ForEachResult::kStop;
+                        }
                     }
                     
                     return RE::BSContainer::ForEachResult::kContinue;
                 });
-                
+                    
                 if (foundExcludedForm) return false;
             }
         }
@@ -2522,47 +2563,6 @@ namespace OIF {
                 }
             }
         }
-        if (!f.keywordsLists.empty()) {
-            hasObjectIdentifiers = true;
-            auto* kwf = ctx.baseObj->As<RE::BGSKeywordForm>();
-            if (kwf) {
-                bool matched = false;
-                for (const auto& listFormID : f.keywordsLists) {
-                    auto* list = RE::TESForm::LookupByID<RE::BGSListForm>(listFormID);
-                    if (!list) continue;
-
-                    for (auto* el : list->forms) {
-                        if (!el) continue;
-                        if (auto* kw = el->As<RE::BGSKeyword>()) {
-                            if (kwf->HasKeyword(kw)) {
-                                matched = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (matched) break;
-                }
-                if (matched) {
-                    objectIdentifierMatch = true;
-                }
-            }
-        }
-        if (!f.keywordsListsNot.empty()) {
-            auto* kwf = ctx.baseObj->As<RE::BGSKeywordForm>();
-            if (kwf) {
-                for (const auto& listFormID : f.keywordsListsNot) {
-                    auto* list = RE::TESForm::LookupByID<RE::BGSListForm>(listFormID);
-                    if (!list) continue;
-                    
-                    for (auto* el : list->forms) {
-                        if (!el) continue;
-                        if (auto* kw = el->As<RE::BGSKeyword>()) {
-                            if (kwf->HasKeyword(kw)) return false;
-                        }
-                    }
-                }
-            }
-        }
         if (f.questItemStatus != 3) {
             auto currentStatus = GetQuestItemStatus(ctx.target);
             
@@ -2593,44 +2593,6 @@ namespace OIF {
                 if (perk && actor->HasPerk(perk)) return false;
             }
         }
-        if (!f.perksLists.empty()) {
-            if (!ctx.source) return false;
-            auto* actor = ctx.source->As<RE::Actor>();
-            if (!actor) return false;
-            bool matched = false;
-            for (const auto& listFormID : f.perksLists) {
-                auto* list = RE::TESForm::LookupByID<RE::BGSListForm>(listFormID);
-                if (!list) continue;
-
-                for (auto* el : list->forms) {
-                    if (!el) continue;
-                    if (auto* perk = el->As<RE::BGSPerk>()) {
-                        if (actor->HasPerk(perk)) {
-                            matched = true;
-                            break;
-                        }
-                    }
-                }
-                if (matched) break;
-            }
-            if (!matched) return false;
-        }
-        if (!f.perksListsNot.empty()) {
-            if (!ctx.source) return false;
-            auto* actor = ctx.source->As<RE::Actor>();
-            if (!actor) return false;
-            for (const auto& listFormID : f.perksListsNot) {
-                auto* list = RE::TESForm::LookupByID<RE::BGSListForm>(listFormID);
-                if (!list) continue;
-                
-                for (auto* el : list->forms) {
-                    if (!el) continue;
-                    if (auto* perk = el->As<RE::BGSPerk>()) {
-                        if (actor->HasPerk(perk)) return false;
-                    }
-                }
-            }
-        }
         if (!f.spells.empty()) {
             if (!ctx.source) return false;
             auto* actor = ctx.source->As<RE::Actor>();
@@ -2654,44 +2616,6 @@ namespace OIF {
                 if (spell && actor->HasSpell(spell)) return false;
             }
         }
-        if (!f.spellsLists.empty()) {
-            if (!ctx.source) return false;
-            auto* actor = ctx.source->As<RE::Actor>();
-            if (!actor) return false;
-            bool matched = false;
-            for (const auto& listFormID : f.spellsLists) {
-                auto* list = RE::TESForm::LookupByID<RE::BGSListForm>(listFormID);
-                if (!list) continue;
-
-                for (auto* el : list->forms) {
-                    if (!el) continue;
-                    if (auto* spell = el->As<RE::SpellItem>()) {
-                        if (actor->HasSpell(spell)) {
-                            matched = true;
-                            break;
-                        }
-                    }
-                }
-                if (matched) break;
-            }
-            if (!matched) return false;
-        }
-        if (!f.spellsListsNot.empty()) {
-            if (!ctx.source) return false;
-            auto* actor = ctx.source->As<RE::Actor>();
-            if (!actor) return false;
-            for (const auto& listFormID : f.spellsListsNot) {
-                auto* list = RE::TESForm::LookupByID<RE::BGSListForm>(listFormID);
-                if (!list) continue;
-                
-                for (auto* el : list->forms) {
-                    if (!el) continue;
-                    if (auto* spell = el->As<RE::SpellItem>()) {
-                        if (actor->HasSpell(spell)) return false;
-                    }
-                }
-            }
-        }
         if (!f.hasItem.empty()) {
             if (!ctx.source) return false;
             bool hasAnyItem = false;
@@ -2708,38 +2632,6 @@ namespace OIF {
             for (auto formID : f.hasItemNot) {
                 if (HasItem(ctx.source, formID)) {
                     return false;
-                }
-            }
-        }
-        if (!f.hasItemLists.empty()) {
-            if (!ctx.source) return false;
-            bool hasAnyItem = false;
-            for (const auto& listFormID : f.hasItemLists) {
-                auto* list = RE::TESForm::LookupByID<RE::BGSListForm>(listFormID);
-                if (!list) continue;
-
-                for (auto* el : list->forms) {
-                    if (!el) continue;
-                    if (HasItem(ctx.source, el->GetFormID())) {
-                        hasAnyItem = true;
-                        break;
-                    }
-                }
-                if (hasAnyItem) break;
-            }
-            if (!hasAnyItem) return false;
-        }
-        if (!f.hasItemListsNot.empty()) {
-            if (!ctx.source) return false;
-            for (const auto& listFormID : f.hasItemListsNot) {
-                auto* list = RE::TESForm::LookupByID<RE::BGSListForm>(listFormID);
-                if (!list) continue;
-                
-                for (auto* el : list->forms) {
-                    if (!el) continue;
-                        if (HasItem(ctx.source, el->GetFormID())) {
-                        return false;
-                    }
                 }
             }
         }
@@ -2809,45 +2701,6 @@ namespace OIF {
                 }
             }
         }
-        if (!f.actorKeywordsLists.empty()) {
-            if (!ctx.source) return false;
-            auto* kwf = ctx.source->As<RE::BGSKeywordForm>();
-            if (!kwf) return false;
-            bool matched = false;
-            for (const auto& listFormID : f.actorKeywordsLists) {
-                auto* list = RE::TESForm::LookupByID<RE::BGSListForm>(listFormID);
-                if (!list) continue;
-
-                for (auto* el : list->forms) {
-                    if (!el) continue;
-                    if (auto* kw = el->As<RE::BGSKeyword>()) {
-                        if (kwf->HasKeyword(kw)) {
-                            matched = true;
-                            break;
-                        }
-                    }
-                }
-                if (matched) break;
-            }
-            if (!matched) return false;
-        }
-        if (!f.actorKeywordsListsNot.empty()) {
-            if (!ctx.source) return false;
-            auto* kwf = ctx.source->As<RE::BGSKeywordForm>();
-            if (kwf) {
-                for (const auto& listFormID : f.actorKeywordsListsNot) {
-                    auto* list = RE::TESForm::LookupByID<RE::BGSListForm>(listFormID);
-                    if (!list) continue;
-                    
-                    for (auto* el : list->forms) {
-                        if (!el) continue;
-                        if (auto* kw = el->As<RE::BGSKeyword>()) {
-                            if (kwf->HasKeyword(kw)) return false;
-                        }
-                    }
-                }
-            }
-        }
         if (!f.actorRaces.empty()) {
             if (!ctx.source) return false;
             auto race = ctx.source->GetRace();
@@ -2871,45 +2724,6 @@ namespace OIF {
                 for (auto* notAllowedRace : f.actorRacesNot) {
                     if (notAllowedRace && notAllowedRace == race) {
                         return false;
-                    }
-                }
-            }
-        }
-        if (!f.actorRacesLists.empty()) {
-            if (!ctx.source) return false;
-            auto race = ctx.source->GetRace();
-            if (!race) return false;
-            bool matched = false;
-            for (const auto& listFormID : f.actorRacesLists) {
-                auto* list = RE::TESForm::LookupByID<RE::BGSListForm>(listFormID);
-                if (!list) continue;
-
-                for (auto* el : list->forms) {
-                    if (!el) continue;
-                    if (auto* raceForm = el->As<RE::TESRace>()) {
-                        if (raceForm == race) {
-                            matched = true;
-                            break;
-                        }
-                    }
-                }
-                if (matched) break;
-            }
-            if (!matched) return false;
-        }
-        if (!f.actorRacesListsNot.empty()) {
-            if (!ctx.source) return false;
-            auto race = ctx.source->GetRace();
-            if (race) {
-                for (const auto& listFormID : f.actorRacesListsNot) {
-                    auto* list = RE::TESForm::LookupByID<RE::BGSListForm>(listFormID);
-                    if (!list) continue;
-                    
-                    for (auto* el : list->forms) {
-                        if (!el) continue;
-                        if (auto* raceForm = el->As<RE::TESRace>()) {
-                            if (raceForm == race) return false;
-                        }
                     }
                 }
             }
@@ -2983,33 +2797,6 @@ namespace OIF {
                     if (weapon->GetFormID() == ctx.attackSource->GetFormID()) return false;
                 }
             }
-            if (!f.weaponsLists.empty()) {
-                if (!ctx.attackSource) return false;
-                bool matched = false;
-                for (const auto& listFormID : f.weaponsLists) {
-                    auto* list = RE::TESForm::LookupByID<RE::BGSListForm>(listFormID);
-                    if (!list) continue;
-
-                    for (auto* el : list->forms) {
-                        if (el && el->GetFormID() == ctx.attackSource->GetFormID()) {
-                            matched = true;
-                            break;
-                        }
-                    }
-                    if (matched) break;
-                }
-                if (!matched) return false;
-            }
-            if (!f.weaponsListsNot.empty()) {
-                if (!ctx.attackSource) return false;
-                for (const auto& listFormID : f.weaponsListsNot) {
-                    auto* list = RE::TESForm::LookupByID<RE::BGSListForm>(listFormID);
-                    if (!list) continue;
-                    for (auto* el : list->forms) {
-                        if (el && el->GetFormID() == ctx.attackSource->GetFormID()) return false;
-                    }
-                }
-            }
             if (!f.weaponsKeywords.empty()) {
                 if (!ctx.attackSource) return false;
                 auto* kwf = ctx.attackSource->As<RE::BGSKeywordForm>();
@@ -3032,44 +2819,6 @@ namespace OIF {
                     }
                 }
             }
-            if (!f.weaponsKeywordsLists.empty()) {
-                if (!ctx.attackSource) return false;
-                auto* kwf = ctx.attackSource->As<RE::BGSKeywordForm>();
-                if (!kwf) return false;
-                bool matched = false;
-                for (const auto& listFormID : f.weaponsKeywordsLists) {
-                    auto* list = RE::TESForm::LookupByID<RE::BGSListForm>(listFormID);
-                    if (!list) continue;
-
-                    for (auto* el : list->forms) {
-                        if (!el) continue;
-                        if (auto* kw = el->As<RE::BGSKeyword>()) {
-                            if (kwf->HasKeyword(kw)) {
-                                matched = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (matched) break;
-                }
-                if (!matched) return false;
-            }
-            if (!f.weaponsKeywordsListsNot.empty()) {
-                if (!ctx.attackSource) return false;
-                auto* kwf = ctx.attackSource->As<RE::BGSKeywordForm>();
-                if (kwf) {
-                    for (const auto& listFormID : f.weaponsKeywordsListsNot) {
-                        auto* list = RE::TESForm::LookupByID<RE::BGSListForm>(listFormID);
-                        if (!list) continue;
-                        for (auto* el : list->forms) {
-                            if (!el) continue;
-                            if (auto* kw = el->As<RE::BGSKeyword>()) {
-                                if (kwf->HasKeyword(kw)) return false;
-                            }
-                        }
-                    }
-                }
-            }
             if (!f.projectiles.empty()) {
                 if (!ctx.projectileSource) return false;
                 bool matched = false;
@@ -3089,33 +2838,6 @@ namespace OIF {
                     auto* projectile = entry;
                     if (!projectile) continue;
                     if (projectile->GetFormID() == ctx.projectileSource->GetFormID()) return false;
-                }
-            }
-            if (!f.projectilesLists.empty()) {
-                if (!ctx.projectileSource) return false;
-                bool matched = false;
-                for (const auto& listFormID : f.projectilesLists) {
-                    auto* list = RE::TESForm::LookupByID<RE::BGSListForm>(listFormID);
-                    if (!list) continue;
-
-                    for (auto* el : list->forms) {
-                        if (el && el->GetFormID() == ctx.projectileSource->GetFormID()) {
-                            matched = true;
-                            break;
-                        }
-                    }
-                    if (matched) break;
-                }
-                if (!matched) return false;
-            }
-            if (!f.projectilesListsNot.empty()) {
-                if (!ctx.projectileSource) return false;
-                for (const auto& listFormID : f.projectilesListsNot) {
-                    auto* list = RE::TESForm::LookupByID<RE::BGSListForm>(listFormID);
-                    if (!list) continue;
-                    for (auto* el : list->forms) {
-                        if (el && el->GetFormID() == ctx.projectileSource->GetFormID()) return false;
-                    }
                 }
             }
             if (!f.attackTypes.empty() && f.attackTypes.find(ctx.attackType) == f.attackTypes.end()) return false;
