@@ -282,7 +282,7 @@ For rules with the `"Hit"` event, additional filters can refine which attacks tr
 - **`weaponsKeywordsNot`**: An array of keywords the weapon or spell must *not* have. Same format as `weaponsKeywords`.
 
 - **`attacksTypes`** or **`attacks`**: An array of attack types. Possible values:
-  - `"regular"`: Standard attacks.
+  - `"regular"` (default): Standard attacks.
   - `"power"`: Power attacks.
   - `"bash"`: Shield or weapon bashes.
   - `"charge"`: Charging attacks (e.g., sprinting strikes).
@@ -301,7 +301,8 @@ For rules with the `"Hit"` event, additional filters can refine which attacks tr
   - `"targetactor"`: Actor-targeted spells.
   - `"targetlocation"`: Location-targeted spells.
   - `"touch"`: Touch-based spells.
-  - `"total"`: All delivery types.
+  - `"total"`: Yet to discover. Supposedly matches all delivery types.
+  - `"none"`: None.
  
 - **`deliveryTypesNot`**: An array of spell delivery types that must *not* be used. Same format as `deliveryTypes`.
 
