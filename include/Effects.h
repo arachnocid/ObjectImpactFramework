@@ -11,7 +11,6 @@ namespace OIF::Effects
     void SpawnSpell(const RuleContext& ctx, const std::vector<SpellSpawnData>& spellsData);
     void SpawnSpellOnItem(const RuleContext& ctx, const std::vector<SpellSpawnData>& spellsData);
     void SpawnActor(const RuleContext& ctx, const std::vector<ActorSpawnData>& actorsData);
-    //void SpawnImpact(const RuleContext& ctx, const std::vector<ImpactSpawnData>& impactsData);
     void SpawnImpactDataSet(const RuleContext& ctx, const std::vector<ImpactDataSetSpawnData>& impactsData);
     void SpawnExplosion(const RuleContext& ctx, const std::vector<ExplosionSpawnData>& explosionsData);
     void SwapItem(const RuleContext& ctx, const std::vector<ItemSpawnData>& itemsData);
