@@ -50,6 +50,7 @@ Each rule in your JSON file defines a specific behavior for the mod. Rules are w
   - `"CellDetach"`: Triggered when an object is detached from a cell.
   - `"WeatherChange"`: Triggered on weather change.
   - `"OnUpdate"`: Triggered every 250 milliseconds.
+  - `"DestructionStageChange"`: Triggered on object's destruction stage change. The effect will *not* be applied to the scene when the object is disabled or deleted.
   
 - **`filter`**: Defines the conditions under which the rule applies. This is an object that specifies which objects or interactions the rule targets. At least one of `formTypes`, `formIDs`, `editorIDs`, `formLists`, or `keywords` must be provided to identify target objects.
 
@@ -84,7 +85,7 @@ Below are all possible filter parameters:
 
 ### General Filters
 
-- **`formTypes`** (one of the required fields to choose from): An array of strings specifying the types of objects the rule applies to. Possible values:
+- **`formTypes`** (one of the required fields to choose from): An array of strings specifying the types of objects the rule applies to. **Note:** The object *must* have a collision. Possible values:
   - `"activator"`: Standard activators (e.g., levers, buttons).
   - `"talkingactivator"`: Activators that can "speak" (e.g., some quest-related objects).
   - `"weapon"`: Weapons like swords or bows (lying around in the world).
@@ -106,6 +107,7 @@ Below are all possible filter parameters:
   - `"moveablestatic"`: Movable static objects.
   - `"tree"`: Trees.
   - `"light"`: Lights with 3D models (e.g., torches).
+  - `"grass"`: Grass.
  
 - **`formTypesNot`**: An array of strings specifying the types of objects that the rule should *not* apply to. Same format as `formTypes`.
 
@@ -168,7 +170,15 @@ Below are all possible filter parameters:
 
 ### Time-Based Filters
 
-- **`timer`**: A defined number of seconds before triggering the effect.
+- **`timer`**: A defined number of seconds before triggering the effect (e.g., `"timer": 1.0`). **Optional** detailed entry has:
+  - **`time`**: Number of seconds.
+  - **`matchFilterRecheck`**: Whether the effect needs to be canceled if conditions were violated while waiting.
+    - `0`: No re-check.
+    - `1`: Re-check.
+
+  ```json
+  "timer": {"time": "1.0", "matchFilterRecheck": 1}
+  ```
 
 - **`time`**: An array of time conditions that must be active for the rule to apply. Format: `["Hour >= 10", "DayOfWeek = 1"]`. Available entries:
   - `Minute`
@@ -249,6 +259,10 @@ Below are all possible filter parameters:
 
 For rules with the `"Hit"` event, additional filters can refine which attacks trigger the rule:
 
+- **`destructionStage`**: Checks with the current destruction stage. Possible values:
+  - `-1` (default): All stages allowed.
+  - `0`, `1`, etc.: Specific destruction stage index.
+
 - **`weaponsTypes`**: An array of weapon or spell types that must be used. Possible values:
   - `"onehandsword"`: One-handed swords.
   - `"twohandsword"`: Two-handed swords.
@@ -321,6 +335,19 @@ The `effect` field defines the outcome when a rule is triggered. It can be a sin
 
 Here are all possible `type` values and their supported fields:
 
+### Utility Effects
+- **`ExecuteConsoleCommand`**: Executes a console command on nearby actors.
+  - Supported fields: `string`, `chance`, `timer`.
+ 
+- **`ExecuteConsoleCommandOnItem`**: Executes a console command on the target object.
+  - Supported fields: `string`, `chance`, `timer`.
+
+- **`ShowNotification`**: Shows a notification.
+  - Supported fields: `string`, `chance`, `timer`.
+
+- **`ShowMessageBox`**: Shows a message box with "OK" button.
+  - Supported fields: `string`, `chance`, `timer`.
+
 ### Object Management
 - **`RemoveItem`**: Deletes the target object.
   - No `items` array required.
@@ -345,108 +372,114 @@ Here are all possible `type` values and their supported fields:
   - No `items` array required.
 
 - **`AddContainerItem`**: Adds specified items to the contents of a container.
-  - Supported fields: `formID`, `editorID`, `formList`, `chance`.
+  - Supported fields: `formID`, `editorID`, `formList`, `chance`, `timer`.
  
 - **`AddActorItem`**: Adds specified items to the inventory of an actor who interacted with the object.
-  - Supported fields: `formID`, `editorID`, `formList`, `chance`.
+  - Supported fields: `formID`, `editorID`, `formList`, `chance`, `timer`.
  
 - **`RemoveContainerItem`**: Removes specified items from the contents of a container.
-  - Supported fields: `formID`, `editorID`, `formList`, `chance`.
+  - Supported fields: `formID`, `editorID`, `formList`, `chance`, `timer`.
  
 - **`RemoveActorItem`**: Removes specified items from the inventory of an actor who interacted with the object.
-  - Supported fields: `formID`, `editorID`, `formList`, `chance`.
+  - Supported fields: `formID`, `editorID`, `formList`, `chance`, `timer`.
 
 ### Item Spawning & Swapping
 - **`SpawnItem`**: Spawns specific items at the object's location.
-  - Supported fields: `formID`, `editorID`, `formList`, `chance`, `count`, `scale`, `fade`, `spawnType`.
+  - Supported fields: `formID`, `editorID`, `formList`, `count`, `scale`, `fade`, `spawnType`, `string`, `chance`, `timer`.
 
 - **`SpawnLeveledItem`**: Spawns random leveled items based on the player's level.
-  - Supported fields: `formID`, `editorID`, `chance`, `count`, `scale`, `fade`, `spawnType`.
+  - Supported fields: `formID`, `editorID`, `formList`, `count`, `scale`, `fade`, `spawnType`, `string`, `chance`, `timer`.
 
 - **`SwapItem`**: Replaces the target object with another specific item.
-  - Supported fields: `formID`, `editorID`, `formList`, `chance`, `count`, `nonDeletable`, `scale`, `fade`, `spawnType`.
+  - Supported fields: `formID`, `editorID`, `formList`, `count`, `scale`, `fade`, `spawnType`, `string`, `nonDeletable`, `chance`, `timer`.
 
 - **`SwapLeveledItem`**: Replaces the target object with a random leveled item.
-  - Supported fields: `formID`, `editorID`, `chance`, `count`, `nonDeletable`, `scale`, `fade`, `spawnType`.
+  - Supported fields: `formID`, `editorID`, `formList`, `count`, `scale`, `fade`, `spawnType`, `string`, `nonDeletable`, `chance`, `timer`.
 
 ### Actor Spawning & Swapping
 - **`SpawnActor`**: Spawns specific actors at the object's location.
-  - Supported fields: `formID`, `editorID`, `formList`, `chance`, `count`, `scale`, `fade`, `spawnType`.
+  - Supported fields: `formID`, `editorID`, `formList`, `count`, `scale`, `fade`, `spawnType`, `string`, `chance`, `timer`.
 
 - **`SpawnLeveledActor`**: Spawns random leveled actors.
-  - Supported fields: `formID`, `editorID`, `chance`, `count`, `scale`, `fade`, `spawnType`.
+  - Supported fields: `formID`, `editorID`, `formList`, `count`, `scale`, `fade`, `spawnType`, `string`, `chance`, `timer`.
 
 - **`SwapActor`**: Replaces the target object with specific actors.
-  - Supported fields: `formID`, `editorID`, `formList`, `chance`, `count`, `nonDeletable`, `scale`, `fade`, `spawnType`.
+  - Supported fields: `formID`, `editorID`, `formList`, `count`, `scale`, `fade`, `spawnType`, `string`, `nonDeletable`, `chance`, `timer`.
 
 - **`SwapLeveledActor`**: Replaces the target object with random leveled actors.
-  - Supported fields: `formID`, `editorID`, `chance`, `count`, `nonDeletable`, `scale`, `fade`, `spawnType`.
+  - Supported fields: `formID`, `editorID`, `formList`, `count`, `scale`, `fade`, `spawnType`, `string`, `nonDeletable`, `chance`, `timer`.
 
 ### Magic Effects
 - **`SpawnSpell`**: Casts spells on nearby actors.
-  - Supported fields: `formID`, `editorID`, `formList`, `chance`, `count`, `radius`.
+  - Supported fields: `formID`, `editorID`, `formList`, `count`, `radius`, `chance`, `timer`.
 
 - **`SpawnLeveledSpell`**: Casts random leveled spells on nearby actors.
-  - Supported fields: `formID`, `editorID`, `chance`, `count`, `radius`.
+  - Supported fields: `formID`, `editorID`, `formList`, `count`, `radius`, `chance`, `timer`.
 
 - **`SpawnSpellOnItem`**: Casts spells on the target object.
-  - Supported fields: `formID`, `editorID`, `formList`, `count`, `chance`.
+  - Supported fields: `formID`, `editorID`, `formList`, `chance`, `chance`, `timer`.
 
 - **`SpawnLeveledSpellOnItem`**: Casts random leveled spells on the target object.
-  - Supported fields: `formID`, `editorID`, `chance`, `count`.
+  - Supported fields: `formID`, `editorID`, `formList`, `count`, `chance`, `timer`.
 
 - **`ApplyIngestible`**: Applies the target object's effects (if it's an ingredient or ingestible) to nearby actors.
-  - Supported fields: `chance`, `radius`.
+  - Supported fields: `radius`, `chance`, `timer`.
 
 - **`ApplyOtherIngestible`**: Applies effects from specified ingestibles to nearby actors. Can be used with any form type.
-  - Supported fields: `formID`, `editorID`, `formList`, `chance`, `radius`.
+  - Supported fields: `formID`, `editorID`, `formList`, `radius`, `chance`, `timer`.
  
 - **`AddActorSpell`**: Adds specified spells to the source actor.
-  - Supported fields: `formID`, `editorID`, `formList`, `chance`.
+  - Supported fields: `formID`, `editorID`, `formList`, `chance`, `timer`.
 
 - **`RemoveActorSpell`**: Removes specified spells from the source actor.
-  - Supported fields: `formID`, `editorID`, `formList`, `chance`.
+  - Supported fields: `formID`, `editorID`, `formList`, `chance`, `timer`.
 
 - **`AddActorPerk`**: Adds specified perks to the source actor.
-  - Supported fields: `formID`, `editorID`, `formList`, `chance`, `rank`.
+  - Supported fields: `formID`, `editorID`, `formList`, `rank`, `chance`, `timer`.
 
 - **`RemoveActorPerk`**: Removes specified perks from the source actor (regardless of the perk rank).
-  - Supported fields: `formID`, `editorID`, `formList`, `chance`.
+  - Supported fields: `formID`, `editorID`, `formList`, `chance`, `timer`.
 
 ### Visual & Audio Effects
 - **`PlaySound`**: Plays a sound descriptor.
-  - Supported fields: `formID`, `editorID`, `formList`, `chance`, `count`.
+  - Supported fields: `formID`, `editorID`, `formList`, `count`, `chance`, `timer`.
 
-- **`PlayIdle`**: Plays an animation on an actor who interacted with the object.
-  - Supported fields: `string`, `duration`.
+- **`PlayIdle`**: Plays an animation on an actor who interacted with the object. [List of available animation names](https://forums.nexusmods.com/topic/11007808-le-list-of-animation-events-for-debugsendanimationevent/?do=findComment&comment=105617168).
+  - Supported fields: `string`, `duration`, `chance`, `timer`.
  
 - **`SpawnImpactDataSet`**: Plays an impact data set (not to be confused with impacts).
-  - Supported fields: `formID`, `editorID`, `formList`, `chance`, `count`.
+  - Supported fields: `formID`, `editorID`, `formList`, `count`, `chance`, `timer`.
 
 - **`SpawnExplosion`**: Triggers an explosion at the object's location.
-  - Supported fields: `formID`, `editorID`, `formList`, `chance`, `count`, `fade`, `spawnType`.
+  - Supported fields: `formID`, `editorID`, `formList`, `count`, `fade`, `spawnType`, `chance`, `timer`.
 
 - **`SpawnEffectShader`**: Spawns effect shaders on nearby actors.
-  - Supported fields: `formID`, `editorID`, `formList`, `chance`, `count`, `radius`, `duration`.
+  - Supported fields: `formID`, `editorID`, `formList`, `count`, `radius`, `duration`, `chance`, `timer`.
 
 - **`SpawnEffectShaderOnItem`**: Spawns effect shaders on the target object.
-  - Supported fields: `formID`, `editorID`, `formList`, `chance`, `count`, `duration`.
+  - Supported fields: `formID`, `editorID`, `formList`, `count`, `duration`, `chance`, `timer`.
+
+- **`SpawnArtObject`**: Spawns art objects on nearby actors.
+  - Supported fields: `formID`, `editorID`, `formList`, `count`, `radius`, `duration`, `chance`, `timer`.
+
+- **`SpawnArtObjectOnItem`**:  Spawns art objects on the target object.
+  - Supported fields: `formID`, `editorID`, `formList`, `count`, `duration`, `chance`, `timer`.
  
 - **`ToggleNode`**: Toggles nodes on and off (scales to 0.00001 or 1.0).
-  - Supported fields: `mode`, `nodeNames`.
+  - Supported fields: `mode`, `strings`, `chance`, `timer`.
 
 ### Lighting Effects
 - **`SpawnLight`**: Spawns a light at the object's location.
-  - Supported fields: `formID`, `editorID`, `formList`, `chance`, `count`, `fade`, `spawnType`.
+  - Supported fields: `formID`, `editorID`, `formList`, `count`, `fade`, `spawnType`, `string`, `chance`, `timer`.
 
 - **`RemoveLight`**: Deletes lights.
-  - Supported fields: `formID`, `editorID`, `formList`, `chance`, `radius`.
+  - Supported fields: `formID`, `editorID`, `formList`, `radius`, `chance`, `timer`.
 
 - **`DisableLight`**: Disables lights.
-  - Supported fields: `formID`, `editorID`, `formList`, `chance`, `radius`.
+  - Supported fields: `formID`, `editorID`, `formList`, `radius`, `chance`, `timer`.
 
 - **`EnableLight`**: Enables previously disabled lights.
-  - Supported fields: `formID`, `editorID`, `formList`, `chance`, `radius`.
+  - Supported fields: `formID`, `editorID`, `formList`, `radius`, `chance`, `timer`.
  
 ---
 
@@ -477,15 +510,25 @@ For effect types that support an `items` array, you can specify detailed configu
 
 - **`chance`**: A number between 0 and 100 for the percentage chance this item is used. Defaults to 100.
 
+- **`timer`**: A defined number of seconds before triggering the effect (e.g., `"timer": 1.0`). **Optional** detailed entry has:
+  - **`time`**: Number of seconds.
+  - **`matchFilterRecheck`**: Whether the effect needs to be canceled if conditions were violated while waiting.
+    - `0`: No re-check.
+    - `1`: Re-check.
+
+    ```json
+    "timer": {"time": "1.0", "matchFilterRecheck": 1}
+    ```
+
 - **`count`**: An integer specifying how many instances to spawn or swap. Defaults to 1.
 
 - **`radius`**: Specifies the radius in game units for effect application. Defaults vary by effect type.
 
-- **`duration`**: Used for `PlayIdle`, `SpawnEffectShader`, and `SpawnEffectShaderOnItem` effects. For `PlayIdle`, defaults to 1.0 (lower values make animation faster). For effect shaders, specifies how long the effect lasts.
+- **`duration`**: For `PlayIdle`, defaults to 1.0 (lower values make animation faster). For **effect shaders** and **art objects**, specifies how long the effect lasts.
 
-- **`string`**: Used for various effects. Takes one entry. Currently used for `PlayIdle` effect to specify animation name (e.g., `"AnimationName"`). [List of available animation names](https://forums.nexusmods.com/topic/11007808-le-list-of-animation-events-for-debugsendanimationevent/?do=findComment&comment=105617168).
+- **`string`**: Used for various effects. Takes one entry. For **spawn** and **swap** effects, used to take node name. For `PlayIdle`, used to take animation name.
 
-- **`strings`**: Used for various effects. Takes multiple entries. Currently used for `ToggleNode` effect to specify node names substrings.
+- **`strings`**: Used for various effects. Takes multiple entries. For `ToggleNode`, used to take node names.
 
 - **`mode`**: Used for various effects. Currently used for `ToggleNode` effect to specify the disable or enable mode.
   - `0` (default): Disable.
@@ -509,6 +552,7 @@ For effect types that support an `items` array, you can specify detailed configu
   - `6`: Bypass with spawning at the top of the original.
   - `7`: Bypass with spawning at the bottom of the original.
   - `8`: Pin to the ground regardless of the landing location (e.g., when used with `Throw`, an object that lands on the wall will spawn a new one directly beneath it on the floor).
+  - `9`: Pin to the specified node. Requires a node name or it's substring to be passed in `string`.
 
   **NOTE**: If you want to spawn **explosions**, use `0` or `4` only.
 
