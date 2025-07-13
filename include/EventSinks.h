@@ -1,5 +1,6 @@
 #pragma once
 #include "RuleManager.h"
+#include "RE/T/TESDestructionStageChangedEvent.h"
 
 namespace OIF
 {
@@ -142,6 +143,20 @@ namespace OIF
         RE::BSEventNotifyControl ProcessEvent(
             const RE::TESCellAttachDetachEvent* evn,
             RE::BSTEventSource<RE::TESCellAttachDetachEvent>*) override;
+    };
+
+    class DestructionStageChangedSink : public RE::BSTEventSink<RE::TESDestructionStageChangedEvent>
+    {
+    public:
+        static DestructionStageChangedSink* GetSingleton()
+        {
+            static DestructionStageChangedSink sink;
+            return &sink;
+        }
+    
+        RE::BSEventNotifyControl ProcessEvent(
+            const RE::TESDestructionStageChangedEvent* evn,
+            RE::BSTEventSource<RE::TESDestructionStageChangedEvent>*) override;
     };
 
     struct UpdateHook

@@ -34,6 +34,7 @@ namespace OIF::Effects
     void SpawnEffectShader(const RuleContext& ctx, const std::vector<EffectShaderSpawnData>& effectShadersData);
     void SpawnEffectShaderOnItem(const RuleContext& ctx, const std::vector<EffectShaderSpawnData>& effectShadersData);
     void ToggleNode(const RuleContext& ctx, const std::vector<NodeData>& nodeData);
+    void AttachNode(const RuleContext& ctx, const std::vector<ArtObjectData>& artObjectsData);
     //void ToggleShaderFlag(const RuleContext& ctx, const std::vector<ShaderFlagData>& shaderFlagsData);
     void UnlockItem(const RuleContext& ctx);
     void LockItem(const RuleContext& ctx);
@@ -46,4 +47,10 @@ namespace OIF::Effects
     void RemoveActorSpell(const RuleContext& ctx, const std::vector<SpellSpawnData>& spellsData);
     void AddActorPerk(const RuleContext& ctx, const std::vector<PerkData>& perksData);
     void RemoveActorPerk(const RuleContext& ctx, const std::vector<PerkData>& perksData);
+    void SpawnArtObject(const RuleContext& ctx, const std::vector<ArtObjectData>& artObjectData);
+    void SpawnArtObjectOnItem(const RuleContext& ctx, const std::vector<ArtObjectData>& artObjectData);
+    void ExecuteConsoleCommand(const RuleContext& ctx, const std::vector<StringData>& commandsData);
+    void ExecuteConsoleCommandOnItem(const RuleContext& ctx, const std::vector<StringData>& commandsData);
+    void ShowNotification(const RuleContext& ctx, const std::vector<StringData>& notificationsData);
+    void ShowMessageBox(const RuleContext& ctx, const std::vector<StringData>& messagesData);
 }

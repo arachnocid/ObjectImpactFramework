@@ -170,7 +170,7 @@ namespace OIF::Effects
 
     // Execute a list of commands in the console - taken and adapted from the ConsoleUtil NG source code
     template <typename... Args>
-    void ExecuteCommand(const std::string& command, RE::TESObjectREFR* targetRef = nullptr, Args... args) {
+    void ExecuteCommand(const std::string& command, RE::TESObjectREFR* targetRef = nullptr) {
         const auto scriptFactory = RE::IFormFactory::GetConcreteFormFactoryByType<RE::Script>();
         const auto script = scriptFactory ? scriptFactory->Create() : nullptr;
         
@@ -179,12 +179,7 @@ namespace OIF::Effects
             return;
         }
     
-        std::string formattedCommand;
-        if constexpr (sizeof...(args) > 0) {
-            formattedCommand = std::vformat(command, std::make_format_args(args...));
-        } else {
-            formattedCommand = command;
-        }
+        std::string formattedCommand = command;
         
         script->SetCommand(formattedCommand);
         
@@ -441,7 +436,7 @@ namespace OIF::Effects
         }
     }
 
-    RE::NiPointer<RE::TESObjectREFR> Spawn(RE::TESObjectREFR* target, RE::TESBoundObject* item, std::uint32_t type, std::uint32_t fade) {
+    RE::NiPointer<RE::TESObjectREFR> Spawn(RE::TESObjectREFR* target, RE::TESBoundObject* item, std::uint32_t type, std::uint32_t fade, const std::string& nodeName = "") {
         if (!target || !item) {
             logger::error("Spawn: Invalid target or item pointer");
             return nullptr;
@@ -562,6 +557,28 @@ namespace OIF::Effects
                 return spawned;
             }
         }
+
+        // For type 9, try to find the specific node first
+        RE::NiNode* targetNode = nullptr;
+        if (type == 9 && !nodeName.empty()) {
+            if (!target->Get3D()) target->Load3D(true);
+            auto* rootObj = target->Get3D();
+            if (rootObj) {
+                auto* rootNode = rootObj->AsNode();
+                if (rootNode) {
+                    std::vector<RE::NiNode*> foundNodes;
+                    std::vector<std::string> nodeNames = {nodeName};
+                    CollectNodes(rootNode, nodeNames, foundNodes);
+                    if (!foundNodes.empty()) {
+                        targetNode = foundNodes[0];
+                    }
+                }
+            }
+            
+            if (!targetNode) {
+                logger::warn("Spawn: Node '{}' not found for type 9, falling back to root node", nodeName);
+            }
+        }
     
         // Move the dummy to the target node
         if (auto targetObject = target->Get3D()) {
@@ -569,7 +586,13 @@ namespace OIF::Effects
                 if (dummy && !dummy->IsDeleted() && dummy->GetParentCell() && 
                     target && !target->IsDeleted() && target->GetParentCell()) {
                     try {
-                        dummy->MoveToNode(target, node);
+                        if (type == 9 && targetNode) {
+                            // Move to the specific node found
+                            dummy->MoveToNode(target, targetNode);
+                        } else {
+                            // Move to root node for other types
+                            dummy->MoveToNode(target, node);
+                        }
                         dummy->data.angle = target->data.angle;
                     } catch (...) {
                         logger::error("Spawn: Exception while moving dummy to node");
@@ -589,6 +612,10 @@ namespace OIF::Effects
                         auto dummyPos = dummy->GetPosition();
                         GetToNearestNavmesh(dummy.get(), 1.0f);
                         dummy->data.angle = RE::NiPoint3{0.0f, 0.0f, 0.0f};
+                        break;
+                    }
+                    case 9: {
+                        dummy->data.angle = target->data.angle;
                         break;
                     }
                 }
@@ -799,7 +826,7 @@ namespace OIF::Effects
                 continue;
 
             for (std::uint32_t i = 0; i < itemData.count; ++i) {
-                auto item = Spawn(ctx.target, itemData.item, itemData.spawnType, itemData.fade);
+                auto item = Spawn(ctx.target, itemData.item, itemData.spawnType, itemData.fade, itemData.string);
                 if (item && ctx.target) {
                     CopyOwnership(ctx.target, item.get());
                     if (itemData.scale == -1.0f) {
@@ -988,7 +1015,7 @@ namespace OIF::Effects
                 continue;
 
             for (std::uint32_t i = 0; i < actorData.count; ++i) {
-                auto actor = Spawn(ctx.target, actorData.npc, actorData.spawnType, actorData.fade);
+                auto actor = Spawn(ctx.target, actorData.npc, actorData.spawnType, actorData.fade, actorData.string);
                 if (actor && ctx.target) {
                     if (actorData.scale == -1.0f) {
                         SetObjectScale(actor.get(), ctx.target->GetScale());
@@ -999,13 +1026,6 @@ namespace OIF::Effects
             }
         }
     }
-
-    // A placeholder. Haven't find a decent way to spawn pure impacts yet
-    /*void SpawnImpact(const RuleContext& ctx, const std::vector<ImpactSpawnData>& impactsData) {
-        (void)ctx;
-        (void)impactsData;
-        return;
-    }*/
     
     void SpawnImpactDataSet(const RuleContext& ctx, const std::vector<ImpactDataSetSpawnData>& impactsData)
     {
@@ -1018,16 +1038,6 @@ namespace OIF::Effects
         if (!im) {
             logger::error("SpawnImpactDataSet: BGSImpactManager is null");
             return;
-        }
-
-        auto* sourceActor = ctx.source ? ctx.source->As<RE::Actor>() : nullptr;
-        if (!sourceActor) {
-            auto* player = RE::PlayerCharacter::GetSingleton();
-            if (!player) {
-                logger::error("SpawnImpactDataSet: No source actor or player found");
-                return;
-            }
-            sourceActor = player;
         }
 
         static RE::TESBoundObject* dummyForm = nullptr;
@@ -1046,6 +1056,16 @@ namespace OIF::Effects
         if (!dummy) {
             logger::error("SpawnImpactDataSet: Failed to create dummy");
             return;
+        }
+
+        auto* sourceActor = ctx.source ? ctx.source->As<RE::Actor>() : nullptr;
+        if (!sourceActor) {
+            auto* player = RE::PlayerCharacter::GetSingleton();
+            if (!player) {
+                logger::error("SpawnImpactDataSet: No source actor or player found");
+                return;
+            }
+            sourceActor = player;
         }
 
         RE::NiPoint3 hitPos;
@@ -1146,10 +1166,6 @@ namespace OIF::Effects
             }
         }
 
-        //auto dummyPos = dummy->GetPosition();
-        //dummyPos.z = hitPos.z;
-        //dummy->SetPosition(dummyPos);
-
         auto finalHitPos = dummy->GetPosition();
 
         for (const auto& data : impactsData) {
@@ -1182,7 +1198,7 @@ namespace OIF::Effects
                 continue;
 
             for (std::uint32_t i = 0; i < explosionData.count; ++i) {
-                auto explosion = Spawn(ctx.target, explosionData.explosion, explosionData.spawnType, explosionData.fade);              
+                auto explosion = Spawn(ctx.target, explosionData.explosion, explosionData.spawnType, explosionData.fade, explosionData.string);              
             }
         }
     }
@@ -1206,7 +1222,7 @@ namespace OIF::Effects
                 continue;
 
             for (std::uint32_t i = 0; i < itemData.count; ++i) {
-                auto item = Spawn(ctx.target, itemData.item, itemData.spawnType, itemData.fade);
+                auto item = Spawn(ctx.target, itemData.item, itemData.spawnType, itemData.fade, itemData.string);
                 if (item && ctx.target) {
                     anyItemSpawned = true;
                     CopyOwnership(ctx.target, item.get());
@@ -1332,7 +1348,7 @@ namespace OIF::Effects
                 continue;
 
             for (std::uint32_t i = 0; i < actorData.count; ++i) {
-                auto actor = Spawn(ctx.target, actorData.npc, actorData.spawnType, actorData.fade);
+                auto actor = Spawn(ctx.target, actorData.npc, actorData.spawnType, actorData.fade, actorData.string);
                 if (actor && ctx.target) {
                     anyActorSpawned = true;
                     if (actorData.scale == -1.0f) {
@@ -1380,7 +1396,7 @@ namespace OIF::Effects
                     continue;
                 }
 
-                auto item = Spawn(ctx.target, obj, itemData.spawnType, itemData.fade);
+                auto item = Spawn(ctx.target, obj, itemData.spawnType, itemData.fade, itemData.string);
                 if (item && ctx.target) {
                     CopyOwnership(ctx.target, item.get());
                     if (itemData.scale == -1.0f) {
@@ -1419,7 +1435,7 @@ namespace OIF::Effects
                     continue;
                 }
 
-                auto item = Spawn(ctx.target, obj, itemData.spawnType, itemData.fade);
+                auto item = Spawn(ctx.target, obj, itemData.spawnType, itemData.fade, itemData.string);
                 if (item && ctx.target) {
                     spawned = true;
                     CopyOwnership(ctx.target, item.get());
@@ -1640,7 +1656,7 @@ namespace OIF::Effects
                     continue;
                 }
 
-                auto actor = Spawn(ctx.target, npcBase, actorData.spawnType, actorData.fade);
+                auto actor = Spawn(ctx.target, npcBase, actorData.spawnType, actorData.fade, actorData.string);
                 if (actor && ctx.target) {
                     if (actorData.scale == -1.0f) {
                         SetObjectScale(actor.get(), ctx.target->GetScale());
@@ -1676,7 +1692,7 @@ namespace OIF::Effects
                     continue;
                 }
 
-                auto actor = Spawn(ctx.target, npcBase, actorData.spawnType, actorData.fade);
+                auto actor = Spawn(ctx.target, npcBase, actorData.spawnType, actorData.fade, actorData.string);
                 if (actor && ctx.target) {
                     spawned = true;
                     if (actorData.scale == -1.0f) {
@@ -1913,7 +1929,7 @@ namespace OIF::Effects
                 continue;
 
             for (std::uint32_t i = 0; i < lightData.count; ++i) {
-                auto light = Spawn(ctx.target, lightData.light, lightData.spawnType, lightData.fade);
+                auto light = Spawn(ctx.target, lightData.light, lightData.spawnType, lightData.fade, lightData.string);
                 if (light && ctx.target) {
                     light->Enable(false);
                     if (lightData.scale == -1.0f) {
@@ -2093,7 +2109,7 @@ namespace OIF::Effects
     void SpawnEffectShader(const RuleContext& ctx, const std::vector<EffectShaderSpawnData>& effectShadersData) 
     {
         if (!ctx.target || ctx.target->IsDeleted()) {
-            logger::error("SpawnEffectShader: No target to spawn effect shaders");
+            logger::error("SpawnEffectShader: No target to search for closest actors");
             return;
         }
 
@@ -2574,6 +2590,236 @@ namespace OIF::Effects
             if (ctx.source->HasPerk(perkData.perk)) {
                 ctx.source->RemovePerk(perkData.perk);            
             }
+        }
+    }
+
+    void SpawnArtObject(const RuleContext& ctx, const std::vector<ArtObjectData>& artObjectsData)
+    {
+        if (!ctx.target || ctx.target->IsDeleted()) {
+            logger::error("SpawnArtObject: No target to search for closest actors");
+            return;
+        }
+
+        if (artObjectsData.empty()) {
+            logger::error("SpawnArtObject: No art objects to spawn");
+            return;
+        }
+
+        auto* tes = RE::TES::GetSingleton();
+        if (!tes) {
+            logger::error("SpawnArtObject: TES singleton is null");
+            return;
+        }
+        
+        for (const auto& artObjectData : artObjectsData) {
+            if (!artObjectData.artObject) continue;
+    
+            std::vector<RE::Actor*> targets;
+        
+            tes->ForEachReferenceInRange(ctx.target, artObjectData.radius, [&](RE::TESObjectREFR* a_ref) {
+                auto* actor = a_ref->As<RE::Actor>();
+                if (actor && !actor->IsDead() && !actor->IsDisabled()) {
+                    targets.push_back(actor);
+                }
+                return RE::BSContainer::ForEachResult::kContinue;
+            });
+        
+            if (targets.empty()) {
+                logger::warn("SpawnArtObject: No valid actors found in range");
+                continue;
+            }
+    
+            for (auto* actor : targets) {
+                for (std::uint32_t i = 0; i < artObjectData.count; ++i) {
+                    auto artObjectEffect = actor->ApplyArtObject(artObjectData.artObject, artObjectData.duration, nullptr, false, false, nullptr, false);
+    
+                    if (!artObjectEffect) {
+                        logger::error("SpawnArtObject: Failed to apply art object {} on actor {}", 
+                            artObjectData.artObject ? artObjectData.artObject->GetFormID() : 0,
+                            actor ? actor->GetFormID() : 0);
+                    }
+                }
+            }
+        }
+    }
+
+    void SpawnArtObjectOnItem(const RuleContext& ctx, const std::vector<ArtObjectData>& artObjectsData)
+    {
+        if (!ctx.target || ctx.target->IsDeleted()) {
+            logger::error("SpawnArtObjectOnItem: No target to apply art objects to");
+            return;
+        }
+    
+        if (artObjectsData.empty()) {
+            logger::error("SpawnArtObjectOnItem: No art objects to apply");
+            return;
+        }
+    
+        for (const auto& artObjectData : artObjectsData) {
+            if (!artObjectData.artObject) continue;
+    
+            for (std::uint32_t i = 0; i < artObjectData.count; ++i) {
+                ctx.target->ApplyArtObject(artObjectData.artObject, artObjectData.duration, nullptr, false, false, nullptr, false);
+            }
+        }
+    
+        // Physics nudge to ensure the art object doesn't freeze when target is not moving
+        static std::vector<std::future<void>> runningTasks;
+        static std::mutex tasksMutex;
+    
+        auto future = std::async(std::launch::async, [target = ctx.target, duration = artObjectsData[0].duration]() {
+            const float tickInterval = 0.05f;
+            auto startTime = std::chrono::steady_clock::now();
+            auto endTime = startTime + std::chrono::duration<float>(duration + 1.0f);
+            
+            while (std::chrono::steady_clock::now() < endTime) {
+                std::this_thread::sleep_for(std::chrono::duration<float>(tickInterval));
+                
+                SKSE::GetTaskInterface()->AddTask([target]() {
+                    if (target && !target->IsDeleted()) {
+                        auto node3D = target->Get3D();
+                        if (node3D) {
+                            auto collisionObject = node3D->GetCollisionObject();
+                            if (collisionObject) {
+                                auto rigidBody = collisionObject->GetRigidBody();
+                                if (rigidBody) {
+                                    hkVector4 nudge(0.0f, 0.0f, 1e-4f, 0.0f);
+                                    rigidBody->SetLinearImpulse(nudge);
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        });
+    
+        {
+            std::lock_guard<std::mutex> lock(tasksMutex);
+            runningTasks.push_back(std::move(future));
+            
+            runningTasks.erase(
+                std::remove_if(runningTasks.begin(), runningTasks.end(),
+                    [](const std::future<void>& f) {
+                        return f.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
+                    }),
+                runningTasks.end()
+            );
+        }
+    }
+
+    void ExecuteConsoleCommand(const RuleContext& ctx, const std::vector<StringData>& commandsData)
+    {
+        if (!ctx.target || ctx.target->IsDeleted()) {
+            logger::error("ExecuteConsoleCommand: No target to search for closest actors");
+            return;
+        }
+
+        if (commandsData.empty()) {
+            logger::error("ExecuteConsoleCommand: No commands to execute");
+            return;
+        }
+
+        auto* tes = RE::TES::GetSingleton();
+        if (!tes) {
+            logger::error("ExecuteConsoleCommand: TES singleton is null");
+            return;
+        }
+
+        float radius = 0.0f;
+        if (!commandsData.empty()) radius = commandsData[0].radius;
+
+        std::vector<RE::Actor*> targets;
+        tes->ForEachReferenceInRange(ctx.target, radius, [&](RE::TESObjectREFR* a_ref) {
+            auto* actor = a_ref->As<RE::Actor>();
+            if (actor && !actor->IsDead() && !actor->IsDisabled()) {
+                targets.push_back(actor);
+            }
+            return RE::BSContainer::ForEachResult::kContinue;
+        });
+
+        if (targets.empty()) {
+            logger::warn("ExecuteConsoleCommand: No valid actors found in range");
+            return;
+        }
+
+        for (auto* actor : targets) {
+            for (const auto& commandData : commandsData) {
+                if (commandData.string.empty()) continue;
+                ExecuteCommand(commandData.string, actor);
+                ExecuteCommand(commandData.string, nullptr);
+            }
+        }
+    }
+
+    void ExecuteConsoleCommandOnItem(const RuleContext& ctx, const std::vector<StringData>& commandsData)
+    {
+        if (!ctx.target || ctx.target->IsDeleted()) {
+            logger::error("ExecuteConsoleCommandOnItem: No target to execute commands on");
+            return;
+        }
+
+        if (commandsData.empty()) {
+            logger::error("ExecuteConsoleCommandOnItem: No commands to execute");
+            return;
+        }
+
+        for (const auto& commandData : commandsData) {
+            if (commandData.string.empty()) continue;
+            ExecuteCommand(commandData.string, ctx.target);
+            ExecuteCommand(commandData.string, nullptr);
+        }
+    }
+
+    void ExecuteConsoleCommandOnSource(const RuleContext& ctx, const std::vector<StringData>& commandsData)
+    {
+        if (!ctx.source || ctx.source->IsDeleted()) {
+            logger::error("ExecuteConsoleCommandOnSource: No source to execute commands on");
+            return;
+        }
+
+        if (commandsData.empty()) {
+            logger::error("ExecuteConsoleCommandOnSource: No commands to execute");
+            return;
+        }
+
+        for (const auto& commandData : commandsData) {
+            if (commandData.string.empty()) continue;
+            ExecuteCommand(commandData.string, ctx.source);
+            ExecuteCommand(commandData.string, nullptr);
+        }
+    }
+
+    void ShowNotification(const RuleContext& ctx, const std::vector<StringData>& notificationsData)
+    {
+        ctx;
+
+        if (notificationsData.empty()) {
+            logger::error("ShowNotification: No notifications to show");
+            return;
+        }
+
+        for (const auto& notificationData : notificationsData) {
+            if (notificationData.string.empty()) continue;
+
+            RE::DebugNotification(notificationData.string.c_str());
+        }
+    }
+
+    void ShowMessageBox(const RuleContext& ctx, const std::vector<StringData>& messagesData)
+    {
+        ctx;
+        
+        if (messagesData.empty()) {
+            logger::error("ShowMessageBox: No messages to show");
+            return;
+        }
+
+        for (const auto& messageData : messagesData) {
+            if (messageData.string.empty()) continue;
+
+            RE::DebugMessageBox(messageData.string.c_str());
         }
     }
 }

@@ -58,7 +58,8 @@ namespace OIF {
         {"moveablestatic", RE::FormType::MovableStatic},
         {"tree", RE::FormType::Tree},
         {"key", RE::FormType::KeyMaster},
-        {"light", RE::FormType::Light}
+        {"light", RE::FormType::Light},
+        {"grass", RE::FormType::Grass}
     };
 
     static RE::FormType MapStringToFormType(std::string_view s) {
@@ -752,6 +753,7 @@ namespace OIF {
                 else if (evLower == "celldetach") r.events.push_back(EventType::kCellDetach);
                 else if (evLower == "weatherchange") r.events.push_back(EventType::kWeatherChange);
                 else if (evLower == "onupdate") r.events.push_back(EventType::kOnUpdate);
+                else if (evLower == "destructionstagechange") r.events.push_back(EventType::kDestructionStageChange);
                 else logger::warn("Unknown event '{}' in {}", ev, path.string());
             }
 
@@ -838,7 +840,7 @@ namespace OIF {
                     }
                 } 
 
-                if (jf.contains("interactions") && jf["interactions"].is_number()) {
+                if (jf.contains("interactions") && jf["interactions"].is_number_unsigned()) {
                     try {
                         r.filter.interactions = jf["interactions"].get<std::uint32_t>();
                     } catch (const std::exception& e) {
@@ -846,7 +848,7 @@ namespace OIF {
                     }
                 }
 
-                if (jf.contains("limit") && jf["limit"].is_number()) {
+                if (jf.contains("limit") && jf["limit"].is_number_unsigned()) {
                     try {
                         r.filter.limit = jf["limit"].get<std::uint32_t>();
                     } catch (const std::exception& e) {
@@ -1020,7 +1022,19 @@ namespace OIF {
                             if (kwStr.find(':') != std::string::npos) {
                                 form = GetFormFromIdentifier<RE::TESForm>(kwStr);
                             } else {
-                                form = GetFormFromEditorID<RE::TESForm>(kwStr);
+                                form = GetFormFromEditorID<RE::BGSKeyword>(kwStr);
+                                if (!form) {
+                                    form = GetFormFromEditorID<RE::BGSListForm>(kwStr);
+                                }
+                                if (!form) {
+                                    form = GetFormFromEditorID<RE::BGSKeyword>(kwStr);
+                                if (!form) {
+                                    form = GetFormFromEditorID<RE::BGSListForm>(kwStr);
+                                }
+                                if (!form) {
+                                    form = GetFormFromEditorID<RE::TESForm>(kwStr);
+                                }     
+                                }
                             }
                             
                             if (form) {
@@ -1057,7 +1071,19 @@ namespace OIF {
                             if (kwStr.find(':') != std::string::npos) {
                                 form = GetFormFromIdentifier<RE::TESForm>(kwStr);
                             } else {
-                                form = GetFormFromEditorID<RE::TESForm>(kwStr);
+                                form = GetFormFromEditorID<RE::BGSKeyword>(kwStr);
+                                if (!form) {
+                                    form = GetFormFromEditorID<RE::BGSListForm>(kwStr);
+                                }
+                                if (!form) {
+                                    form = GetFormFromEditorID<RE::BGSKeyword>(kwStr);
+                                if (!form) {
+                                    form = GetFormFromEditorID<RE::BGSListForm>(kwStr);
+                                }
+                                if (!form) {
+                                    form = GetFormFromEditorID<RE::TESForm>(kwStr);
+                                }     
+                                }                            
                             }
                             
                             if (form) {
@@ -1118,7 +1144,13 @@ namespace OIF {
                             if (kwStr.find(':') != std::string::npos) {
                                 form = GetFormFromIdentifier<RE::TESForm>(kwStr);
                             } else {
-                                form = GetFormFromEditorID<RE::TESForm>(kwStr);
+                                form = GetFormFromEditorID<RE::BGSKeyword>(kwStr);
+                                if (!form) {
+                                    form = GetFormFromEditorID<RE::BGSListForm>(kwStr);
+                                }
+                                if (!form) {
+                                    form = GetFormFromEditorID<RE::TESForm>(kwStr);
+                                }     
                             }
                             
                             if (form) {
@@ -1152,7 +1184,13 @@ namespace OIF {
                             if (kwStr.find(':') != std::string::npos) {
                                 form = GetFormFromIdentifier<RE::TESForm>(kwStr);
                             } else {
-                                form = GetFormFromEditorID<RE::TESForm>(kwStr);
+                                form = GetFormFromEditorID<RE::BGSKeyword>(kwStr);
+                                if (!form) {
+                                    form = GetFormFromEditorID<RE::BGSListForm>(kwStr);
+                                }
+                                if (!form) {
+                                    form = GetFormFromEditorID<RE::TESForm>(kwStr);
+                                }     
                             }
                             
                             if (form) {
@@ -1234,7 +1272,7 @@ namespace OIF {
                     }
                 }
 
-                if (jf.contains("allowprojectiles") && jf["allowprojectiles"].is_number()) {
+                if (jf.contains("allowprojectiles") && jf["allowprojectiles"].is_number_unsigned()) {
                     try {
                         r.filter.allowProjectiles = jf["allowprojectiles"].get<std::uint32_t>();
                     } catch (const std::exception& e) {
@@ -1815,7 +1853,13 @@ namespace OIF {
                             if (kwStr.find(':') != std::string::npos) {
                                 form = GetFormFromIdentifier<RE::TESForm>(kwStr);
                             } else {
-                                form = GetFormFromEditorID<RE::TESForm>(kwStr);
+                                form = GetFormFromEditorID<RE::BGSKeyword>(kwStr);
+                                if (!form) {
+                                    form = GetFormFromEditorID<RE::BGSListForm>(kwStr);
+                                }
+                                if (!form) {
+                                    form = GetFormFromEditorID<RE::TESForm>(kwStr);
+                                }     
                             }
                             
                             if (form) {
@@ -1848,7 +1892,13 @@ namespace OIF {
                             if (kwStr.find(':') != std::string::npos) {
                                 form = GetFormFromIdentifier<RE::TESForm>(kwStr);
                             } else {
-                                form = GetFormFromEditorID<RE::TESForm>(kwStr);
+                                form = GetFormFromEditorID<RE::BGSKeyword>(kwStr);
+                                if (!form) {
+                                    form = GetFormFromEditorID<RE::BGSListForm>(kwStr);
+                                }
+                                if (!form) {
+                                    form = GetFormFromEditorID<RE::TESForm>(kwStr);
+                                }     
                             }
                             
                             if (form) {
@@ -1938,7 +1988,7 @@ namespace OIF {
                     }
                 }
 
-                if (jf.contains("issneaking") && jf["issneaking"].is_number()) {
+                if (jf.contains("issneaking") && jf["issneaking"].is_number_unsigned()) {
                     try {
                         r.filter.isSneaking = jf["issneaking"].get<std::uint32_t>();
                     } catch (const std::exception& e) {
@@ -1946,7 +1996,7 @@ namespace OIF {
                     }
                 }
 
-                if (jf.contains("isswimming") && jf["isswimming"].is_number()) {
+                if (jf.contains("isswimming") && jf["isswimming"].is_number_unsigned()) {
                     try {
                         r.filter.isSwimming = jf["isswimming"].get<std::uint32_t>();
                     } catch (const std::exception& e) {
@@ -1954,7 +2004,7 @@ namespace OIF {
                     }
                 }
 
-                if (jf.contains("isincombat") && jf["isincombat"].is_number()) {
+                if (jf.contains("isincombat") && jf["isincombat"].is_number_unsigned()) {
                     try {
                         r.filter.isInCombat = jf["isincombat"].get<std::uint32_t>();
                     } catch (const std::exception& e) {
@@ -1962,7 +2012,7 @@ namespace OIF {
                     }
                 }
 
-                if (jf.contains("ismounted") && jf["ismounted"].is_number()) {
+                if (jf.contains("ismounted") && jf["ismounted"].is_number_unsigned()) {
                     try {
                         r.filter.isMounted = jf["ismounted"].get<std::uint32_t>();
                     } catch (const std::exception& e) {
@@ -1970,7 +2020,7 @@ namespace OIF {
                     }
                 }
 
-                if (jf.contains("isdualcasting") && jf["isdualcasting"].is_number()) {
+                if (jf.contains("isdualcasting") && jf["isdualcasting"].is_number_unsigned()) {
                     try {
                         r.filter.isDualCasting = jf["isdualcasting"].get<std::uint32_t>();
                     } catch (const std::exception& e) {
@@ -1978,7 +2028,7 @@ namespace OIF {
                     }
                 }
 
-                if (jf.contains("issprinting") && jf["issprinting"].is_number()) {
+                if (jf.contains("issprinting") && jf["issprinting"].is_number_unsigned()) {
                     try {
                         r.filter.isSprinting = jf["issprinting"].get<std::uint32_t>();
                     } catch (const std::exception& e) {
@@ -1986,7 +2036,7 @@ namespace OIF {
                     }
                 }
 
-                if (jf.contains("isweapondrawn") && jf["isweapondrawn"].is_number()) {
+                if (jf.contains("isweapondrawn") && jf["isweapondrawn"].is_number_unsigned()) {
                     try {
                         r.filter.isWeaponDrawn = jf["isweapondrawn"].get<std::uint32_t>();
                     } catch (const std::exception& e) {
@@ -1994,7 +2044,7 @@ namespace OIF {
                     }
                 }
 
-                if (jf.contains("isinitiallydisabled") && jf["isinitiallydisabled"].is_number()) {
+                if (jf.contains("isinitiallydisabled") && jf["isinitiallydisabled"].is_number_unsigned()) {
                     try {
                         r.filter.isInitiallyDisabled = jf["isinitiallydisabled"].get<std::uint32_t>();
                     } catch (const std::exception& e) {
@@ -2104,11 +2154,34 @@ namespace OIF {
                     }
                 }
 
-                if (jf.contains("timer") && jf["timer"].is_number()) {
-                    try {
-                        r.filter.timer = jf["timer"].get<float>();
-                    } catch (const std::exception& e) {
-                        logger::warn("Invalid timer value in timer filter of {}: {}", path.string(), e.what());
+                if (jf.contains("timer") && (jf["timer"].is_number() || jf["timer"].is_object())) {
+                    if (jf["timer"].is_number()) {
+                        // Handle legacy format (simple number)
+                        try {
+                            r.filter.timer.time = jf["timer"].get<float>();
+                            r.filter.timer.matchFilterRecheck = 0;
+                        } catch (const std::exception& e) {
+                            logger::warn("Invalid timer value in timer filter of {}: {}", path.string(), e.what());
+                        }
+                    } else if (jf["timer"].is_object()) {
+                        // Handle new format (object with time and matchFilterRecheck)
+                        const auto& timerObj = jf["timer"];
+                        
+                        if (timerObj.contains("time") && timerObj["time"].is_number()) {
+                            try {
+                                r.filter.timer.time = timerObj["time"].get<float>();
+                            } catch (const std::exception& e) {
+                                logger::warn("Invalid time value in timer filter of {}: {}", path.string(), e.what());
+                            }
+                        }
+                        
+                        if (timerObj.contains("matchfilterrecheck") && timerObj["matchfilterrecheck"].is_number_unsigned()) {
+                            try {
+                                r.filter.timer.matchFilterRecheck = timerObj["matchfilterrecheck"].get<std::uint32_t>();
+                            } catch (const std::exception& e) {
+                                logger::warn("Invalid matchFilterRecheck value in timer filter of {}: {}", path.string(), e.what());
+                            }
+                        }
                     }
                 }
 
@@ -2171,6 +2244,14 @@ namespace OIF {
                         }
                     }
                 }
+
+                if (jf.contains("destructionstage") && jf["destructionstage"].is_number_integer()) {
+                    try {
+                        r.filter.destructionStage = jf["destructionstage"].get<std::int32_t>();
+                    } catch (const std::exception& e) {
+                        logger::warn("Invalid destruction stage value in destructionstage filter of {}: {}", path.string(), e.what());
+                    }
+                }
             }           
 
             if (!hasObjectIdentifier) {
@@ -2203,7 +2284,6 @@ namespace OIF {
                 {"spawnspell", EffectType::kSpawnSpell},
                 {"spawnspellonitem", EffectType::kSpawnSpellOnItem},
                 {"spawnactor", EffectType::kSpawnActor},
-                //{"spawnimpact", EffectType::kSpawnImpact},
                 {"spawnimpactdataset", EffectType::kSpawnImpactDataSet},
                 {"spawnexplosion", EffectType::kSpawnExplosion},
                 {"swapitem", EffectType::kSwapItem},
@@ -2237,7 +2317,13 @@ namespace OIF {
                 {"addactorspell", EffectType::kAddActorSpell},
                 {"removeactorspell", EffectType::kRemoveActorSpell},
                 {"addactorperk", EffectType::kAddActorPerk},
-                {"removeactorperk", EffectType::kRemoveActorPerk}
+                {"removeactorperk", EffectType::kRemoveActorPerk},
+                {"spawnartobject", EffectType::kSpawnArtObject},
+                {"spawnartobjectonitem", EffectType::kSpawnArtObjectOnItem},
+                {"executeconsolecommand", EffectType::kExecuteConsoleCommand},
+                {"executeconsolecommandonitem", EffectType::kExecuteConsoleCommandOnItem},
+                {"shownotification", EffectType::kShowNotification},
+                {"showmessagebox", EffectType::kShowMessageBox}
             };
 
             for (const auto& effj : effectArray) {
@@ -2278,6 +2364,34 @@ namespace OIF {
                             extData.radius = itemJson.value("radius", 150.0f);
                             extData.scale = itemJson.value("scale", -1.0f);
                             extData.chance = itemJson.value("chance", 100.0f);
+                            if (itemJson.contains("timer") && (itemJson["timer"].is_number() || itemJson["timer"].is_object())) {
+                                if (itemJson["timer"].is_number()) {
+                                    try {
+                                        extData.timer.time = itemJson["timer"].get<float>();
+                                        extData.timer.matchFilterRecheck = 0;
+                                    } catch (const std::exception& e) {
+                                        logger::warn("Invalid timer value in items of {}: {}", path.string(), e.what());
+                                    }
+                                } else if (itemJson["timer"].is_object()) {
+                                    const auto& timerObj = itemJson["timer"];
+                                    
+                                    if (timerObj.contains("time") && timerObj["time"].is_number()) {
+                                        try {
+                                            extData.timer.time = timerObj["time"].get<float>();
+                                        } catch (const std::exception& e) {
+                                            logger::warn("Invalid time value in timer of items in {}: {}", path.string(), e.what());
+                                        }
+                                    }
+                                    
+                                    if (timerObj.contains("matchfilterrecheck") && timerObj["matchfilterrecheck"].is_number_unsigned()) {
+                                        try {
+                                            extData.timer.matchFilterRecheck = timerObj["matchfilterrecheck"].get<std::uint32_t>();
+                                        } catch (const std::exception& e) {
+                                            logger::warn("Invalid matchFilterRecheck value in timer of items in {}: {}", path.string(), e.what());
+                                        }
+                                    }
+                                }
+                            }
                             extData.duration = itemJson.value("duration", 1.0f);
                             extData.string = itemJson.value("string", std::string{});
                             extData.mode = itemJson.value("mode", 0U);
@@ -2356,7 +2470,11 @@ namespace OIF {
                                 //EffectType::kToggleShaderFlag,
                                 EffectType::kUnlockItem,
                                 EffectType::kLockItem,
-                                EffectType::kActivateItem
+                                EffectType::kActivateItem,
+                                EffectType::kExecuteConsoleCommand,
+                                EffectType::kExecuteConsoleCommandOnItem,
+                                EffectType::kShowNotification,
+                                EffectType::kShowMessageBox
                             };
 
                             bool needsForm = std::find(effectsWithoutForm.begin(), effectsWithoutForm.end(), eff.type) == effectsWithoutForm.end();
@@ -2771,6 +2889,9 @@ namespace OIF {
             if (f.isInitiallyDisabled == 1 && !isInitiallyDisabled) return false;
         }
         if (ctx.isHitEvent) {
+            if (f.destructionStage != -1) {
+                if (f.destructionStage != ctx.destructionStage) return false;
+            }
             if (f.allowProjectiles != 1) {
                 if (ctx.projectileSource) return false;
             }
@@ -2866,7 +2987,7 @@ namespace OIF {
         if (!CheckLocationFilter(currentRule.filter, ctx, currentRule)) return;
         if (!CheckWeatherFilter(currentRule.filter, currentRule)) return;
 
-        SKSE::GetTaskInterface()->AddTask([eff, ctx, currentRule]() {
+        SKSE::GetTaskInterface()->AddTask([this, eff, ctx, currentRule]() {
             auto* target = ctx.target;
             auto* source = ctx.source;
 
@@ -2912,1123 +3033,335 @@ namespace OIF {
             
                 try {
                     switch (eff.type) {
-                        case EffectType::kRemoveItem:
-                            Effects::RemoveItem(ctx);
-                            break;
-
-                        case EffectType::kDisableItem:
-                            Effects::DisableItem(ctx);
-                            break;
-
-                        case EffectType::kEnableItem:
-                            Effects::EnableItem(ctx);
-                            break;
-
-                        case EffectType::kSpillInventory:
-                            Effects::SpillInventory(ctx);
-                            break;
-
-                        case EffectType::kUnlockItem:
-                            Effects::UnlockItem(ctx);
-                            break;
-                        
-                        case EffectType::kLockItem:
-                            Effects::LockItem(ctx);
-                            break;
-
-                        case EffectType::kActivateItem:
-                            Effects::ActivateItem(ctx);
-                            break;
-
-                        case EffectType::kSpawnItem:
+                        case EffectType::kRemoveItem: Effects::RemoveItem(ctx); break;
+                        case EffectType::kDisableItem: Effects::DisableItem(ctx); break;
+                        case EffectType::kEnableItem: Effects::EnableItem(ctx); break;
+                        case EffectType::kSpillInventory: Effects::SpillInventory(ctx); break;
+                        case EffectType::kUnlockItem: Effects::UnlockItem(ctx); break;
+                        case EffectType::kLockItem: Effects::LockItem(ctx); break;
+                        case EffectType::kActivateItem: Effects::ActivateItem(ctx); break;
+                            
+                        case EffectType::kSpawnItem: 
                         {
-                            std::vector<ItemSpawnData> itemsData;
-                            for (const auto& [form, extData] : eff.items) {
-                                if (!form) continue;
-                                float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
-                                if (roll > extData.chance) continue;
-
-                                if (extData.isFormList) {
-                                    auto* list = form->As<RE::BGSListForm>();
-                                    if (!list) continue;
-
-                                    int idx = extData.index;
-                                    bool spawnAll = false;
-
-                                    // Use random index if -3 is specified
-                                    if (idx == -3) {
-                                        idx = std::uniform_int_distribution<int>(0, static_cast<int>(list->forms.size()) - 1)(rng);
-                                    }
-
-                                    // Use dynamic index if -2 is specified
-                                    else if (idx == -2) {
-                                        idx = currentRule.dynamicIndex;
-                                    }
-
-                                    // If index is -1, spawn all elements in the list
-                                    else if (idx == -1) {
-                                        spawnAll = true;
-                                    }
-
-                                    if (spawnAll) {
-                                        for (auto* el : list->forms) {
-                                            if (!el) continue;
-                                            if (auto* item = el->As<RE::TESBoundObject>()) itemsData.emplace_back(item, extData.count, extData.spawnType, extData.fade, extData.scale);
-                                        }
-                                    }
-
-                                    // Use index to select a specific element
-                                    else if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[idx];
-                                        if (el) {
-                                            if (auto* item = el->As<RE::TESBoundObject>()) itemsData.emplace_back(item, extData.count, extData.spawnType, extData.fade, extData.scale);
-                                        }
-                                    }
-                                }
-                                else if (auto* item = form->As<RE::TESBoundObject>()) {
-                                    itemsData.emplace_back(item, extData.count, extData.spawnType, extData.fade, extData.scale);
-                                }
-                            }
-                            if (!itemsData.empty()) {
-                                Effects::SpawnItem(ctx, itemsData);
-                            }
+                            ProcessEffect<RE::TESBoundObject, ItemSpawnData>(
+                                eff, ctx, currentRule, true,
+                                [](auto* item, const EffectExtendedData& ext) {
+                                    return ItemSpawnData(item, ext.string, ext.count, ext.spawnType, ext.fade, ext.scale);
+                                },
+                                Effects::SpawnItem
+                            );
                         }
                         break;
-                        
-                        case EffectType::kSpawnSpell:
-                        {
-                            std::vector<SpellSpawnData> spellsData;
-                            for (const auto& [form, extData] : eff.items) {
-                                if (!form) continue;
-                                float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
-                                if (roll > extData.chance) continue;
 
-                                if (extData.isFormList) {
-                                    auto* list = form->As<RE::BGSListForm>();
-                                    if (!list) continue;
-
-                                    int idx = extData.index;
-                                    bool spawnAll = false;
-
-                                    if (idx == -3) {
-                                        idx = std::uniform_int_distribution<int>(0, static_cast<int>(list->forms.size()) - 1)(rng);
-                                    }
-                                    else if (idx == -2) {
-                                        idx = currentRule.dynamicIndex;
-                                    }
-                                    else if (idx == -1) {
-                                        spawnAll = true;
-                                    }
-                                    if (spawnAll) {
-                                        for (auto* el : list->forms) {
-                                            if (!el) continue;
-                                            if (auto* spell = el->As<RE::SpellItem>()) spellsData.emplace_back(spell, extData.count, extData.radius);
-                                        }
-                                    }
-                                    else if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[idx];
-                                        if (el) {
-                                            if (auto* spell = el->As<RE::SpellItem>()) spellsData.emplace_back(spell, extData.count, extData.radius);
-                                        }
-                                    }
-                                }
-                                else if (auto* spell = form->As<RE::SpellItem>()) {
-                                    spellsData.emplace_back(spell, extData.count, extData.radius);
-                                }
-                            }
-                            if (!spellsData.empty()) {
-                                Effects::SpawnSpell(ctx, spellsData);
-                            }
-                        }
-                        break;
-                        
-                        case EffectType::kSpawnSpellOnItem:
-                        {
-                            std::vector<SpellSpawnData> spellsData;
-                            for (const auto& [form, extData] : eff.items) {
-                                if (!form) continue;
-                                float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
-                                if (roll > extData.chance) continue;
-
-                                if (extData.isFormList) {
-                                    auto* list = form->As<RE::BGSListForm>();
-                                    if (!list) continue;
-
-                                    int idx = extData.index;
-                                    bool spawnAll = false;
-
-                                    if (idx == -3) {
-                                        idx = std::uniform_int_distribution<int>(0, static_cast<int>(list->forms.size()) - 1)(rng);
-                                    }
-                                    else if (idx == -2) {
-                                        idx = currentRule.dynamicIndex;
-                                    }
-                                    else if (idx == -1) {
-                                        spawnAll = true;
-                                    }
-                                    if (spawnAll) {
-                                        for (auto* el : list->forms) {
-                                            if (!el) continue;
-                                            if (auto* spell = el->As<RE::SpellItem>()) spellsData.emplace_back(spell, extData.count);
-                                        }
-                                    }
-                                    else if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[idx];
-                                        if (el) {
-                                            if (auto* spell = el->As<RE::SpellItem>()) spellsData.emplace_back(spell, extData.count);
-                                        }
-                                    }
-                                }
-                                else if (auto* spell = form->As<RE::SpellItem>()) {
-                                    spellsData.emplace_back(spell, extData.count);
-                                }
-                            }
-                            if (!spellsData.empty()) {
-                                Effects::SpawnSpellOnItem(ctx, spellsData);
-                            }
-                        }
-                        break;
-                        
-                        case EffectType::kSpawnActor:
-                        {
-                            std::vector<ActorSpawnData> actorsData;
-                            for (const auto& [form, extData] : eff.items) {
-                                if (!form) continue;
-                                float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
-                                if (roll > extData.chance) continue;
-
-                                if (extData.isFormList) {
-                                    auto* list = form->As<RE::BGSListForm>();
-                                    if (!list) continue;
-
-                                    int idx = extData.index;
-                                    bool spawnAll = false;
-
-                                    if (idx == -3) {
-                                        idx = std::uniform_int_distribution<int>(0, static_cast<int>(list->forms.size()) - 1)(rng);
-                                    }
-                                    else if (idx == -2) {
-                                        idx = currentRule.dynamicIndex;
-                                    }
-                                    else if (idx == -1) {
-                                        spawnAll = true;
-                                    }
-                                    if (spawnAll) {
-                                        for (auto* el : list->forms) {
-                                            if (!el) continue;
-                                            if (auto* actor = el->As<RE::TESNPC>()) actorsData.emplace_back(actor, extData.count, extData.spawnType, extData.fade, extData.scale);
-                                        }
-                                    }
-                                    else if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[idx];
-                                        if (el) {
-                                            if (auto* actor = el->As<RE::TESNPC>()) actorsData.emplace_back(actor, extData.count, extData.spawnType, extData.fade, extData.scale);
-                                        }
-                                    }
-                                }
-                                else if (auto* actor = form->As<RE::TESNPC>()) {
-                                    actorsData.emplace_back(actor, extData.count, extData.spawnType, extData.fade, extData.scale);
-                                }
-                            }
-                            if (!actorsData.empty()) {
-                                Effects::SpawnActor(ctx, actorsData);
-                            }
-                        }
-                        break;
-                        
-                        /*case EffectType::kSpawnImpact:
-                        {
-                            std::vector<ImpactSpawnData> impactsData;
-                            for (const auto& [form, extData] : eff.items) {
-                                if (!form) continue;
-                                float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
-                                if (roll > extData.chance) continue;
-
-                                if (extData.isFormList) {
-                                    auto* list = form->As<RE::BGSListForm>();
-                                    if (!list) continue;
-
-                                    int idx = extData.index;
-                                    bool spawnAll = false;
-
-                                    if (idx == -3) {
-                                        idx = std::uniform_int_distribution<int>(0, static_cast<int>(list->forms.size()) - 1)(rng);
-                                    }
-                                    else if (idx == -2) {
-                                        idx = currentRule.dynamicIndex;
-                                    }
-                                    else if (idx == -1) {
-                                        spawnAll = true;
-                                    }
-                                    if (spawnAll) {
-                                        for (auto* el : list->forms) {
-                                            if (!el) continue;
-                                            if (auto* impact = el->As<RE::BGSImpactData>()) impactsData.emplace_back(impact, extData.count);
-                                        }
-                                    }
-                                    else if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[idx];
-                                        if (el) {
-                                            if (auto* impact = el->As<RE::BGSImpactData>()) impactsData.emplace_back(impact, extData.count);
-                                        }
-                                    }
-                                }
-                                else if (auto* impact = form->As<RE::BGSImpactData>()) {
-                                    impactsData.emplace_back(impact, extData.count);
-                                }
-                            }
-                            if (!impactsData.empty()) {
-                                Effects::SpawnImpact(ctx, impactsData);
-                            }
-                        }
-                        break;*/
-
-                        case EffectType::kSpawnImpactDataSet:
-                        {
-                            std::vector<ImpactDataSetSpawnData> impactsData;
-                            for (const auto& [form, extData] : eff.items) {
-                                if (!form) continue;
-                                float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
-                                if (roll > extData.chance) continue;
-
-                                if (extData.isFormList) {
-                                    auto* list = form->As<RE::BGSListForm>();
-                                    if (!list) continue;
-
-                                    int idx = extData.index;
-                                    bool spawnAll = false;
-
-                                    if (idx == -3) {
-                                        idx = std::uniform_int_distribution<int>(0, static_cast<int>(list->forms.size()) - 1)(rng);
-                                    }
-                                    else if (idx == -2) {
-                                        idx = currentRule.dynamicIndex;
-                                    }
-                                    else if (idx == -1) {
-                                        spawnAll = true;
-                                    }
-                                    if (spawnAll) {
-                                        for (auto* el : list->forms) {
-                                            if (!el) continue;
-                                            if (auto* impact = el->As<RE::BGSImpactDataSet>()) impactsData.emplace_back(impact, extData.count);
-                                        }
-                                    }
-                                    else if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[idx];
-                                        if (el) {
-                                            if (auto* impact = el->As<RE::BGSImpactDataSet>()) impactsData.emplace_back(impact, extData.count);
-                                        }
-                                    }
-                                }
-                                else if (auto* impact = form->As<RE::BGSImpactDataSet>()) {
-                                    impactsData.emplace_back(impact, extData.count);
-                                }
-                            }
-                            if (!impactsData.empty()) {
-                                Effects::SpawnImpactDataSet(ctx, impactsData);
-                            }
-                        }
-                        break;
-                        
-                        case EffectType::kSpawnExplosion:
-                        {
-                            std::vector<ExplosionSpawnData> explosionsData;
-                            for (const auto& [form, extData] : eff.items) {
-                                if (!form) continue;
-                                float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
-                                if (roll > extData.chance) continue;
-
-                                if (extData.isFormList) {
-                                    auto* list = form->As<RE::BGSListForm>();
-                                    if (!list) continue;
-
-                                    int idx = extData.index;
-                                    bool spawnAll = false;
-
-                                    if (idx == -3) {
-                                        idx = std::uniform_int_distribution<int>(0, static_cast<int>(list->forms.size()) - 1)(rng);
-                                    }
-                                    else if (idx == -2) {
-                                        idx = currentRule.dynamicIndex;
-                                    }
-                                    else if (idx == -1) {
-                                        spawnAll = true;
-                                    }
-                                    if (spawnAll) {
-                                        for (auto* el : list->forms) {
-                                            if (!el) continue;
-                                            if (auto* explosion = el->As<RE::BGSExplosion>()) explosionsData.emplace_back(explosion, extData.count, extData.spawnType, extData.fade);
-                                        }
-                                    }
-                                    else if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[idx];
-                                        if (el) {
-                                            if (auto* explosion = el->As<RE::BGSExplosion>()) explosionsData.emplace_back(explosion, extData.count, extData.spawnType, extData.fade);
-                                        }
-                                    }
-                                }
-                                else if (auto* explosion = form->As<RE::BGSExplosion>()) {
-                                    explosionsData.emplace_back(explosion, extData.count, extData.spawnType, extData.fade);
-                                }
-                            }
-                            if (!explosionsData.empty()) {
-                                Effects::SpawnExplosion(ctx, explosionsData);
-                            }
-                        }
-                        break;
-                        
                         case EffectType::kSwapItem:
                         {
-                            std::vector<ItemSpawnData> itemsData;
-                            for (const auto& [form, extData] : eff.items) {
-                                if (!form) continue;
-                                float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
-                                if (roll > extData.chance) continue;
-
-                                if (extData.isFormList) {
-                                    auto* list = form->As<RE::BGSListForm>();
-                                    if (!list) continue;
-
-                                    int idx = extData.index;
-                                    bool spawnAll = false;
-
-                                    if (idx == -3) {
-                                        idx = std::uniform_int_distribution<int>(0, static_cast<int>(list->forms.size()) - 1)(rng);
-                                    }
-                                    else if (idx == -2) {
-                                        idx = currentRule.dynamicIndex;
-                                    }
-                                    else if (idx == -1) {
-                                        spawnAll = true;
-                                    }
-                                    if (spawnAll) {
-                                        for (auto* el : list->forms) {
-                                            if (!el) continue;
-                                            if (auto* item = el->As<RE::TESBoundObject>()) itemsData.emplace_back(item, extData.count, extData.spawnType, extData.fade, extData.scale, extData.nonDeletable);
-                                        }
-                                    }
-                                    else if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[idx];
-                                        if (el) {
-                                            if (auto* item = el->As<RE::TESBoundObject>()) itemsData.emplace_back(item, extData.count, extData.spawnType, extData.fade, extData.scale, extData.nonDeletable);
-                                        }
-                                    }
-                                }
-                                else if (auto* item = form->As<RE::TESBoundObject>()) {
-                                    itemsData.emplace_back(item, extData.count, extData.spawnType, extData.fade, extData.scale, extData.nonDeletable);
-                                }
-                            }
-                            if (!itemsData.empty()) {
-                                Effects::SwapItem(ctx, itemsData);
-                            }
+                            ProcessEffect<RE::TESBoundObject, ItemSpawnData>(
+                                eff, ctx, currentRule, true,
+                                [](auto* item, const EffectExtendedData& ext) {
+                                    return ItemSpawnData(item, ext.string, ext.count, ext.spawnType, ext.fade, ext.scale, ext.nonDeletable);
+                                },
+                                Effects::SwapItem
+                            );
                         }
                         break;
-                        
-                        case EffectType::kPlaySound:
-                        {
-                            std::vector<SoundSpawnData> soundsData;
-                            for (const auto& [form, extData] : eff.items) {
-                                if (!form) continue;
-                                float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
-                                if (roll > extData.chance) continue;
 
-                                if (extData.isFormList) {
-                                    auto* list = form->As<RE::BGSListForm>();
-                                    if (!list) continue;
-
-                                    int idx = extData.index;
-                                    bool spawnAll = false;
-
-                                    if (idx == -3) {
-                                        idx = std::uniform_int_distribution<int>(0, static_cast<int>(list->forms.size()) - 1)(rng);
-                                    }
-                                    else if (idx == -2) {
-                                        idx = currentRule.dynamicIndex;
-                                    }
-                                    else if (idx == -1) {
-                                        spawnAll = true;
-                                    }
-                                    if (spawnAll) {
-                                        for (auto* el : list->forms) {
-                                            if (!el) continue;
-                                            if (auto* sound = el->As<RE::BGSSoundDescriptorForm>()) soundsData.emplace_back(sound, extData.count);
-                                        }
-                                    }
-                                    else if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[idx];
-                                        if (el) {
-                                            if (auto* sound = el->As<RE::BGSSoundDescriptorForm>()) soundsData.emplace_back(sound, extData.count);
-                                        }
-                                    }
-                                }
-                                else if (auto* sound = form->As<RE::BGSSoundDescriptorForm>()) {
-                                    soundsData.emplace_back(sound, extData.count);
-                                }
-                            }
-                            if (!soundsData.empty()) {
-                                Effects::PlaySound(ctx, soundsData);
-                            }
-                        }
-                        break;
-                        
-                        case EffectType::kSwapActor:
-                        {
-                            std::vector<ActorSpawnData> actorsData;
-                            for (const auto& [form, extData] : eff.items) {
-                                if (!form) continue;
-                                float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
-                                if (roll > extData.chance) continue;
-
-                                if (extData.isFormList) {
-                                    auto* list = form->As<RE::BGSListForm>();
-                                    if (!list) continue;
-
-                                    int idx = extData.index;
-                                    bool spawnAll = false;
-
-                                    if (idx == -3) {
-                                        idx = std::uniform_int_distribution<int>(0, static_cast<int>(list->forms.size()) - 1)(rng);
-                                    }
-                                    else if (idx == -2) {
-                                        idx = currentRule.dynamicIndex;
-                                    }
-                                    else if (idx == -1) {
-                                        spawnAll = true;
-                                    }
-                                    if (spawnAll) {
-                                        for (auto* el : list->forms) {
-                                            if (!el) continue;
-                                            if (auto* actor = el->As<RE::TESNPC>()) actorsData.emplace_back(actor, extData.count, extData.spawnType, extData.fade, extData.scale, extData.nonDeletable);
-                                        }
-                                    }
-                                    else if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[idx];
-                                        if (el) {
-                                            if (auto* actor = el->As<RE::TESNPC>()) actorsData.emplace_back(actor, extData.count, extData.spawnType, extData.fade, extData.scale, extData.nonDeletable);
-                                        }
-                                    }
-                                }
-                                else if (auto* actor = form->As<RE::TESNPC>()) {
-                                    actorsData.emplace_back(actor, extData.count, extData.spawnType, extData.fade, extData.scale, extData.nonDeletable);
-                                }
-                            }
-                            if (!actorsData.empty()) {
-                                Effects::SwapActor(ctx, actorsData);
-                            }
-                        }
-                        break;
-                        
                         case EffectType::kSpawnLeveledItem:
                         {
-                            std::vector<LvlItemSpawnData> lvlItemsData;
-                            for (const auto& [form, extData] : eff.items) {
-                                if (!form) continue;
-                                float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
-                                if (roll > extData.chance) continue;
-
-                                if (extData.isFormList) {
-                                    auto* list = form->As<RE::BGSListForm>();
-                                    if (!list) continue;
-
-                                    if (extData.index >= 0) {
-                                        if (extData.index < static_cast<int>(list->forms.size())) {
-                                            auto* el = list->forms[extData.index];
-                                            if (el) {
-                                                if (auto* lvli = el->As<RE::TESLevItem>())
-                                                    lvlItemsData.emplace_back(lvli, extData.count, extData.spawnType, extData.fade, extData.scale);
-                                            }
-                                        }
-                                    } else {
-                                        for (auto* el : list->forms) {
-                                            if (!el) continue;
-                                            if (auto* lvli = el->As<RE::TESLevItem>())
-                                                lvlItemsData.emplace_back(lvli, extData.count, extData.spawnType, extData.fade, extData.scale);
-                                        }
-                                    }
-                                }
-                                else if (auto* lvli = form->As<RE::TESLevItem>())
-                                    lvlItemsData.emplace_back(lvli, extData.count, extData.spawnType, extData.fade, extData.scale);
-                            }
-                            if (!lvlItemsData.empty()) {
-                                Effects::SpawnLeveledItem(ctx, lvlItemsData);
-                            }
+                            ProcessEffect<RE::TESLevItem, LvlItemSpawnData>(
+                                eff, ctx, currentRule, true,
+                                [](auto* lvli, const EffectExtendedData& ext) {
+                                    return LvlItemSpawnData(lvli, ext.string, ext.count, ext.spawnType, ext.fade, ext.scale);
+                                },
+                                Effects::SpawnLeveledItem
+                            );
                         }
                         break;
 
                         case EffectType::kSwapLeveledItem:
                         {
-                            std::vector<LvlItemSpawnData> lvlItemsData;
-                            for (const auto& [form, extData] : eff.items) {
-                                if (!form) continue;
-                                float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
-                                if (roll > extData.chance) continue;
-
-                                if (extData.isFormList) {
-                                    auto* list = form->As<RE::BGSListForm>();
-                                    if (!list) continue;
-
-                                    if (extData.index >= 0) {
-                                        if (extData.index < static_cast<int>(list->forms.size())) {
-                                            auto* el = list->forms[extData.index];
-                                            if (el) {
-                                                if (auto* lvli = el->As<RE::TESLevItem>())
-                                                    lvlItemsData.emplace_back(lvli, extData.count, extData.spawnType, extData.fade, extData.scale, extData.nonDeletable);
-                                            }
-                                        }
-                                    } else {
-                                        for (auto* el : list->forms) {
-                                            if (!el) continue;
-                                            if (auto* lvli = el->As<RE::TESLevItem>())
-                                                lvlItemsData.emplace_back(lvli, extData.count, extData.spawnType, extData.fade, extData.scale, extData.nonDeletable);
-                                        }
-                                    }
-                                }
-                                else if (auto* lvli = form->As<RE::TESLevItem>())
-                                    lvlItemsData.emplace_back(lvli, extData.count, extData.spawnType, extData.fade, extData.scale, extData.nonDeletable);
-                            }
-                            if (!lvlItemsData.empty()) {
-                                Effects::SwapLeveledItem(ctx, lvlItemsData);
-                            }
+                            ProcessEffect<RE::TESLevItem, LvlItemSpawnData>(
+                                eff, ctx, currentRule, true,
+                                [](auto* lvli, const EffectExtendedData& ext) {
+                                    return LvlItemSpawnData(lvli, ext.string, ext.count, ext.spawnType, ext.fade, ext.scale, ext.nonDeletable);
+                                },
+                                Effects::SwapLeveledItem
+                            );
                         }
                         break;
+                        
+                        case EffectType::kSpawnSpell:
+                        {
+                            ProcessEffect<RE::SpellItem, SpellSpawnData>(
+                                eff, ctx, currentRule, true,
+                                [](auto* spell, const EffectExtendedData& ext) {
+                                    return SpellSpawnData(spell, ext.count, ext.radius);
+                                },
+                                Effects::SpawnSpell
+                            );
+                        }
+                        break;
+                        
+                        case EffectType::kSpawnSpellOnItem:
+                        {
+                            ProcessEffect<RE::SpellItem, SpellSpawnData>(
+                                eff, ctx, currentRule, true,
+                                [](auto* spell, const EffectExtendedData& ext) {
+                                    return SpellSpawnData(spell, ext.count);
+                                },
+                                Effects::SpawnSpellOnItem
+                            );
+                            break;
+                        }
 
                         case EffectType::kSpawnLeveledSpell:
                         {
-                            std::vector<LvlSpellSpawnData> lvlSpellsData;
-                            for (const auto& [form, extData] : eff.items) {
-                                if (!form) continue;
-                                float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
-                                if (roll > extData.chance) continue;
-
-                                if (extData.isFormList) {
-                                    auto* list = form->As<RE::BGSListForm>();
-                                    if (!list) continue;
-
-                                    if (extData.index >= 0) {
-                                        if (extData.index < static_cast<int>(list->forms.size())) {
-                                            auto* el = list->forms[extData.index];
-                                            if (el) {
-                                                if (auto* lvls = el->As<RE::TESLevSpell>())
-                                                    lvlSpellsData.emplace_back(lvls, extData.count, extData.radius);
-                                            }
-                                        }
-                                    } else {
-                                        for (auto* el : list->forms) {
-                                            if (!el) continue;
-                                            if (auto* lvls = el->As<RE::TESLevSpell>())
-                                                lvlSpellsData.emplace_back(lvls, extData.count, extData.radius);
-                                        }
-                                    }
-                                }
-                                else if (auto* lvls = form->As<RE::TESLevSpell>())
-                                    lvlSpellsData.emplace_back(lvls, extData.count, extData.radius);
-                            }
-                            if (!lvlSpellsData.empty()) {
-                                Effects::SpawnLeveledSpell(ctx, lvlSpellsData);
-                            }
+                            ProcessEffect<RE::TESLevSpell, LvlSpellSpawnData>(
+                                eff, ctx, currentRule, true,
+                                [](auto* lvls, const EffectExtendedData& ext) {
+                                    return LvlSpellSpawnData(lvls, ext.count, ext.radius);
+                                },
+                                Effects::SpawnLeveledSpell
+                            );
                         }
                         break;
 
                         case EffectType::kSpawnLeveledSpellOnItem:
                         {
-                            std::vector<LvlSpellSpawnData> lvlSpellsData;
-                            for (const auto& [form, extData] : eff.items) {
-                                if (!form) continue;
-                                float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
-                                if (roll > extData.chance) continue;
+                            ProcessEffect<RE::TESLevSpell, LvlSpellSpawnData>(
+                                eff, ctx, currentRule, true,
+                                [](auto* lvls, const EffectExtendedData& ext) {
+                                    return LvlSpellSpawnData(lvls, ext.count);
+                                },
+                                Effects::SpawnLeveledSpellOnItem
+                            );
+                        }
+                        break;
+                        
+                        case EffectType::kSpawnActor:
+                        {
+                            ProcessEffect<RE::TESNPC, ActorSpawnData>(
+                                eff, ctx, currentRule, true,
+                                [](auto* actor, const EffectExtendedData& ext) {
+                                    return ActorSpawnData(actor, ext.string, ext.count, ext.spawnType, ext.fade, ext.scale);
+                                },
+                                Effects::SpawnActor
+                            );
+                        }
+                        break;
 
-                                if (extData.isFormList) {
-                                    auto* list = form->As<RE::BGSListForm>();
-                                    if (!list) continue;
-
-                                    if (extData.index >= 0) {
-                                        if (extData.index < static_cast<int>(list->forms.size())) {
-                                            auto* el = list->forms[extData.index];
-                                            if (el) {
-                                                if (auto* lvls = el->As<RE::TESLevSpell>())
-                                                    lvlSpellsData.emplace_back(lvls, extData.count);
-                                            }
-                                        }
-                                    } else {
-                                        for (auto* el : list->forms) {
-                                            if (!el) continue;
-                                            if (auto* lvls = el->As<RE::TESLevSpell>())
-                                                lvlSpellsData.emplace_back(lvls, extData.count);
-                                        }
-                                    }
-                                }
-                                else if (auto* lvls = form->As<RE::TESLevSpell>())
-                                    lvlSpellsData.emplace_back(lvls, extData.count);
-                            }
-                            if (!lvlSpellsData.empty()) {
-                                Effects::SpawnLeveledSpellOnItem(ctx, lvlSpellsData);
-                            }
+                        case EffectType::kSwapActor:
+                        {
+                            ProcessEffect<RE::TESNPC, ActorSpawnData>(
+                                eff, ctx, currentRule, true,
+                                [](auto* actor, const EffectExtendedData& ext) {
+                                    return ActorSpawnData(actor, ext.string, ext.count, ext.spawnType, ext.fade, ext.scale, ext.nonDeletable);
+                                },
+                                Effects::SwapActor
+                            );
                         }
                         break;
 
                         case EffectType::kSpawnLeveledActor:
                         {
-                            std::vector<LvlActorSpawnData> lvlActorsData;
-                            for (const auto& [form, extData] : eff.items) {
-                                if (!form) continue;
-                                float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
-                                if (roll > extData.chance) continue;
-
-                                if (extData.isFormList) {
-                                    auto* list = form->As<RE::BGSListForm>();
-                                    if (!list) continue;
-
-                                    if (extData.index >= 0) {
-                                        if (extData.index < static_cast<int>(list->forms.size())) {
-                                            auto* el = list->forms[extData.index];
-                                            if (el) {
-                                                if (auto* lvlc = el->As<RE::TESLevCharacter>())
-                                                    lvlActorsData.emplace_back(lvlc, extData.count, extData.spawnType, extData.fade, extData.scale);
-                                            }
-                                        }
-                                    } else {
-                                        for (auto* el : list->forms) {
-                                            if (!el) continue;
-                                            if (auto* lvlc = el->As<RE::TESLevCharacter>())
-                                                lvlActorsData.emplace_back(lvlc, extData.count, extData.spawnType, extData.fade, extData.scale);
-                                        }
-                                    }
-                                }
-                                else if (auto* lvlc = form->As<RE::TESLevCharacter>()) {
-                                    lvlActorsData.emplace_back(lvlc, extData.count, extData.spawnType, extData.fade, extData.scale);
-                                }
-                            }
-                            if (!lvlActorsData.empty()) {
-                                Effects::SpawnLeveledActor(ctx, lvlActorsData);
-                            }
+                            ProcessEffect<RE::TESLevCharacter, LvlActorSpawnData>(
+                                eff, ctx, currentRule, true,
+                                [](auto* lvlc, const EffectExtendedData& ext) {
+                                    return LvlActorSpawnData(lvlc, ext.string, ext.count, ext.spawnType, ext.fade, ext.scale);
+                                },
+                                Effects::SpawnLeveledActor
+                            );
                         }
                         break;
 
                         case EffectType::kSwapLeveledActor:
                         {
-                            std::vector<LvlActorSpawnData> lvlActorsData;
-                            for (const auto& [form, extData] : eff.items) {
-                                if (!form) continue;
-                                float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
-                                if (roll > extData.chance) continue;
+                            ProcessEffect<RE::TESLevCharacter, LvlActorSpawnData>(
+                                eff, ctx, currentRule, true,
+                                [](auto* lvlc, const EffectExtendedData& ext) {
+                                    return LvlActorSpawnData(lvlc, ext.string, ext.count, ext.spawnType, ext.fade, ext.scale, ext.nonDeletable);
+                                },
+                                Effects::SwapLeveledActor
+                            );
+                        }
+                        break;
 
-                                if (extData.isFormList) {
-                                    auto* list = form->As<RE::BGSListForm>();
-                                    if (!list) continue;
-
-                                    if (extData.index >= 0) {
-                                        if (extData.index < static_cast<int>(list->forms.size())) {
-                                            auto* el = list->forms[extData.index];
-                                            if (el) {
-                                                if (auto* lvlc = el->As<RE::TESLevCharacter>())
-                                                    lvlActorsData.emplace_back(lvlc, extData.count, extData.spawnType, extData.fade, extData.scale, extData.nonDeletable);
-                                            }
-                                        }
-                                    } else {
-                                        for (auto* el : list->forms) {
-                                            if (!el) continue;
-                                            if (auto* lvlc = el->As<RE::TESLevCharacter>())
-                                                lvlActorsData.emplace_back(lvlc, extData.count, extData.spawnType, extData.fade, extData.scale, extData.nonDeletable);
-                                        }
-                                    }
-                                }
-                                else if (auto* lvlc = form->As<RE::TESLevCharacter>())
-                                    lvlActorsData.emplace_back(lvlc, extData.count, extData.spawnType, extData.fade, extData.scale, extData.nonDeletable);
-                            }
-                            if (!lvlActorsData.empty()) {
-                                Effects::SwapLeveledActor(ctx, lvlActorsData);
-                            }
+                        case EffectType::kSpawnImpactDataSet:
+                        {
+                            ProcessEffect<RE::BGSImpactDataSet, ImpactDataSetSpawnData>(
+                                eff, ctx, currentRule, true,
+                                [](auto* impact, const EffectExtendedData& ext) {
+                                    return ImpactDataSetSpawnData(impact, ext.count);
+                                },
+                                Effects::SpawnImpactDataSet
+                            );
+                        }
+                        break;
+                        
+                        case EffectType::kSpawnExplosion:
+                        {
+                            ProcessEffect<RE::BGSExplosion, ExplosionSpawnData>(
+                                eff, ctx, currentRule, true,
+                                [](auto* explosion, const EffectExtendedData& ext) {
+                                    return ExplosionSpawnData(explosion, ext.string, ext.count, ext.spawnType, ext.fade);
+                                },
+                                Effects::SpawnExplosion
+                            );
+                        }
+                        break;
+                        
+                        case EffectType::kPlaySound:
+                        {
+                            ProcessEffect<RE::BGSSoundDescriptorForm, SoundSpawnData>(
+                                eff, ctx, currentRule, true,
+                                [](auto* sound, const EffectExtendedData& ext) {
+                                    return SoundSpawnData(sound, ext.count);
+                                },
+                                Effects::PlaySound
+                            );
                         }
                         break;
 
                         case EffectType::kApplyIngestible:
                         {
-                            std::vector<IngestibleApplyData> ingestibleData;
-                            for (const auto& [form, extData] : eff.items) {                                
-                                float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
-                                if (roll > extData.chance) continue;
-
-                                IngestibleApplyData data;
-                                data.ingestible = nullptr;      // not used, a placeholder
-                                data.count = 0;                 // not used, a placeholder
-                                data.radius = extData.radius;
-                                data.chance = extData.chance;
-                                ingestibleData.emplace_back(std::move(data));
-                            }
-                            if (!ingestibleData.empty()) {
-                                Effects::ApplyIngestible(ctx, ingestibleData);
-                            }
+                            ProcessEffect<void, IngestibleApplyData>(
+                                eff, ctx, currentRule, false,
+                                [](std::nullptr_t, const EffectExtendedData& ext) {
+                                    return IngestibleApplyData(nullptr, 0, ext.radius);
+                                },
+                                Effects::ApplyIngestible
+                            );
                         }
                         break;
 
                         case EffectType::kApplyOtherIngestible:
                         {
-                            std::vector<IngestibleApplyData> ingestibleData;
-                            for (const auto& [form, extData] : eff.items) {
-                                if (!form) continue;
-                                float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
-                                if (roll > extData.chance) continue;
-
-                                if (extData.isFormList) {
-                                    auto* list = form->As<RE::BGSListForm>();
-                                    if (!list) continue;
-
-                                    int idx = extData.index;
-                                    bool spawnAll = false;
-
-                                    if (idx == -3) {
-                                        idx = std::uniform_int_distribution<int>(0, static_cast<int>(list->forms.size()) - 1)(rng);
-                                    }
-                                    else if (idx == -2) {
-                                        idx = currentRule.dynamicIndex;
-                                    }
-                                    else if (idx == -1) {
-                                        spawnAll = true;
-                                    }
-                                    if (spawnAll) {
-                                        for (auto* el : list->forms) {
-                                            if (!el) continue;
-                                            if (auto* ingestible = el->As<RE::MagicItem>()) ingestibleData.emplace_back(ingestible, extData.count, extData.radius);
-                                        }
-                                    }
-                                    else if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[idx];
-                                        if (el) {
-                                            if (auto* ingestible = el->As<RE::MagicItem>()) ingestibleData.emplace_back(ingestible, extData.count, extData.radius);
-                                        }
-                                    }
-                                }
-                                else if (auto* ingestible = form->As<RE::MagicItem>()) {
-                                    ingestibleData.emplace_back(ingestible, extData.count, extData.radius);
-                                }
-                            }
-                            if (!ingestibleData.empty()) {
-                                Effects::ApplyOtherIngestible(ctx, ingestibleData);
-                            }
+                            ProcessEffect<RE::MagicItem, IngestibleApplyData>(
+                                eff, ctx, currentRule, true,
+                                [](auto* ingestible, const EffectExtendedData& ext) {
+                                    return IngestibleApplyData(ingestible, ext.count, ext.radius);
+                                },
+                                Effects::ApplyOtherIngestible
+                            );
                         }
                         break;
 
                         case EffectType::kSpawnLight:
                         {
-                            std::vector<LightSpawnData> lightsData;
-                            for (const auto& [form, extData] : eff.items) {
-                                if (!form) continue;
-                                float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
-                                if (roll > extData.chance) continue;
-
-                                if (extData.isFormList) {
-                                    auto* list = form->As<RE::BGSListForm>();
-                                    if (!list) continue;
-
-                                    int idx = extData.index;
-                                    bool spawnAll = false;
-
-                                    if (idx == -3) {
-                                        idx = std::uniform_int_distribution<int>(0, static_cast<int>(list->forms.size()) - 1)(rng);
-                                    }
-                                    else if (idx == -2) {
-                                        idx = currentRule.dynamicIndex;
-                                    }
-                                    else if (idx == -1) {
-                                        spawnAll = true;
-                                    }
-                                    if (spawnAll) {
-                                        for (auto* el : list->forms) {
-                                            if (!el) continue;
-                                            if (auto* light = el->As<RE::TESObjectLIGH>()) lightsData.emplace_back(light, extData.count, extData.spawnType, extData.fade, extData.scale);
-                                        }
-                                    }
-                                    else if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[idx];
-                                        if (el) {
-                                            if (auto* light = el->As<RE::TESObjectLIGH>()) lightsData.emplace_back(light, extData.count, extData.spawnType, extData.fade, extData.scale);
-                                        }
-                                    }
-                                }
-                                else if (auto* light = form->As<RE::TESObjectLIGH>()) {
-                                    lightsData.emplace_back(light, extData.count, extData.spawnType, extData.fade, extData.scale);
-                                }
-                            }
-                            if (!lightsData.empty()) {
-                                Effects::SpawnLight(ctx, lightsData);
-                            }
+                            ProcessEffect<RE::TESObjectLIGH, LightSpawnData>(
+                                eff, ctx, currentRule, true,
+                                [](auto* light, const EffectExtendedData& ext) {
+                                    return LightSpawnData(light, ext.string, ext.count, ext.spawnType, ext.fade, ext.scale);
+                                },
+                                Effects::SpawnLight
+                            );
                         }
                         break;
 
                         case EffectType::kRemoveLight:
                         {
-                            std::vector<LightRemoveData> lightsData;
-                            for (const auto& [form, extData] : eff.items) {
-                                float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
-                                if (roll > extData.chance) continue;
-                        
-                                if (extData.isFormList) {
-                                    auto* list = form ? form->As<RE::BGSListForm>() : nullptr;
-                                    if (!list) continue;
-                        
-                                    int idx = extData.index;
-                                    bool spawnAll = false;
-
-                                    if (idx == -3) {
-                                        idx = std::uniform_int_distribution<int>(0, static_cast<int>(list->forms.size()) - 1)(rng);
-                                    }
-                                    else if (idx == -2) {
-                                        idx = currentRule.dynamicIndex;
-                                    }
-                                    else if (idx == -1) {
-                                        spawnAll = true;
-                                    }
-                                    if (spawnAll) {
-                                        for (auto* el : list->forms) {
-                                            if (!el) continue;
-                                            if (auto* light = el->As<RE::TESObjectLIGH>()) lightsData.emplace_back(light, extData.radius);
-                                        }
-                                    }
-                                    else if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[idx];
-                                        if (el) {
-                                            if (auto* light = el->As<RE::TESObjectLIGH>()) lightsData.emplace_back(light, extData.radius);
-                                        }
-                                    }
-                                }
-                                else if (form && form->As<RE::TESObjectLIGH>()) {
-                                    auto* light = form->As<RE::TESObjectLIGH>();
-                                    lightsData.emplace_back(light, extData.radius);
-                                }
-                            }
-                            if (!lightsData.empty()) {
-                                Effects::RemoveLight(ctx, lightsData);
-                            }
+                            ProcessEffect<RE::TESObjectLIGH, LightRemoveData>(
+                                eff, ctx, currentRule, true,
+                                [](auto* light, const EffectExtendedData& ext) {
+                                    return LightRemoveData(light, ext.radius);
+                                },
+                                Effects::RemoveLight
+                            );
                         }
                         break;
 
                         case EffectType::kEnableLight:
                         {
-                            std::vector<LightRemoveData> lightsData;
-                            for (const auto& [form, extData] : eff.items) {
-                                float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
-                                if (roll > extData.chance) continue;
-
-                                if (extData.isFormList) {
-                                    auto* list = form ? form->As<RE::BGSListForm>() : nullptr;
-                                    if (!list) continue;
-
-                                    int idx = extData.index;
-                                    bool spawnAll = false;
-
-                                    if (idx == -3) {
-                                        idx = std::uniform_int_distribution<int>(0, static_cast<int>(list->forms.size()) - 1)(rng);
-                                    }
-                                    else if (idx == -2) {
-                                        idx = currentRule.dynamicIndex;
-                                    }
-                                    else if (idx == -1) {
-                                        spawnAll = true;
-                                    }
-                                    if (spawnAll) {
-                                        for (auto* el : list->forms) {
-                                            if (!el) continue;
-                                            if (auto* light = el->As<RE::TESObjectLIGH>()) lightsData.emplace_back(light, extData.radius);
-                                        }
-                                    }
-                                    else if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[idx];
-                                        if (el) {
-                                            if (auto* light = el->As<RE::TESObjectLIGH>()) lightsData.emplace_back(light, extData.radius);
-                                        }
-                                    }
-                                }
-                                else if (form && form->As<RE::TESObjectLIGH>()) {
-                                    auto* light = form->As<RE::TESObjectLIGH>();
-                                    lightsData.emplace_back(light, extData.radius);
-                                }
-                            }
-                            if (!lightsData.empty()) {
-                                Effects::EnableLight(ctx, lightsData);
-                            }
+                            ProcessEffect<RE::TESObjectLIGH, LightRemoveData>(
+                                eff, ctx, currentRule, true,
+                                [](auto* light, const EffectExtendedData& ext) {
+                                    return LightRemoveData(light, ext.radius);
+                                },
+                                Effects::EnableLight
+                            );
                         }
                         break;
 
                         case EffectType::kDisableLight:
                         {
-                            std::vector<LightRemoveData> lightsData;
-                            for (const auto& [form, extData] : eff.items) {
-                                float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
-                                if (roll > extData.chance) continue;
-
-                                if (extData.isFormList) {
-                                    auto* list = form ? form->As<RE::BGSListForm>() : nullptr;
-                                    if (!list) continue;
-
-                                    int idx = extData.index;
-                                    bool spawnAll = false;
-
-                                    if (idx == -3) {
-                                        idx = std::uniform_int_distribution<int>(0, static_cast<int>(list->forms.size()) - 1)(rng);
-                                    }
-                                    else if (idx == -2) {
-                                        idx = currentRule.dynamicIndex;
-                                    }
-                                    else if (idx == -1) {
-                                        spawnAll = true;
-                                    }
-                                    if (spawnAll) {
-                                        for (auto* el : list->forms) {
-                                            if (!el) continue;
-                                            if (auto* light = el->As<RE::TESObjectLIGH>()) lightsData.emplace_back(light, extData.radius);
-                                        }
-                                    }
-                                    else if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[idx];
-                                        if (el) {
-                                            if (auto* light = el->As<RE::TESObjectLIGH>()) lightsData.emplace_back(light, extData.radius);
-                                        }
-                                    }
-                                }
-                                else if (form && form->As<RE::TESObjectLIGH>()) {
-                                    auto* light = form->As<RE::TESObjectLIGH>();
-                                    lightsData.emplace_back(light, extData.radius);
-                                }
-                            }
-                            if (!lightsData.empty()) {
-                                Effects::DisableLight(ctx, lightsData);
-                            }
+                            ProcessEffect<RE::TESObjectLIGH, LightRemoveData>(
+                                eff, ctx, currentRule, true,
+                                [](auto* light, const EffectExtendedData& ext) {
+                                    return LightRemoveData(light, ext.radius);
+                                },
+                                Effects::DisableLight
+                            );
                         }
                         break;
 
                         case EffectType::kPlayIdle:
                         {
-                            std::vector<PlayIdleData> idleData;
-                            for (const auto& [form, extData] : eff.items) {
-                                float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
-                                if (roll > extData.chance) continue;
-                        
-                                if (!extData.string.empty()) {
-                                    PlayIdleData data;
-                                    data.string = extData.string;
-                                    data.duration = extData.duration > 0.0f ? extData.duration : 1.0f;
-                                    data.chance = extData.chance;
-                                    idleData.emplace_back(std::move(data));
-                                }
-                            }
-                            if (!idleData.empty()) {
-                                Effects::PlayIdle(ctx, idleData);
-                            }
+                            ProcessEffect<void, PlayIdleData>(
+                                eff, ctx, currentRule, false,
+                                [&ctx](std::nullptr_t, const EffectExtendedData& ext) {
+                                    return PlayIdleData(ctx.source, ext.string, ext.duration > 0.0f ? ext.duration : 1.0f);
+                                },
+                                Effects::PlayIdle
+                            );
                         }
                         break;
 
                         case EffectType::kSpawnEffectShader:
                         {
-                            std::vector<EffectShaderSpawnData> effectShadersData;
-                            for (const auto& [form, extData] : eff.items) {
-                                if (!form) continue;
-                                float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
-                                if (roll > extData.chance) continue;
-
-                                if (extData.isFormList) {
-                                    auto* list = form->As<RE::BGSListForm>();
-                                    if (!list) continue;
-
-                                    int idx = extData.index;
-                                    bool spawnAll = false;
-
-                                    if (idx == -3) {
-                                        idx = std::uniform_int_distribution<int>(0, static_cast<int>(list->forms.size()) - 1)(rng);
-                                    }
-                                    else if (idx == -2) {
-                                        idx = currentRule.dynamicIndex;
-                                    }
-                                    else if (idx == -1) {
-                                        spawnAll = true;
-                                    }
-                                    if (spawnAll) {
-                                        for (auto* el : list->forms) {
-                                            if (!el) continue;
-                                            if (auto* shader = el->As<RE::TESEffectShader>()) effectShadersData.emplace_back(shader, extData.count, extData.radius, extData.duration);
-                                        }
-                                    }
-                                    else if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[idx];
-                                        if (el) {
-                                            if (auto* shader = el->As<RE::TESEffectShader>()) effectShadersData.emplace_back(shader, extData.count, extData.radius, extData.duration);
-                                        }
-                                    }
-                                }
-                                else if (auto* shader = form->As<RE::TESEffectShader>()) {
-                                    effectShadersData.emplace_back(shader, extData.count, extData.radius, extData.duration);
-                                }
-                            }
-                            if (!effectShadersData.empty()) {
-                                Effects::SpawnEffectShader(ctx, effectShadersData);
-                            }
+                            ProcessEffect<RE::TESEffectShader, EffectShaderSpawnData>(
+                                eff, ctx, currentRule, true,
+                                [](auto* shader, const EffectExtendedData& ext) {
+                                    return EffectShaderSpawnData(shader, ext.count, ext.radius, ext.duration);
+                                },
+                                Effects::SpawnEffectShader
+                            );
                         }
                         break;
 
                         case EffectType::kSpawnEffectShaderOnItem:
                         {
-                            std::vector<EffectShaderSpawnData> effectShadersData;
-                            for (const auto& [form, extData] : eff.items) {
-                                if (!form) continue;
-                                float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
-                                if (roll > extData.chance) continue;
-
-                                if (extData.isFormList) {
-                                    auto* list = form->As<RE::BGSListForm>();
-                                    if (!list) continue;
-
-                                    int idx = extData.index;
-                                    bool spawnAll = false;
-
-                                    if (idx == -3) {
-                                        idx = std::uniform_int_distribution<int>(0, static_cast<int>(list->forms.size()) - 1)(rng);
-                                    }
-                                    else if (idx == -2) {
-                                        idx = currentRule.dynamicIndex;
-                                    }
-                                    else if (idx == -1) {
-                                        spawnAll = true;
-                                    }
-                                    if (spawnAll) {
-                                        for (auto* el : list->forms) {
-                                            if (!el) continue;
-                                            if (auto* shader = el->As<RE::TESEffectShader>()) effectShadersData.emplace_back(shader, extData.count, extData.duration);
-                                        }
-                                    }
-                                    else if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[idx];
-                                        if (el) {
-                                            if (auto* shader = el->As<RE::TESEffectShader>()) effectShadersData.emplace_back(shader, extData.count, extData.duration);
-                                        }
-                                    }
-                                }
-                                else if (auto* shader = form->As<RE::TESEffectShader>()) {
-                                    effectShadersData.emplace_back(shader, extData.count, extData.duration);
-                                }
-                            }
-                            if (!effectShadersData.empty()) {
-                                Effects::SpawnEffectShaderOnItem(ctx, effectShadersData);
-                            }
+                            ProcessEffect<RE::TESEffectShader, EffectShaderSpawnData>(
+                                eff, ctx, currentRule, true,
+                                [](auto* shader, const EffectExtendedData& ext) {
+                                    return EffectShaderSpawnData(shader, ext.count, ext.radius, ext.duration);
+                                },
+                                Effects::SpawnEffectShaderOnItem
+                            );
                         }
                         break;
                         
                         case EffectType::kToggleNode:
                         {
-                            std::vector<NodeData> nodeData;
-                            for (const auto& [form, extData] : eff.items) {
-                                float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
-                                if (roll > extData.chance) continue;
-
-                                NodeData data;
-                                data.mode = extData.mode;
-                                data.strings = extData.strings;
-                                data.chance = extData.chance;
-                                nodeData.emplace_back(std::move(data));
-                            }
-                            if (!nodeData.empty()) {
-                                Effects::ToggleNode(ctx, nodeData);
-                            }
+                            ProcessEffect<void, NodeData>(
+                                eff, ctx, currentRule, false,
+                                [](std::nullptr_t, const EffectExtendedData& ext) {
+                                    return NodeData(ext.mode, ext.strings);
+                                },
+                                Effects::ToggleNode
+                            );
                         }
                         break;
+
+                        case EffectType::kSpawnArtObject:
+                        {
+                            ProcessEffect<RE::BGSArtObject, ArtObjectData>(
+                                eff, ctx, currentRule, true,
+                                [](auto* artObject, const EffectExtendedData& ext) {
+                                    return ArtObjectData(artObject, ext.count, ext.radius, ext.duration);
+                                },
+                                Effects::SpawnArtObject
+                            );
+                        }
+
+                        case EffectType::kSpawnArtObjectOnItem:
+                        {
+                            ProcessEffect<RE::BGSArtObject, ArtObjectData>(
+                                eff, ctx, currentRule, true,
+                                [](auto* artObject, const EffectExtendedData& ext) {
+                                    return ArtObjectData(artObject, ext.count, ext.radius, ext.duration);
+                                },
+                                Effects::SpawnArtObjectOnItem
+                            );
+                        }
 
                         /*case EffectType::kToggleShaderFlag:
                         {
@@ -4048,6 +3381,9 @@ namespace OIF {
                                 Effects::ToggleShaderFlag(ctx, shaderFlagData);
                             }
                         }
+                        {
+                        
+                        }
                         break;*/
 
                         case EffectType::kAddContainerItem:
@@ -4055,249 +3391,117 @@ namespace OIF {
                         case EffectType::kRemoveContainerItem:
                         case EffectType::kRemoveActorItem:
                         {
-                            std::vector<InventoryData> itemsData;
-                            for (const auto& [form, extData] : eff.items) {
-                                if (!form) continue;
-                                float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
-                                if (roll > extData.chance) continue;
-
-                                if (extData.isFormList) {
-                                    auto* list = form->As<RE::BGSListForm>();
-                                    if (!list) continue;
-
-                                    int idx = extData.index;
-                                    bool processAll = false;
-
-                                    if (idx == -3) {
-                                        idx = std::uniform_int_distribution<int>(0, static_cast<int>(list->forms.size()) - 1)(rng);
-                                    } else if (idx == -2) {
-                                        idx = currentRule.dynamicIndex;
-                                    } else if (idx == -1) {
-                                        processAll = true;
+                            ProcessEffect<RE::TESBoundObject, InventoryData>(
+                                eff, ctx, currentRule, true,
+                                [](auto* item, const EffectExtendedData& ext) {
+                                    return InventoryData(item, ext.count);
+                                },
+                                [eff](const RuleContext& ctx, const std::vector<InventoryData>& data) {
+                                    switch (eff.type) {
+                                        case EffectType::kAddContainerItem: Effects::AddContainerItem(ctx, data); break;
+                                        case EffectType::kAddActorItem: Effects::AddActorItem(ctx, data); break;
+                                        case EffectType::kRemoveContainerItem: Effects::RemoveContainerItem(ctx, data); break;
+                                        case EffectType::kRemoveActorItem: Effects::RemoveActorItem(ctx, data); break;
+                                        default: break;
                                     }
-                                    if (processAll) {
-                                        for (auto* el : list->forms) {
-                                            if (!el) continue;
-                                            if (auto* item = el->As<RE::TESBoundObject>()) {
-                                                itemsData.emplace_back(item, extData.count);
-                                            }
-                                        }
-                                    } else if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[idx];
-                                        if (el) {
-                                            if (auto* item = el->As<RE::TESBoundObject>()) {
-                                                itemsData.emplace_back(item, extData.count);
-                                            }
-                                        }
-                                    }
-                                } else if (auto* item = form->As<RE::TESBoundObject>()) {
-                                    itemsData.emplace_back(item, extData.count);
                                 }
-                            }
-                            if (!itemsData.empty()) {
-                                switch (eff.type) {
-                                    case EffectType::kAddContainerItem:
-                                        Effects::AddContainerItem(ctx, itemsData);
-                                        break;
-                                    case EffectType::kAddActorItem:
-                                        Effects::AddActorItem(ctx, itemsData);
-                                        break;
-                                    case EffectType::kRemoveContainerItem:
-                                        Effects::RemoveContainerItem(ctx, itemsData);
-                                        break;
-                                    case EffectType::kRemoveActorItem:
-                                        Effects::RemoveActorItem(ctx, itemsData);
-                                        break;
-                                }
-                            }
+                            );
                         }
                         break;
 
                         case EffectType::kAddActorSpell:
                         {
-                            std::vector<SpellSpawnData> spellData;
-                            for (const auto& [form, extData] : eff.items) {
-                                if (!form) continue;
-                                float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
-                                if (roll > extData.chance) continue;
-
-                                if (extData.isFormList) {
-                                    auto* list = form->As<RE::BGSListForm>();
-                                    if (!list) continue;
-
-                                    int idx = extData.index;
-                                    bool processAll = false;
-
-                                    if (idx == -3) {
-                                        idx = std::uniform_int_distribution<int>(0, static_cast<int>(list->forms.size()) - 1)(rng);
-                                    } else if (idx == -2) {
-                                        idx = currentRule.dynamicIndex;
-                                    } else if (idx == -1) {
-                                        processAll = true;
-                                    }
-                                    if (processAll) {
-                                        for (auto* el : list->forms) {
-                                            if (!el) continue;
-                                            if (auto* spell = el->As<RE::SpellItem>()) {
-                                                spellData.emplace_back(spell);
-                                            }
-                                        }
-                                    } else if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[idx];
-                                        if (el) {
-                                            if (auto* spell = el->As<RE::SpellItem>()) {
-                                                spellData.emplace_back(spell);
-                                            }
-                                        }
-                                    }
-                                } else if (auto* spell = form->As<RE::SpellItem>()) {
-                                    spellData.emplace_back(spell);
-                                }
-                            }
-                            if (!spellData.empty()) {
-                                Effects::AddActorSpell(ctx, spellData);
-                            }
+                            ProcessEffect<RE::SpellItem, SpellSpawnData>(
+                                eff, ctx, currentRule, true,
+                                [](auto* spell, const EffectExtendedData& ext) {
+                                    return SpellSpawnData(spell, ext.count);
+                                },
+                                Effects::AddActorSpell
+                            );
                         }
                         break;
 
                         case EffectType::kRemoveActorSpell:
                         {
-                            std::vector<SpellSpawnData> spellData;
-                            for (const auto& [form, extData] : eff.items) {
-                                if (!form) continue;
-                                float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
-                                if (roll > extData.chance) continue;
-
-                                if (extData.isFormList) {
-                                    auto* list = form->As<RE::BGSListForm>();
-                                    if (!list) continue;
-
-                                    int idx = extData.index;
-                                    bool processAll = false;
-
-                                    if (idx == -3) {
-                                        idx = std::uniform_int_distribution<int>(0, static_cast<int>(list->forms.size()) - 1)(rng);
-                                    } else if (idx == -2) {
-                                        idx = currentRule.dynamicIndex;
-                                    } else if (idx == -1) {
-                                        processAll = true;
-                                    }
-                                    if (processAll) {
-                                        for (auto* el : list->forms) {
-                                            if (!el) continue;
-                                            if (auto* spell = el->As<RE::SpellItem>()) {
-                                                spellData.emplace_back(spell);
-                                            }
-                                        }
-                                    } else if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[idx];
-                                        if (el) {
-                                            if (auto* spell = el->As<RE::SpellItem>()) {
-                                                spellData.emplace_back(spell);
-                                            }
-                                        }
-                                    }
-                                } else if (auto* spell = form->As<RE::SpellItem>()) {
-                                    spellData.emplace_back(spell);
-                                }
-                            }
-                            if (!spellData.empty()) {
-                                Effects::RemoveActorSpell(ctx, spellData);
-                            }
+                            ProcessEffect<RE::SpellItem, SpellSpawnData>(
+                                eff, ctx, currentRule, true,
+                                [](auto* spell, const EffectExtendedData& /*ext*/) {
+                                    return SpellSpawnData(spell);
+                                },
+                                Effects::RemoveActorSpell
+                            );
                         }
                         break;
 
                         case EffectType::kAddActorPerk:
                         {
-                            std::vector<PerkData> perkData;
-                            for (const auto& [form, extData] : eff.items) {
-                                if (!form) continue;
-                                float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
-                                if (roll > extData.chance) continue;
-
-                                if (extData.isFormList) {
-                                    auto* list = form->As<RE::BGSListForm>();
-                                    if (!list) continue;
-
-                                    int idx = extData.index;
-                                    bool processAll = false;
-
-                                    if (idx == -3) {
-                                        idx = std::uniform_int_distribution<int>(0, static_cast<int>(list->forms.size()) - 1)(rng);
-                                    } else if (idx == -2) {
-                                        idx = currentRule.dynamicIndex;
-                                    } else if (idx == -1) {
-                                        processAll = true;
-                                    }
-                                    if (processAll) {
-                                        for (auto* el : list->forms) {
-                                            if (!el) continue;
-                                            if (auto* perk = el->As<RE::BGSPerk>()) {
-                                                perkData.emplace_back(perk, extData.rank);
-                                            }
-                                        }
-                                    } else if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[idx];
-                                        if (el) {
-                                            if (auto* perk = el->As<RE::BGSPerk>()) {
-                                                perkData.emplace_back(perk, extData.rank);
-                                            }
-                                        }
-                                    }
-                                } else if (auto* perk = form->As<RE::BGSPerk>()) {
-                                    perkData.emplace_back(perk, extData.rank);
-                                }
-                            }
-                            if (!perkData.empty()) {
-                                Effects::AddActorPerk(ctx, perkData);
-                            }
+                            ProcessEffect<RE::BGSPerk, PerkData>(
+                                eff, ctx, currentRule, true,
+                                [](auto* perk, const EffectExtendedData& ext) {
+                                    return PerkData(perk, ext.rank);
+                                },
+                                Effects::AddActorPerk
+                            );
                         }
                         break;
 
                         case EffectType::kRemoveActorPerk:
                         {
-                            std::vector<PerkData> perkData;
-                            for (const auto& [form, extData] : eff.items) {
-                                if (!form) continue;
-                                float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
-                                if (roll > extData.chance) continue;
+                            ProcessEffect<RE::BGSPerk, PerkData>(
+                                eff, ctx, currentRule, true,
+                                [](auto* perk, const EffectExtendedData& /*ext*/) {
+                                    return PerkData(perk);
+                                },
+                                Effects::RemoveActorPerk
+                            );
+                        }
+                        break;
 
-                                if (extData.isFormList) {
-                                    auto* list = form->As<RE::BGSListForm>();
-                                    if (!list) continue;
+                        case EffectType::kExecuteConsoleCommand:
+                        {
+                            ProcessEffect<void, StringData>(
+                                eff, ctx, currentRule, true,
+                                [](std::nullptr_t, const EffectExtendedData& ext) {
+                                    return StringData(ext.string, ext.radius);
+                                },
+                                Effects::ExecuteConsoleCommand
+                            );
+                        }
+                        break;
 
-                                    int idx = extData.index;
-                                    bool processAll = false;
+                        case EffectType::kExecuteConsoleCommandOnItem:
+                        {
+                            ProcessEffect<void, StringData>(
+                                eff, ctx, currentRule, false,
+                                [](std::nullptr_t, const EffectExtendedData& ext) {
+                                    return StringData(ext.string);
+                                },
+                                Effects::ExecuteConsoleCommandOnItem
+                            );
+                        }
+                        break;
 
-                                    if (idx == -3) {
-                                        idx = std::uniform_int_distribution<int>(0, static_cast<int>(list->forms.size()) - 1)(rng);
-                                    } else if (idx == -2) {
-                                        idx = currentRule.dynamicIndex;
-                                    } else if (idx == -1) {
-                                        processAll = true;
-                                    }
-                                    if (processAll) {
-                                        for (auto* el : list->forms) {
-                                            if (!el) continue;
-                                            if (auto* perk = el->As<RE::BGSPerk>()) {
-                                                perkData.emplace_back(perk);
-                                            }
-                                        }
-                                    } else if (idx >= 0 && idx < static_cast<int>(list->forms.size())) {
-                                        auto* el = list->forms[idx];
-                                        if (el) {
-                                            if (auto* perk = el->As<RE::BGSPerk>()) {
-                                                perkData.emplace_back(perk);
-                                            }
-                                        }
-                                    }
-                                } else if (auto* perk = form->As<RE::BGSPerk>()) {
-                                    perkData.emplace_back(perk);
-                                }
-                            }
-                            if (!perkData.empty()) {
-                                Effects::RemoveActorPerk(ctx, perkData);
-                            }
+                        case EffectType::kShowNotification:
+                        {
+                            ProcessEffect<void, StringData>(
+                                eff, ctx, currentRule, false,
+                                [](std::nullptr_t, const EffectExtendedData& ext) {
+                                    return StringData(ext.string);
+                                },
+                                Effects::ShowNotification
+                            );
+                        }
+                        break;
+                        
+                        case EffectType::kShowMessageBox: 
+                        {
+                            ProcessEffect<void, StringData>(
+                                eff, ctx, currentRule, false,
+                                [](std::nullptr_t, const EffectExtendedData& ext) {
+                                    return StringData(ext.string);
+                                },
+                                Effects::ShowMessageBox
+                            );
                         }
                         break;
                                 
@@ -4311,6 +3515,7 @@ namespace OIF {
                 }
         });
     }
+    
 
     // ------------------ Cleanup ------------------
     void RuleManager::CleanupCounters() {
@@ -4356,19 +3561,6 @@ namespace OIF {
     // ------------------ Trigger ------------------
     void RuleManager::Trigger(const RuleContext& ctx)
     {
-        /*logger::warn("=== RuleManager::Trigger START ===");
-        logger::warn("Event: {}", static_cast<int>(ctx.event));
-        logger::warn("Source: {}", ctx.source ? ctx.source->GetFormID() : 0);
-        logger::warn("Target: {}", ctx.target ? ctx.target->GetFormID() : 0);
-        logger::warn("BaseObj: {}", ctx.baseObj ? ctx.baseObj->GetFormID() : 0);
-        logger::warn("AttackSource: {}", ctx.attackSource ? ctx.attackSource->GetFormID() : 0);
-        logger::warn("ProjectileSource: {}", ctx.projectileSource ? ctx.projectileSource->GetFormID() : 0);
-        logger::warn("WeaponType: '{}'", ctx.weaponType);
-        logger::warn("AttackType: '{}'", ctx.attackType);
-        logger::warn("DeliveryType: '{}'", ctx.deliveryType);
-        logger::warn("IsHitEvent: {}", ctx.isHitEvent);
-        logger::warn("Weather: {}", ctx.weather ? ctx.weather->GetFormID() : 0);*/
-
         std::unique_lock lock(_ruleMutex);
 
         // Save critical data to prevent potential loss
@@ -4455,8 +3647,8 @@ namespace OIF {
 
             // 3. TIMER CHECK BLOCK
             bool timerBlockApplied = false;
-            if (r.filter.timer > 0.0f) {
-                float timerValue = r.filter.timer;
+            if (r.filter.timer.time > 0.0f) {
+                float timerValue = r.filter.timer.time;
                 if (ctx.event == EventType::kOnUpdate) {                    
                     static std::map<Key, std::chrono::steady_clock::time_point> updateTimers;
                     static std::chrono::steady_clock::time_point lastTimerCleanup = std::chrono::steady_clock::now();
@@ -4517,6 +3709,10 @@ namespace OIF {
                             if (!source || source->IsDeleted()) {
                                 logger::warn("Source is invalid or deleted after timer");
                                 return;
+                            }
+
+                            if (r.filter.timer.matchFilterRecheck == 1) {
+                                if (!MatchFilter(r.filter, ctx, r)) return;
                             }
 
                             for (const auto& eff : r.effects) {

@@ -29,7 +29,8 @@ namespace OIF
         RE::FormType::MovableStatic,
         RE::FormType::Tree,
         RE::FormType::KeyMaster,
-        RE::FormType::Light
+        RE::FormType::Light,
+        RE::FormType::Grass
     };
 
     // ------------------ Enums ------------------
@@ -985,6 +986,42 @@ namespace OIF
         }
     }
 
+    RE::BSEventNotifyControl DestructionStageChangedSink::ProcessEvent(const RE::TESDestructionStageChangedEvent* evn, RE::BSTEventSource<RE::TESDestructionStageChangedEvent>*)
+    {
+        if (!evn || !evn->target) return RE::BSEventNotifyControl::kContinue;
+
+        auto targetRef = evn->target;
+    
+        if (!targetRef || targetRef->IsDeleted() || !targetRef.get()) return RE::BSEventNotifyControl::kContinue;
+
+        if (!EventSinkBase::IsRelevantObjectRef(targetRef.get())) return RE::BSEventNotifyControl::kContinue;
+
+        std::int32_t stage = evn->newStage;
+        
+        SKSE::GetTaskInterface()->AddTask([targetRef, stage]() {
+            if (targetRef && !targetRef->IsDeleted()) {
+                
+                RuleContext ctx {
+                    EventType::kDestructionStageChange,
+                    RE::PlayerCharacter::GetSingleton()->As<RE::Actor>(),
+                    targetRef.get(),
+                    targetRef.get()->GetBaseObject(),
+                    nullptr,
+                    nullptr,
+                    "",
+                    "",
+                    "",
+                    true,
+                    nullptr,
+                    stage
+                };
+                RuleManager::GetSingleton()->Trigger(ctx);
+            }
+        });
+        
+        return RE::BSEventNotifyControl::kContinue;
+    }
+
     void RegisterSinks()
     {
         auto holder = RE::ScriptEventSourceHolder::GetSingleton();
@@ -993,6 +1030,7 @@ namespace OIF
         holder->GetEventSource<RE::TESGrabReleaseEvent>()->AddEventSink(GrabReleaseSink::GetSingleton());
         holder->GetEventSource<RE::TESCellAttachDetachEvent>()->AddEventSink(CellAttachDetachSink::GetSingleton());
         holder->GetEventSource<RE::TESMagicEffectApplyEvent>()->AddEventSink(MagicEffectApplySink::GetSingleton());
+        holder->GetEventSource<RE::TESDestructionStageChangedEvent>()->AddEventSink(DestructionStageChangedSink::GetSingleton());
     }
 
     void InstallHooks() 
