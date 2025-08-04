@@ -473,13 +473,13 @@ Here are all possible `type` values and their supported fields:
   - Supported fields: `formID`, `editorID`, `formList`, `count`, `fade`, `spawnType`, `string`, `chance`, `timer`.
 
 - **`RemoveLight`**: Deletes lights.
-  - Supported fields: `formID`, `editorID`, `formList`, `radius`, `chance`, `timer`.
+  - Supported fields: `radius`, `chance`, `timer`.
 
 - **`DisableLight`**: Disables lights.
-  - Supported fields: `formID`, `editorID`, `formList`, `radius`, `chance`, `timer`.
+  - Supported fields: `radius`, `chance`, `timer`.
 
 - **`EnableLight`**: Enables previously disabled lights.
-  - Supported fields: `formID`, `editorID`, `formList`, `radius`, `chance`, `timer`.
+  - Supported fields: `radius`, `chance`, `timer`.
  
 ---
 
