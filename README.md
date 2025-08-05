@@ -1,8 +1,8 @@
 # Object Impact Framework
 
-Object Impact Framework (OIF) is a SKSE plugin that lets you add custom effects to items when they are activated, grabbed, released, thrown, or hit. You can make things happen like spawning items, impact data sets, actors, casting spells, creating explosions, playing sounds, and swapping objects - all controlled with JSON files. Compatible with everything.
+**Object Impact Framework (OIF)** is a SKSE plugin that lets you add custom effects to items upon **activation**, **grabbing**, **releasing**, **throwing**, **hitting**, **update**, or **weather change**. You can make things happen like spawning or swapping items and actors, casting spells, creating various visual effects, playing sounds, and more - all controlled with JSON files. Compatible with everything.
 
-This guide explains how to set up those JSON files so you can customize the mod however you like. Examples are given below.
+This guide explains how to set up those JSON files so you can create your own mods. Examples are given at the end of the documentation.
 
 ## Users Info
 
@@ -12,9 +12,9 @@ This guide explains how to set up those JSON files so you can customize the mod 
 ## Mod Authors Info
 
 - **Filter Note**: An object must be defined by at least one of the three parameters - `formIDs`, `editorIDs`, `formLists`, `formTypes`, `keywords` - for the event to work. **Warning:** Equivalents with the `Not` ending do *not* count.
-- **FormIDs Note**: If you are not using the standard `0x` prefix and are copying from CK or SSEEdit, make sure you put `00` instead of the load order digits.
-- **Identifiers Must Match**: Make sure the `formID` or `editorID` fits the effect (e.g., a spell ID for `"SpawnSpell"`, an item ID for `"SpawnItem"`).
+- **Effect Additional Fields Note**: Make sure you check whether the effect requires the presence of the `items` field. Without specifying and filling out this field (at least with one identifier or, if the effect does not support identifiers, with any available field), the effect will *not* work.
 - **Priority Note**: Place effects with `"Remove"` and `"Swap"` prefixes at the very end of the event, otherwise the removed object may not have time to call other effects on itself before gets deleted.
+- **Non-collidable Objects Note**: Only `flora` and `tree` hits are supported. Since the system is based on workarounds and math, in rare cases it may behave unexpectedly and some impacts will be ignored.
 - You can modify existing JSON files without quitting the game, edit the file and reload the save.
 
 ---
