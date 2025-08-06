@@ -4,6 +4,14 @@
 
 namespace OIF
 {
+	
+//██╗░░██╗███████╗██╗░░░░░██████╗░███████╗██████╗░░██████╗
+//██║░░██║██╔════╝██║░░░░░██╔══██╗██╔════╝██╔══██╗██╔════╝
+//███████║█████╗░░██║░░░░░██████╔╝█████╗░░██████╔╝╚█████╗░
+//██╔══██║██╔══╝░░██║░░░░░██╔═══╝░██╔══╝░░██╔══██╗░╚═══██╗
+//██║░░██║███████╗███████╗██║░░░░░███████╗██║░░██║██████╔╝
+//╚═╝░░╚═╝╚══════╝╚══════╝╚═╝░░░░░╚══════╝╚═╝░░╚═╝╚═════╝░
+
     class EventSinkBase
     {
     public:
@@ -17,9 +25,71 @@ namespace OIF
         static bool IsRelevantObjectRef(RE::TESObjectREFR* ref) {
             if (!ref || ref->IsDeleted()) return false;
             auto* baseObj = ref->GetBaseObject();
+			if (!baseObj) return false;
             return IsRelevantObject(baseObj);
         }
+
+		static bool IsActorSafe(RE::Actor* actor) {
+			if (!actor || actor->IsDeleted() || actor->IsDead() || !actor->GetBaseObject() || !actor->GetFormID()) return false;
+			auto formID = actor->GetFormID();
+			if (formID == 0 || formID == 0xFFFFFFFF) return false;
+			try {
+				auto* baseObj = actor->GetBaseObject();
+				if (!baseObj) return false;
+        
+				auto* cell = actor->GetParentCell();
+				if (!cell) return false;
+        
+				return true;
+			} catch (...) {
+				return false;
+			}
+		}
+
+		static bool IsItemSafe(RE::TESObjectREFR* item)
+		{
+			if (!item || item->IsDeleted() || !item->GetBaseObject() || !item->GetFormID()) return false;
+			auto formID = item->GetFormID();
+			if (formID == 0 || formID == 0xFFFFFFFF) return false;
+			if (!EventSinkBase::IsRelevantObjectRef(item)) return false;
+			try {
+				auto* baseObj = item->GetBaseObject();
+				if (!baseObj) return false;
+
+				auto* cell = item->GetParentCell();
+				if (!cell) return false;
+
+				return true;
+			} catch (...) {
+				return false;
+			}
+		}
     };
+
+	class InputHandler
+	{
+	public:
+		static InputHandler* GetSingleton()
+		{
+			static InputHandler handler;
+			return &handler;
+		}
+
+		bool WasKeyJustReleased() const { return KeyJustReleased; }
+		void SetKeyJustReleased() { KeyJustReleased = true; }
+		void ResetKeyState() { KeyJustReleased = false; }
+
+	private:
+		bool KeyJustReleased = false;
+	};
+
+
+//░██████╗██╗███╗░░██╗██╗░░██╗░██████╗
+//██╔════╝██║████╗░██║██║░██╔╝██╔════╝
+//╚█████╗░██║██╔██╗██║█████═╝░╚█████╗░
+//░╚═══██╗██║██║╚████║██╔═██╗░░╚═══██╗
+//██████╔╝██║██║░╚███║██║░╚██╗██████╔╝
+//╚═════╝░╚═╝╚═╝░░╚══╝╚═╝░░╚═╝╚═════╝░                              
 
     class ActivateSink : public RE::BSTEventSink<RE::TESActivateEvent>
     {
@@ -61,19 +131,7 @@ namespace OIF
         RE::BSEventNotifyControl ProcessEvent(
             const RE::TESMagicEffectApplyEvent* evn,
             RE::BSTEventSource<RE::TESMagicEffectApplyEvent>*) override;
-    };
-
-    struct ExplosionHook {
-        static void thunk(RE::Explosion* a_this);
-        static inline REL::Relocation<decltype(thunk)> func;
-        static inline constexpr std::size_t size = 0xA2;
-    };
-
-    struct WeatherChangeHook {
-        static void thunk(RE::TESWeather* a_currentWeather);
-        static inline REL::Relocation<decltype(thunk)> func;
-        static inline RE::TESWeather* currentWeather{ nullptr };
-    };       
+    };     
 
     class GrabReleaseSink : public RE::BSTEventSink<RE::TESGrabReleaseEvent>
     {
@@ -105,58 +163,77 @@ namespace OIF
         std::vector<RE::hkpRigidBody*> bodiesToCleanup;
         static constexpr std::uint32_t HK_PROPERTY_TELEKINESIS{ 314159 };
         static constexpr std::uint32_t HK_PROPERTY_GRABTHROWNOBJECT{ 628318 };
+		static constexpr std::uint32_t HK_PROPERTY_DROPPEDOBJECT{ 271828 };
     };
 
-    class InputHandler
-    {
-    public:
-        static InputHandler* GetSingleton()
-        {
-            static InputHandler handler;
-            return &handler;
-        }
-        
-        bool WasKeyJustReleased() const { return KeyJustReleased; }
-        void SetKeyJustReleased() { KeyJustReleased = true; }
-        void ResetKeyState() { KeyJustReleased = false; }
-    
-    private:
-        bool KeyJustReleased = false;
-    };
+	class CellAttachDetachSink : public RE::BSTEventSink<RE::TESCellAttachDetachEvent>
+	{
+	public:
+		static CellAttachDetachSink* GetSingleton()
+		{
+			static CellAttachDetachSink sink;
+			return &sink;
+		}
+
+		RE::BSEventNotifyControl ProcessEvent(
+			const RE::TESCellAttachDetachEvent* evn,
+			RE::BSTEventSource<RE::TESCellAttachDetachEvent>*) override;
+	};
+
+	class DestructionStageChangedSink : public RE::BSTEventSink<RE::TESDestructionStageChangedEvent>
+	{
+	public:
+		static DestructionStageChangedSink* GetSingleton()
+		{
+			static DestructionStageChangedSink sink;
+			return &sink;
+		}
+
+		RE::BSEventNotifyControl ProcessEvent(
+			const RE::TESDestructionStageChangedEvent* evn,
+			RE::BSTEventSource<RE::TESDestructionStageChangedEvent>*) override;
+	};
+
+	/*class DropSink : public RE::BSTEventSink<RE::TESContainerChangedEvent>
+	{
+	public:
+		static DropSink* GetSingleton()
+		{
+			static DropSink sink;
+			return &sink;
+		}
+		RE::BSEventNotifyControl ProcessEvent(
+			const RE::TESContainerChangedEvent* evn,
+			RE::BSTEventSource<RE::TESContainerChangedEvent>*) override;
+	};*/
+
+	
+//██╗░░██╗░█████╗░░█████╗░██╗░░██╗░██████╗
+//██║░░██║██╔══██╗██╔══██╗██║░██╔╝██╔════╝
+//███████║██║░░██║██║░░██║█████═╝░╚█████╗░
+//██╔══██║██║░░██║██║░░██║██╔═██╗░░╚═══██╗
+//██║░░██║╚█████╔╝╚█████╔╝██║░╚██╗██████╔╝
+//╚═╝░░╚═╝░╚════╝░░╚════╝░╚═╝░░╚═╝╚═════╝░                               
+
+	struct ExplosionHook
+	{
+		static void thunk(RE::Explosion* a_this);
+		static inline REL::Relocation<decltype(thunk)> func;
+		static inline constexpr std::size_t size = 0xA2;
+	};
+
+	struct WeatherChangeHook
+	{
+		static void thunk(RE::TESRegion* a_region, RE::TESWeather* a_currentWeather);
+		static inline REL::Relocation<decltype(thunk)> func;
+		static inline RE::TESWeather* currentWeather{ nullptr };
+	};  
 
     // Taken and adapted from Grab and Throw source code
     struct ReadyWeaponHook {
-        static void thunk(RE::ReadyWeaponHandler* a_this, RE::ButtonEvent* a_event, RE::PlayerControlsData* a_data);
+		static void thunk(RE::ReadyWeaponHandler* a_this, RE::ButtonEvent* a_event, RE::PlayerControlsData* a_data);
         static inline REL::Relocation<decltype(thunk)> func;
         static inline constexpr std::size_t size = 0x4;
-    };
-
-    class CellAttachDetachSink : public RE::BSTEventSink<RE::TESCellAttachDetachEvent>
-    {
-    public:
-        static CellAttachDetachSink* GetSingleton()
-        {
-            static CellAttachDetachSink sink;
-            return &sink;
-        }
-
-        RE::BSEventNotifyControl ProcessEvent(
-            const RE::TESCellAttachDetachEvent* evn,
-            RE::BSTEventSource<RE::TESCellAttachDetachEvent>*) override;
-    };
-
-    class DestructionStageChangedSink : public RE::BSTEventSink<RE::TESDestructionStageChangedEvent>
-    {
-    public:
-        static DestructionStageChangedSink* GetSingleton()
-        {
-            static DestructionStageChangedSink sink;
-            return &sink;
-        }
-    
-        RE::BSEventNotifyControl ProcessEvent(
-            const RE::TESDestructionStageChangedEvent* evn,
-            RE::BSTEventSource<RE::TESDestructionStageChangedEvent>*) override;
     };
 
     struct UpdateHook
@@ -165,6 +242,70 @@ namespace OIF
         static inline REL::Relocation<decltype(thunk)> func;
         static constexpr std::size_t size = 0xAD;
     };
+
+	//struct AttackBlockHook
+	//{
+	//	static void thunk(RE::AttackBlockHandler* a_this, RE::ButtonEvent* a_event, RE::PlayerControlsData* a_data);
+	//	static inline REL::Relocation<decltype(thunk)> func;
+	//	static inline constexpr std::size_t size = 0x4;
+	//};
+
+	// Credits to RavenKZP for the following hooks!
+	struct MissileImpact
+	{
+		static void thunk(RE::Projectile* a_proj, RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_hitPos,
+						  const RE::NiPoint3& a_velocity, RE::hkpCollidable* a_collidable, 
+						  std::int32_t a_arg6, std::uint32_t a_arg7);		
+		static inline REL::Relocation<decltype(thunk)> func;
+	};
+
+	struct BeamImpact
+	{
+		static void thunk(RE::Projectile* a_proj, RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_hitPos,
+						  const RE::NiPoint3& a_velocity, RE::hkpCollidable* a_collidable, 
+						  std::int32_t a_arg6, std::uint32_t a_arg7);		
+		static inline REL::Relocation<decltype(thunk)> func;
+	};
+
+	struct FlameImpact
+	{
+		static void thunk(RE::Projectile* a_proj, RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_hitPos,
+						  const RE::NiPoint3& a_velocity, RE::hkpCollidable* a_collidable, 
+						  std::int32_t a_arg6, std::uint32_t a_arg7);		
+		static inline REL::Relocation<decltype(thunk)> func;
+	};
+
+	struct GrenadeImpact
+	{
+		static void thunk(RE::Projectile* a_proj, RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_hitPos,
+						  const RE::NiPoint3& a_velocity, RE::hkpCollidable* a_collidable, 
+						  std::int32_t a_arg6, std::uint32_t a_arg7);
+		static inline REL::Relocation<decltype(thunk)> func;
+	};
+
+	struct ConeImpact
+	{
+		static void thunk(RE::Projectile* a_proj, RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_hitPos,
+						  const RE::NiPoint3& a_velocity, RE::hkpCollidable* a_collidable, 
+						  std::int32_t a_arg6, std::uint32_t a_arg7);
+		static inline REL::Relocation<decltype(thunk)> func;
+	};
+
+	struct ArrowImpact
+	{
+		static void thunk(RE::Projectile* a_proj, RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_hitPos,
+						  const RE::NiPoint3& a_velocity, RE::hkpCollidable* a_collidable, 
+						  std::int32_t a_arg6, std::uint32_t a_arg7);		
+		static inline REL::Relocation<decltype(thunk)> func;
+	};
+
+
+//██████╗░███████╗░██████╗░██╗░██████╗████████╗██████╗░░█████╗░████████╗██╗░█████╗░███╗░░██╗
+//██╔══██╗██╔════╝██╔════╝░██║██╔════╝╚══██╔══╝██╔══██╗██╔══██╗╚══██╔══╝██║██╔══██╗████╗░██║
+//██████╔╝█████╗░░██║░░██╗░██║╚█████╗░░░░██║░░░██████╔╝███████║░░░██║░░░██║██║░░██║██╔██╗██║
+//██╔══██╗██╔══╝░░██║░░╚██╗██║░╚═══██╗░░░██║░░░██╔══██╗██╔══██║░░░██║░░░██║██║░░██║██║╚████║
+//██║░░██║███████╗╚██████╔╝██║██████╔╝░░░██║░░░██║░░██║██║░░██║░░░██║░░░██║╚█████╔╝██║░╚███║
+//╚═╝░░╚═╝╚══════╝░╚═════╝░╚═╝╚═════╝░░░░╚═╝░░░╚═╝░░╚═╝╚═╝░░╚═╝░░░╚═╝░░░╚═╝░╚════╝░╚═╝░░╚══╝   
 
     void RegisterSinks();
     void InstallHooks();

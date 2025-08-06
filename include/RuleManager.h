@@ -4,11 +4,19 @@
 
 namespace OIF
 {
-	// ---------------------- Enums ----------------------
-	enum class EventType { 
-		kNone, // placeholder for no event (unavailable for users)
+
+//███████╗███╗░░██╗██╗░░░██╗███╗░░░███╗░██████╗
+//██╔════╝████╗░██║██║░░░██║████╗░████║██╔════╝
+//█████╗░░██╔██╗██║██║░░░██║██╔████╔██║╚█████╗░
+//██╔══╝░░██║╚████║██║░░░██║██║╚██╔╝██║░╚═══██╗
+//███████╗██║░╚███║╚██████╔╝██║░╚═╝░██║██████╔╝
+//╚══════╝╚═╝░░╚══╝░╚═════╝░╚═╝░░░░░╚═╝╚═════╝░
+
+	enum class EventType
+	{ 
+		kNone,			// placeholder for no event (unavailable for users)
 		kActivate, 
-		kHit, // TESHitEvent + TESMagicEffectApplyEvent + ExplosionHook
+		kHit,			// TESHitEvent + TESMagicEffectApplyEvent + ExplosionHook + AttackBlockHook + Projectile Impact Hooks
 		kGrab,
 		kRelease,
 		kThrow,
@@ -17,7 +25,8 @@ namespace OIF
 		kCellDetach,
 		kWeatherChange,
 		kOnUpdate,
-		kDestructionStageChange
+		kDestructionStageChange,
+		kDrop
 	};
 
 	enum class EffectType { 
@@ -37,10 +46,18 @@ namespace OIF
 		kRemoveActorItem, kAddActorSpell, kRemoveActorSpell,
 		kAddActorPerk, kRemoveActorPerk, kSpawnArtObject,
 		kSpawnArtObjectOnItem, kExecuteConsoleCommand, kExecuteConsoleCommandOnItem, 
-		kShowNotification, kShowMessageBox
+		kExecuteConsoleCommandOnSource, kShowNotification, kShowMessageBox, 
+		kApplySpell
 	};
 
-	// ---------------------- Filer ----------------------
+
+//███████╗██╗██╗░░░░░████████╗███████╗██████╗░
+//██╔════╝██║██║░░░░░╚══██╔══╝██╔════╝██╔══██╗
+//█████╗░░██║██║░░░░░░░░██║░░░█████╗░░██████╔╝
+//██╔══╝░░██║██║░░░░░░░░██║░░░██╔══╝░░██╔══██╗
+//██║░░░░░██║███████╗░░░██║░░░███████╗██║░░██║
+//╚═╝░░░░░╚═╝╚══════╝░░░╚═╝░░░╚══════╝╚═╝░░╚═╝
+
 	struct FormListEntry {
 		std::uint32_t formID = 0; 											// id of the form of the formlist
 		int index = -1;           											// -1 -use the entire list
@@ -84,6 +101,8 @@ namespace OIF
 		std::set<RE::BGSKeyword*> keywords;        	  						// must have ANY of these keywords
 		std::set<RE::BGSKeyword*> keywordsNot;      						// must NOT have ANY of these keywords
 		std::uint32_t questItemStatus{ 0 };									// 0 - not a quest item, 1 - an item with an alias, 2 - a quest item, 3 - all/undefined
+		std::int32_t lockLevel{ -2 };										// -2 - no lock level required, -1+ - specific lock level required
+		std::int32_t lockLevelNot{ -2 };									// -2 - no lock level to avoid, -1+ - specific lock level to avoid
 		float chance{ 100.f };         							   			// the chance of 0‑100 % for the event to trigger
 		std::uint32_t interactions{ 1 };									// number of interactions required to satisfy filter
 		std::uint32_t limit = 0; 											// number of interactions to stop the effect
@@ -150,30 +169,21 @@ namespace OIF
 		std::unordered_set<std::string> requiredDLLsNot; 					// DLLs to avoid
 	};
 
-	struct FilterCache {
-		std::optional<bool> locationMatch;
-		std::optional<bool> weatherMatch;
-		std::chrono::steady_clock::time_point lastUpdate;
-		
-		bool IsValid(std::chrono::milliseconds maxAge = std::chrono::milliseconds(1000)) const {
-			auto now = std::chrono::steady_clock::now();
-			return (now - lastUpdate) < maxAge;
-		}
-		
-		void Invalidate() {
-			locationMatch.reset();
-			weatherMatch.reset();
-		}
-	};
 
-	// ---------------------- Effect ----------------------
+//███████╗███████╗███████╗███████╗░█████╗░████████╗░██████╗
+//██╔════╝██╔════╝██╔════╝██╔════╝██╔══██╗╚══██╔══╝██╔════╝
+//█████╗░░█████╗░░█████╗░░█████╗░░██║░░╚═╝░░░██║░░░╚█████╗░
+//██╔══╝░░██╔══╝░░██╔══╝░░██╔══╝░░██║░░██╗░░░██║░░░░╚═══██╗
+//███████╗██║░░░░░██║░░░░░███████╗╚█████╔╝░░░██║░░░██████╔╝
+//╚══════╝╚═╝░░░░░╚═╝░░░░░╚══════╝░╚════╝░░░░╚═╝░░░╚═════╝░
+
 	struct EffectExtendedData {
 		RE::TESForm* formID{ nullptr };  							   		// the thing to spawn/cast/play
 		std::vector<FormListEntry> formLists; 								// formlists contents to spawn/cast/play
 		std::uint32_t count{ 1 };      							   			// the amount of items to spawn/cast/play
 		float chance{ 100.f };         							   			// the chance of 0‑100 %
 		TimerEntry timer; 													// the timer for the effect, e.g. 1.0f for 1 second wait before applying
-		float duration{ 1.f }; 												// the duration of the playidle effect
+		float duration{ 1.f }; 												// the duration of the effect
 		float radius{ 100 };												// the radius of the DetachNearbyLight effect
 		float scale{ -1.f };												// the scale of the spawned item
 		std::string string;													// the text string to use in different effects
@@ -191,27 +201,6 @@ namespace OIF
 	struct Effect {
 		EffectType type{ EffectType::kSpawnItem }; 							// the type of effect
 		std::vector<std::pair<RE::TESForm*, EffectExtendedData>> items;		// the vector of items to utilize
-		float chance{ 100.f }; 												// the chance of 0‑100% (private, uses filter's value)
-	};
-
-	struct RuleContext {
-		// General context
-		EventType event;
-		RE::Actor* source{ nullptr };
-		RE::TESObjectREFR* target{ nullptr };
-		RE::TESForm* baseObj{ nullptr };
-		
-		// Hit-specific context
-		RE::TESForm* attackSource{ nullptr };
-		RE::TESForm* projectileSource{ nullptr };
-		std::string weaponType;
-		std::string attackType;
-		std::string deliveryType;
-		bool isHitEvent{ false };
-
-		// Additional context
-		RE::TESWeather* weather{ nullptr };
-		std::int32_t destructionStage{ -1 };
 	};
 
 	struct InventoryData {
@@ -310,7 +299,6 @@ namespace OIF
 	};
 
 	struct LightRemoveData {
-		RE::TESObjectLIGH* light;
 		float radius;
 	};
 
@@ -351,12 +339,39 @@ namespace OIF
 		float radius;
 	};
 
+
+//███████╗██╗░░░██╗███████╗███╗░░██╗████████╗░██████╗
+//██╔════╝██║░░░██║██╔════╝████╗░██║╚══██╔══╝██╔════╝
+//█████╗░░╚██╗░██╔╝█████╗░░██╔██╗██║░░░██║░░░╚█████╗░
+//██╔══╝░░░╚████╔╝░██╔══╝░░██║╚████║░░░██║░░░░╚═══██╗
+//███████╗░░╚██╔╝░░███████╗██║░╚███║░░░██║░░░██████╔╝
+//╚══════╝░░░╚═╝░░░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░╚═════╝░
+
+	struct RuleContext
+	{
+		// General context
+		EventType event;
+		RE::Actor* source{ nullptr };
+		RE::TESObjectREFR* target{ nullptr };
+
+		// Hit-specific context
+		RE::TESForm* attackSource{ nullptr };
+		RE::TESForm* projectileSource{ nullptr };
+		std::string weaponType;
+		std::string attackType;
+		std::string deliveryType;
+		bool isHitEvent{ false };
+
+		// Additional context
+		RE::TESWeather* weather{ nullptr };
+		std::int32_t destructionStage{ -1 };
+	};
+
 	struct Rule {
 		std::vector<EventType> events;
 		Filter filter;
 		std::vector<Effect> effects;
 		int dynamicIndex{ 0 };
-		mutable FilterCache filterCache;
 	};
 
 	struct Key {
@@ -429,7 +444,14 @@ namespace OIF
 		}
 	};
 	
-	// ---------------------- Manager ----------------------
+
+//███╗░░░███╗░█████╗░███╗░░██╗░█████╗░░██████╗░███████╗██████╗░
+//████╗░████║██╔══██╗████╗░██║██╔══██╗██╔════╝░██╔════╝██╔══██╗
+//██╔████╔██║███████║██╔██╗██║███████║██║░░██╗░█████╗░░██████╔╝
+//██║╚██╔╝██║██╔══██║██║╚████║██╔══██║██║░░╚██╗██╔══╝░░██╔══██╗
+//██║░╚═╝░██║██║░░██║██║░╚███║██║░░██║╚██████╔╝███████╗██║░░██║
+//╚═╝░░░░░╚═╝╚═╝░░╚═╝╚═╝░░╚══╝╚═╝░░╚═╝░╚═════╝░╚══════╝╚═╝░░╚═╝
+
 	class RuleManager {
 
 	private:
@@ -592,14 +614,8 @@ namespace OIF
 					filter.formTypes.insert(RE::FormType::SoulGem);
 					filter.formTypes.insert(RE::FormType::AlchemyItem);
 					filter.formTypes.insert(RE::FormType::Furniture);
-					//filter.formTypes.insert(RE::FormType::Door);
 					filter.formTypes.insert(RE::FormType::Flora);
-					//filter.formTypes.insert(RE::FormType::Container);
-					//filter.formTypes.insert(RE::FormType::Static);
-					//filter.formTypes.insert(RE::FormType::MovableStatic);
-					//filter.formTypes.insert(RE::FormType::Tree);
 					filter.formTypes.insert(RE::FormType::KeyMaster);
-					//filter.formTypes.insert(RE::FormType::Light);
 				}
 			}
 

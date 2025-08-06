@@ -3,13 +3,13 @@
 
 namespace OIF::Effects
 {
-    // ------------------ Effects ------------------
     void RemoveItem(const RuleContext& ctx);
     void DisableItem(const RuleContext& ctx);
     void EnableItem(const RuleContext& ctx);
     void SpawnItem(const RuleContext& ctx, const std::vector<ItemSpawnData>& itemsData);
     void SpawnSpell(const RuleContext& ctx, const std::vector<SpellSpawnData>& spellsData);
     void SpawnSpellOnItem(const RuleContext& ctx, const std::vector<SpellSpawnData>& spellsData);
+	void ApplySpell(const RuleContext& ctx, const std::vector<SpellSpawnData>& spellsData);
     void SpawnActor(const RuleContext& ctx, const std::vector<ActorSpawnData>& actorsData);
     void SpawnImpactDataSet(const RuleContext& ctx, const std::vector<ImpactDataSetSpawnData>& impactsData);
     void SpawnExplosion(const RuleContext& ctx, const std::vector<ExplosionSpawnData>& explosionsData);
@@ -33,7 +33,6 @@ namespace OIF::Effects
     void SpawnEffectShader(const RuleContext& ctx, const std::vector<EffectShaderSpawnData>& effectShadersData);
     void SpawnEffectShaderOnItem(const RuleContext& ctx, const std::vector<EffectShaderSpawnData>& effectShadersData);
     void ToggleNode(const RuleContext& ctx, const std::vector<NodeData>& nodeData);
-    void AttachNode(const RuleContext& ctx, const std::vector<ArtObjectData>& artObjectsData);
     //void ToggleShaderFlag(const RuleContext& ctx, const std::vector<ShaderFlagData>& shaderFlagsData);
     void UnlockItem(const RuleContext& ctx);
     void LockItem(const RuleContext& ctx);
@@ -50,6 +49,7 @@ namespace OIF::Effects
     void SpawnArtObjectOnItem(const RuleContext& ctx, const std::vector<ArtObjectData>& artObjectData);
     void ExecuteConsoleCommand(const RuleContext& ctx, const std::vector<StringData>& commandsData);
     void ExecuteConsoleCommandOnItem(const RuleContext& ctx, const std::vector<StringData>& commandsData);
+	void ExecuteConsoleCommandOnSource(const RuleContext& ctx, const std::vector<StringData>& commandsData);
     void ShowNotification(const RuleContext& ctx, const std::vector<StringData>& notificationsData);
     void ShowMessageBox(const RuleContext& ctx, const std::vector<StringData>& messagesData);
 }

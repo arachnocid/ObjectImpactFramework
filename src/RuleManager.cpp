@@ -5,38 +5,48 @@
 namespace fs = std::filesystem;
 using json = nlohmann::json;
 
-namespace {
-
-    // ------------------ Case‑insensitive helpers ------------------
-    inline std::string tolower_str(std::string_view a_str)
-    {
-        std::string result(a_str);
-        std::ranges::transform(result, result.begin(), [](unsigned char ch) {
-            return static_cast<unsigned char>(std::tolower(ch));
-        });
-        return result;
-    }
-
-    json lower_keys(const json& j)
-    {
-        if (j.is_object()) {
-            json res = json::object();
-            for (auto it = j.begin(); it != j.end(); ++it)
-                res[tolower_str(it.key())] = lower_keys(it.value());
-            return res;
-        } else if (j.is_array()) {
-            json arr = json::array();
-            for (const auto& el : j)
-                arr.push_back(lower_keys(el));
-            return arr;
-        }
-        return j;
-    }
-}
-
 namespace OIF {
 
-    // ------------------ Helpers ------------------
+//██╗░░██╗███████╗██╗░░░░░██████╗░███████╗██████╗░░██████╗
+//██║░░██║██╔════╝██║░░░░░██╔══██╗██╔════╝██╔══██╗██╔════╝
+//███████║█████╗░░██║░░░░░██████╔╝█████╗░░██████╔╝╚█████╗░
+//██╔══██║██╔══╝░░██║░░░░░██╔═══╝░██╔══╝░░██╔══██╗░╚═══██╗
+//██║░░██║███████╗███████╗██║░░░░░███████╗██║░░██║██████╔╝
+//╚═╝░░╚═╝╚══════╝╚══════╝╚═╝░░░░░╚══════╝╚═╝░░╚═╝╚═════╝░
+
+// ╔════════════════════════════════════╗
+// ║      CASE-INSENSITIVE HELPERS      ║
+// ╚════════════════════════════════════╝
+
+	inline std::string tolower_str(std::string_view a_str)
+	{
+		std::string result(a_str);
+		std::ranges::transform(result, result.begin(), [](unsigned char ch) {
+			return static_cast<unsigned char>(std::tolower(ch));
+		});
+		return result;
+	}
+
+	json lower_keys(const json& j)
+	{
+		if (j.is_object()) {
+			json res = json::object();
+			for (auto it = j.begin(); it != j.end(); ++it)
+				res[tolower_str(it.key())] = lower_keys(it.value());
+			return res;
+		} else if (j.is_array()) {
+			json arr = json::array();
+			for (const auto& el : j)
+				arr.push_back(lower_keys(el));
+			return arr;
+		}
+		return j;
+	}
+
+// ╔════════════════════════════════════╗
+// ║       STRING MAPPING HELPERS       ║
+// ╚════════════════════════════════════╝
+
     static const std::unordered_map<std::string_view, RE::FormType> formTypeMap = {
         {"activator", RE::FormType::Activator},
         {"talkingactivator", RE::FormType::TalkingActivator},
@@ -58,8 +68,7 @@ namespace OIF {
         {"moveablestatic", RE::FormType::MovableStatic},
         {"tree", RE::FormType::Tree},
         {"key", RE::FormType::KeyMaster},
-        {"light", RE::FormType::Light},
-        {"grass", RE::FormType::Grass}
+        {"light", RE::FormType::Light}
     };
 
     static RE::FormType MapStringToFormType(std::string_view s) {
@@ -72,7 +81,6 @@ namespace OIF {
             "power", "bash", "charge", "rotating", "continuous", "constant", 
             "fireandforget", "ignoreweapon", "overridedata"
         };
-        
         return validAttackTypes.contains(s) ? std::string(s) : "regular";
     }
 
@@ -83,7 +91,6 @@ namespace OIF {
             "spell", "scroll", "shout", "ability", "lesserpower", "power",
             "explosion", "handtohand", "total"
         };
-        
         return validWeaponTypes.contains(s) ? std::string(s) : "other";
     }
 
@@ -91,128 +98,7 @@ namespace OIF {
         static const std::unordered_set<std::string_view> validDeliveryTypes = {
             "self", "aimed", "targetactor", "targetlocation", "touch", "total"
         };
-        
         return validDeliveryTypes.contains(s) ? std::string(s) : "none";
-    }
-
-    template<typename T>
-    bool CompareValues(const std::string& op, T current, T target) {
-        if (op == ">=") return current >= target;
-        if (op == "<=") return current <= target;
-        if (op == ">") return current > target;
-        if (op == "<") return current < target;
-        if (op == "=") return current == target;
-        if (op == "!=") return current != target;
-        return false;
-    }
-
-    // Specialization for float, taking into account the error
-    template<>
-    bool CompareValues<float>(const std::string& op, float current, float target) {
-        if (op == ">=") return current >= target;
-        if (op == "<=") return current <= target;
-        if (op == ">") return current > target;
-        if (op == "<") return current < target;
-        if (op == "=") return std::abs(current - target) < 0.001f;
-        if (op == "!=") return std::abs(current - target) >= 0.001f;
-        return false;
-    }
-
-    template <class T>
-    T* RuleManager::GetFormFromIdentifier(const std::string& identifier) {
-    
-        static std::recursive_mutex dataHandlerMutex;
-        std::lock_guard<std::recursive_mutex> lock(dataHandlerMutex);
-    
-        auto pos = identifier.find(':');
-        if (pos == std::string::npos) {
-            logger::error("Invalid identifier format: '{}'", identifier);
-            return nullptr;
-        }
-    
-        std::string modName = identifier.substr(0, pos);
-        std::string idStr = identifier.substr(pos + 1);
-    
-        // Remove 0x prefix if present
-        if (idStr.size() > 2 && idStr.substr(0, 2) == "0x") {
-            idStr = idStr.substr(2);
-        }
-    
-        // Handle FE prefix for ESL/ESPFE plugins (convert FE123456 to 123456)
-        if (idStr.size() > 2 && (idStr.substr(0, 2) == "FE" || idStr.substr(0, 2) == "fe")) {
-            idStr = idStr.substr(2);
-        }
-    
-        // Handle leading zeros (00123456 -> 123456)
-        while (idStr.size() > 1 && idStr[0] == '0') {
-            idStr = idStr.substr(1);
-        }
-    
-        std::uint32_t rawID = 0;
-        try {
-            rawID = std::stoul(idStr, nullptr, 16);
-        } catch (const std::exception& e) {
-            logger::error("Invalid FormID '{}' in identifier '{}': {}", idStr, identifier, e.what());
-            return nullptr;
-        }
-    
-        auto* dh = RE::TESDataHandler::GetSingleton();
-        if (!dh) {
-            logger::error("TESDataHandler not available");
-            return nullptr;
-        }
-    
-        auto* modInfo = dh->LookupModByName(modName);
-        if (!modInfo) {
-            logger::error("Mod '{}' not found in load order", modName);
-            return nullptr;
-        }
-    
-        auto* form = dh->LookupForm(rawID, modName);
-        if (!form) {
-            logger::error("Form 0x{:06X} not found in mod '{}'", rawID, modName);
-            return nullptr;
-        }
-    
-        auto* typedForm = form->As<T>();
-        if (!typedForm) {
-            logger::error("Form 0x{:08X} exists but is not of type {} in mod '{}'", form->GetFormID(), typeid(T).name(), modName);
-            return nullptr;
-        }
-    
-        return typedForm;
-    }
-
-    template <class T>
-    T* RuleManager::GetFormFromEditorID(const std::string& editorID) {
-        if (editorID.empty()) {
-            logger::warn("Empty EditorID provided");
-            return nullptr;
-        }
-    
-        auto* form = RE::TESForm::LookupByEditorID<T>(editorID);
-        if (form) {
-            return form;
-        }
-
-        static std::recursive_mutex dataHandlerMutex;
-        std::lock_guard<std::recursive_mutex> lock(dataHandlerMutex);
-        
-        auto* dh = RE::TESDataHandler::GetSingleton();
-        if (!dh) {
-            logger::error("TESDataHandler not available");
-            return nullptr;
-        }
-
-        for (auto& formPtr : dh->GetFormArray<T>()) {
-            if (formPtr && formPtr->GetFormEditorID() &&
-                _stricmp(formPtr->GetFormEditorID(), editorID.c_str()) == 0) {
-                return formPtr;
-            }
-        }
-        
-        logger::debug("Form with EditorID '{}' not found", editorID);
-        return nullptr;
     }
 
     RE::ActorValue GetActorValueFromString(const std::string& avName) {
@@ -361,9 +247,179 @@ namespace OIF {
         if (lowerName == "waterwalking") return RE::ActorValue::kWaterWalking;
         if (lowerName == "weaponspeedmult") return RE::ActorValue::kWeaponSpeedMult;
         if (lowerName == "werewolfperks") return RE::ActorValue::kWerewolfPerks;
-        
         return RE::ActorValue::kNone;
     }
+
+// ╔════════════════════════════════════╗
+// ║         COMPARISON HELPERS         ║
+// ╚════════════════════════════════════╝
+
+    template<typename T>
+    bool CompareValues(const std::string& op, T current, T target) {
+        if (op == ">=") return current >= target;
+        if (op == "<=") return current <= target;
+        if (op == ">") return current > target;
+        if (op == "<") return current < target;
+        if (op == "=") return current == target;
+        if (op == "!=") return current != target;
+        return false;
+    }
+
+    // Specialization for float, taking into account the error
+    template<>
+    bool CompareValues<float>(const std::string& op, float current, float target) {
+        if (op == ">=") return current >= target;
+        if (op == "<=") return current <= target;
+        if (op == ">") return current > target;
+        if (op == "<") return current < target;
+        if (op == "=") return std::abs(current - target) < 0.001f;
+        if (op == "!=") return std::abs(current - target) >= 0.001f;
+        return false;
+    }
+
+// ╔════════════════════════════════════╗
+// ║       FORM RETRIEVING HELPERS      ║
+// ╚════════════════════════════════════╝
+
+    template <class T>
+    T* RuleManager::GetFormFromIdentifier(const std::string& identifier) {
+    
+        static std::recursive_mutex dataHandlerMutex;
+        std::lock_guard<std::recursive_mutex> lock(dataHandlerMutex);
+    
+        auto pos = identifier.find(':');
+        if (pos == std::string::npos) {
+            logger::error("Invalid identifier format: '{}'", identifier);
+            return nullptr;
+        }
+    
+        std::string modName = identifier.substr(0, pos);
+        std::string idStr = identifier.substr(pos + 1);
+    
+        auto* dh = RE::TESDataHandler::GetSingleton();
+        if (!dh) {
+            logger::error("TESDataHandler not available");
+            return nullptr;
+        }
+    
+        auto* modInfo = dh->LookupModByName(modName);
+        if (!modInfo) {
+            logger::error("Mod '{}' not found in load order", modName);
+            return nullptr;
+        }
+
+		// Remove 0x prefix if present
+		if (idStr.starts_with("0x") || idStr.starts_with("0X")) idStr = idStr.substr(2);
+		
+		// Remove any other prefix if present
+		const std::size_t keep = modInfo->IsLight() ? 3 : 6;
+		if (idStr.length() > keep) idStr = idStr.substr(idStr.length() - keep);
+
+		// Handle leading zeros (00123456 -> 123456)
+		while (idStr.size() > 1 && idStr[0] == '0') {
+			idStr = idStr.substr(1);
+		}
+
+		std::uint32_t rawID = 0;
+		try {
+			rawID = std::stoul(idStr, nullptr, 16);
+		} catch (const std::exception& e) {
+			logger::error("Invalid FormID '{}' in identifier '{}': {}", idStr, identifier, e.what());
+			return nullptr;
+		}
+    
+        auto* form = dh->LookupForm(rawID, modName);
+        if (!form) {
+            logger::error("Form 0x{:06X} not found in mod '{}'", rawID, modName);
+            return nullptr;
+        }
+    
+        auto* typedForm = form->As<T>();
+        if (!typedForm) {
+            logger::error("Form 0x{:08X} exists but is not of type {} in mod '{}'", form->GetFormID(), typeid(T).name(), modName);
+            return nullptr;
+        }
+    
+        return typedForm;
+    }
+
+    template <class T>
+    T* RuleManager::GetFormFromEditorID(const std::string& editorID) {
+        if (editorID.empty()) {
+            logger::warn("Empty EditorID provided");
+            return nullptr;
+        }
+    
+        auto* form = RE::TESForm::LookupByEditorID<T>(editorID);
+        if (form) return form;
+
+        static std::recursive_mutex dataHandlerMutex;
+        std::lock_guard<std::recursive_mutex> lock(dataHandlerMutex);
+        
+        auto* dh = RE::TESDataHandler::GetSingleton();
+        if (!dh) {
+            logger::error("TESDataHandler not available");
+            return nullptr;
+        }
+
+        for (auto& formPtr : dh->GetFormArray<T>()) {
+            if (formPtr && formPtr->GetFormEditorID() &&
+                _stricmp(formPtr->GetFormEditorID(), editorID.c_str()) == 0) {
+                return formPtr;
+            }
+        }
+        
+        logger::debug("Form with EditorID '{}' not found", editorID);
+        return nullptr;
+    }
+
+// ╔════════════════════════════════════╗
+// ║           FILTER HELPERS           ║
+// ╚════════════════════════════════════╝
+	
+	bool IsDllPresent(const std::string& dllName)
+	{
+		namespace fs = std::filesystem;
+		fs::path dllPath = fs::path("Data") / "SKSE" / "Plugins" / dllName;
+		return fs::exists(dllPath);
+	}
+
+	bool HasItem(RE::Actor* actor, RE::FormID formID) {
+        if (!actor) return false;
+
+        auto inventory = actor->GetInventory();
+        if (!inventory.empty()) {
+            for (const auto& [item, invData] : inventory) {
+                if (item && item->GetFormID() == formID && invData.first > 0) return true;
+            }
+        }
+        return false;
+    }
+    
+    std::uint32_t GetQuestItemStatus(RE::TESObjectREFR* ref) {
+        if (!ref) return 0;
+
+        if (ref->HasQuestObject()) return 2;
+        
+        if (const auto xAliases = ref->extraList.GetByType<RE::ExtraAliasInstanceArray>(); xAliases) { // the line is taken from the PO3 Papyrus Extender
+            if (xAliases) RE::BSReadLockGuard locker(xAliases->lock);
+            if (!xAliases->aliases.empty()) return 1;
+        }
+        
+        return 0;
+    }
+
+	RE::LOCK_LEVEL GetLockLevel(const int lvl)
+	{
+		if (lvl == -1) return RE::LOCK_LEVEL::kUnlocked;
+		if (lvl == 0) return RE::LOCK_LEVEL::kVeryEasy;
+		if (lvl == 1) return RE::LOCK_LEVEL::kEasy;
+		if (lvl == 2) return RE::LOCK_LEVEL::kAverage;
+		if (lvl == 3) return RE::LOCK_LEVEL::kHard;
+		if (lvl == 4) return RE::LOCK_LEVEL::kVeryHard;
+		if (lvl == 5) return RE::LOCK_LEVEL::kRequiresKey;
+		return RE::LOCK_LEVEL::kUnlocked;
+	}
 
     bool CheckActorValueCondition(const ActorValueCondition& condition, RE::Actor* actor) {
         RE::ActorValue av = GetActorValueFromString(condition.actorValue);
@@ -438,164 +494,104 @@ namespace OIF {
         return true;
     }
 
-    bool HasItem(RE::Actor* actor, RE::FormID formID) {
-        if (!actor) return false;
-        auto inventory = actor->GetInventory();
-        if (!inventory.empty()) {
-            for (const auto& [item, invData] : inventory) {
-                if (item && item->GetFormID() == formID && invData.first > 0) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-    
-    std::uint32_t GetQuestItemStatus(RE::TESObjectREFR* ref) {
-        if (!ref) return 0;
+	bool CheckLocationFilter(const Filter& f, const RuleContext& ctx)
+	{
+		// If there are no filters - skip the check
+		if (f.locations.empty() && f.locationsNot.empty()) return true;
 
-        if (ref->HasQuestObject()) {
-            return 2;
-        }
-        
-        if (const auto xAliases = ref->extraList.GetByType<RE::ExtraAliasInstanceArray>(); xAliases) { // the line is taken from the PO3 Papyrus Extender
-            if (xAliases) RE::BSReadLockGuard locker(xAliases->lock);
-            if (!xAliases->aliases.empty()) {
-                return 1;
-            }
-        }
-        
-        return 0;
-    }
+		auto* target = ctx.target->As<RE::TESObjectREFR>();
+		if (!target) return false;  // If target is not a valid reference, make sure Trigger is not executed
 
-    bool CheckLocationFilter(const Filter& f, const RuleContext& ctx, Rule& currentRule) {
-        // If there are no filters - skip the check
-        if (f.locations.empty() && f.locationsNot.empty()) {
-            currentRule.filterCache.locationMatch = true;
-            return true;
-        }
+		auto* currentCell = target->GetParentCell();
+		RE::FormID currentCellID = currentCell ? currentCell->GetFormID() : 0;
 
-        // Check the cache
-        if (currentRule.filterCache.IsValid() && currentRule.filterCache.locationMatch.has_value()) {
-            return currentRule.filterCache.locationMatch.value();
-        }
-    
-        auto* target = ctx.target->As<RE::TESObjectREFR>();
-        if (!target) {
-            currentRule.filterCache.locationMatch = false;
-            return false;
-        }
-    
-        auto* currentCell = target->GetParentCell();
-        if (!currentCell) {
-            currentRule.filterCache.locationMatch = false;
-            return false;
-        }
-    
-        RE::FormID currentCellID = currentCell->GetFormID();
-        RE::FormID currentWorldspaceID = 0;
-        if (auto* worldspace = currentCell->GetRuntimeData().worldSpace) {
-            currentWorldspaceID = worldspace->GetFormID();
-        }
-    
-        // Get the current locations of the player
-        std::set<RE::FormID> currentlocations;
-        std::set<RE::FormID> visitedParents;
-        if (auto* player = RE::PlayerCharacter::GetSingleton()) {
-            if (auto* currentLocation = player->GetCurrentLocation()) {
-                currentlocations.insert(currentLocation->GetFormID());
-                auto* parentLoc = currentLocation;
-                while (parentLoc && parentLoc->parentLoc) {
-                    parentLoc = parentLoc->parentLoc;
-                    if (visitedParents.contains(parentLoc->GetFormID())) {
-                        logger::warn("Circular reference detected in location hierarchy");
-                        break;
-                    }
-                    visitedParents.insert(parentLoc->GetFormID());
-                    currentlocations.insert(parentLoc->GetFormID());
-                }
-            }
-        }
-    
-        // Checking including filters
-        if (!f.locations.empty()) {
-            bool matched = f.locations.contains(currentCellID) || (currentWorldspaceID && f.locations.contains(currentWorldspaceID));
+		auto* currentLocation = target->GetCurrentLocation();
+		RE::FormID currentLocationID = currentLocation ? currentLocation->GetFormID() : 0;
 
-            if (!matched) {
-                for (auto locID : currentlocations) {
-                    if (f.locations.contains(locID)) {
-                        matched = true;
-                        break;
-                    }
-                }
-            }
-            
-            if (!matched) {
-                currentRule.filterCache.locationMatch = false;
-                return false;
-            }
-        }
-    
-        // Checking excluding filters
-        if (!f.locationsNot.empty()) {
-            bool excluded = f.locationsNot.contains(currentCellID) || (currentWorldspaceID && f.locationsNot.contains(currentWorldspaceID));
+		auto* currentWorldspace = target->GetWorldspace();
+		if (!currentWorldspace && currentCell) {
+			currentWorldspace = currentCell->GetRuntimeData().worldSpace;
+		}
+		RE::FormID currentWorldspaceID = currentWorldspace ? currentWorldspace->GetFormID() : 0;
 
-            if (!excluded) {
-                for (auto locID : currentlocations) {
-                    if (f.locationsNot.contains(locID)) {
-                        excluded = true;
-                        break;
-                    }
-                }
-            }
-            
-            if (excluded) {
-                currentRule.filterCache.locationMatch = false;
-                return false;
-            }
-        }
-    
-        currentRule.filterCache.locationMatch = true;
-        currentRule.filterCache.lastUpdate = std::chrono::steady_clock::now();
-        return true;
-    }
-    
-    bool CheckWeatherFilter(const Filter& f, Rule& currentRule) {
-        if (f.weathers.empty() && f.weathersNot.empty()) {
-            currentRule.filterCache.weatherMatch = true;
-            return true;
-        }
+		// Collect all parent locations
+		std::set<RE::FormID> currentlocations;
+		std::set<RE::FormID> visitedParents;
+		if (currentLocation) {
+			currentlocations.insert(currentLocationID);
+			auto* parentLoc = currentLocation;
+			while (parentLoc && parentLoc->parentLoc) {
+				parentLoc = parentLoc->parentLoc;
+				if (visitedParents.contains(parentLoc->GetFormID())) {
+					logger::warn("Circular reference detected in location hierarchy");
+					break;
+				}
+				visitedParents.insert(parentLoc->GetFormID());
+				currentlocations.insert(parentLoc->GetFormID());
+			}
+		}
 
-        if (currentRule.filterCache.IsValid() && currentRule.filterCache.weatherMatch.has_value()) {
-            return currentRule.filterCache.weatherMatch.value();
-        }
+		// Check including filters
+		if (!f.locations.empty()) {
+			bool matched = (currentCellID && f.locations.contains(currentCellID)) ||
+						   (currentWorldspaceID && f.locations.contains(currentWorldspaceID)) ||
+						   (currentLocationID && f.locations.contains(currentLocationID));
+
+			if (!matched) {
+				for (auto locID : currentlocations) {
+					if (f.locations.contains(locID)) {
+						matched = true;
+						break;
+					}
+				}
+			}
+
+			if (!matched) return false;
+		}
+
+		// Check excluding filters
+		if (!f.locationsNot.empty()) {
+			bool excluded = (currentCellID && f.locationsNot.contains(currentCellID)) ||
+							(currentWorldspaceID && f.locationsNot.contains(currentWorldspaceID)) ||
+							(currentLocationID && f.locationsNot.contains(currentLocationID));
+
+			if (!excluded) {
+				for (auto locID : currentlocations) {
+					if (f.locationsNot.contains(locID)) {
+						excluded = true;
+						break;
+					}
+				}
+			}
+
+			if (excluded) return false;
+		}
+
+		return true;
+	}
+    
+    bool CheckWeatherFilter(const Filter& f) {
+        if (f.weathers.empty() && f.weathersNot.empty()) return true;
     
         auto* sky = RE::Sky::GetSingleton();
-        if (!sky || !sky->currentWeather) {
-            currentRule.filterCache.weatherMatch = f.weathers.empty();
-            return currentRule.filterCache.weatherMatch.value();
-        }
+        if (!sky || !sky->currentWeather) return true;  // If weather data is unavailable, skip the check
     
         RE::FormID currentWeatherID = sky->currentWeather->GetFormID();
 
         if (!f.weathers.empty()) {
-            if (!f.weathers.contains(currentWeatherID)) {
-                currentRule.filterCache.weatherMatch = false;
-                return false;
-            }
+            if (!f.weathers.contains(currentWeatherID)) return false;
         }
 
         if (!f.weathersNot.empty()) {
-            if (f.weathersNot.contains(currentWeatherID)) {
-                currentRule.filterCache.weatherMatch = false;
-                return false;
-            }
+            if (f.weathersNot.contains(currentWeatherID)) return false;
         }
-    
-        currentRule.filterCache.weatherMatch = true;
-        currentRule.filterCache.lastUpdate = std::chrono::steady_clock::now();
+
         return true;
     }
+
+// ╔════════════════════════════════════╗
+// ║       SERIALIZATION HELPERS        ║
+// ╚════════════════════════════════════╝
 
     void RuleManager::ResetInteractionCounts()
     {
@@ -656,20 +652,27 @@ namespace OIF {
         }
     }
 
-    bool IsDllPresent(const std::string& dllName)
-    {
-        namespace fs = std::filesystem;
-        fs::path dllPath = fs::path("Data") / "SKSE" / "Plugins" / dllName;
-        return fs::exists(dllPath);
-    }
 
-    // ------------------ Singleton ------------------
+//░██████╗░███████╗███╗░░██╗███████╗██████╗░░█████╗░██╗░░░░░
+//██╔════╝░██╔════╝████╗░██║██╔════╝██╔══██╗██╔══██╗██║░░░░░
+//██║░░██╗░█████╗░░██╔██╗██║█████╗░░██████╔╝███████║██║░░░░░
+//██║░░╚██╗██╔══╝░░██║╚████║██╔══╝░░██╔══██╗██╔══██║██║░░░░░
+//╚██████╔╝███████╗██║░╚███║███████╗██║░░██║██║░░██║███████╗
+//░╚═════╝░╚══════╝╚═╝░░╚══╝╚══════╝╚═╝░░╚═╝╚═╝░░╚═╝╚══════╝
+
+// ╔════════════════════════════════════╗
+// ║             SINGLETON              ║
+// ╚════════════════════════════════════╝
+
     RuleManager* RuleManager::GetSingleton() {
         static RuleManager inst;
         return &inst;
     }
 
-    // ------------------ Load ------------------
+// ╔════════════════════════════════════╗
+// ║           LOADING RULES            ║
+// ╚════════════════════════════════════╝
+
     void RuleManager::LoadRules() {
 
         std::unique_lock lock(_ruleMutex);
@@ -696,8 +699,15 @@ namespace OIF {
         logger::info("Total rules loaded: {}", _rules.size());
     }
 
-    // ------------------ Parse single file ------------------
-    void RuleManager::ParseJSON(const fs::path& path) {
+
+//██████╗░░█████╗░██████╗░░██████╗███████╗  ███████╗██╗██╗░░░░░███████╗
+//██╔══██╗██╔══██╗██╔══██╗██╔════╝██╔════╝  ██╔════╝██║██║░░░░░██╔════╝
+//██████╔╝███████║██████╔╝╚█████╗░█████╗░░  █████╗░░██║██║░░░░░█████╗░░
+//██╔═══╝░██╔══██║██╔══██╗░╚═══██╗██╔══╝░░  ██╔══╝░░██║██║░░░░░██╔══╝░░
+//██║░░░░░██║░░██║██║░░██║██████╔╝███████╗  ██║░░░░░██║███████╗███████╗
+//╚═╝░░░░░╚═╝░░╚═╝╚═╝░░╚═╝╚═════╝░╚══════╝  ╚═╝░░░░░╚═╝╚══════╝╚══════╝
+
+	void RuleManager::ParseJSON(const fs::path& path) {
         std::ifstream ifs(path);
         if (!ifs.is_open()) {
             logger::error("Failed to open JSON file: {}", path.string());
@@ -722,7 +732,10 @@ namespace OIF {
         for (auto const& jr : jLow) {
             Rule r;
 
-            // -------- events ----------
+            // ╔════════════════════════════════════╗
+			// ║               EVENTS               ║
+			// ╚════════════════════════════════════╝
+
             if (!jr.contains("event")) {
                 logger::warn("Skipping rule in {}: missing 'event' field", path.string());
                 continue;
@@ -754,6 +767,7 @@ namespace OIF {
                 else if (evLower == "weatherchange") r.events.push_back(EventType::kWeatherChange);
                 else if (evLower == "onupdate") r.events.push_back(EventType::kOnUpdate);
                 else if (evLower == "destructionstagechange") r.events.push_back(EventType::kDestructionStageChange);
+				//else if (evLower == "drop") r.events.push_back(EventType::kDrop);
                 else logger::warn("Unknown event '{}' in {}", ev, path.string());
             }
 
@@ -762,7 +776,10 @@ namespace OIF {
                 continue;
             }
 
-            // -------- filters ----------
+            // ╔════════════════════════════════════╗
+			// ║              FILTERS               ║
+			// ╚════════════════════════════════════╝
+
             bool hasObjectIdentifier = false;
 
             if (jr.contains("filter") && jr["filter"].is_object()) {
@@ -1114,6 +1131,22 @@ namespace OIF {
                         logger::warn("Invalid integer value in questitemstatus filter of {}: {}", path.string(), e.what());
                     }
                 }
+
+				if (jf.contains("locklevel") && jf["locklevel"].is_number_integer()) {
+					try {
+						r.filter.lockLevel = jf["locklevel"].get<std::int32_t>();
+					} catch (const std::exception& e) {
+						logger::warn("Invalid integer value in locklevel filter of {}: {}", path.string(), e.what());
+					}
+				}
+
+				if (jf.contains("locklevelnot") && jf["locklevelnot"].is_number_integer()) {
+					try {
+						r.filter.lockLevelNot = jf["locklevelnot"].get<std::int32_t>();
+					} catch (const std::exception& e) {
+						logger::warn("Invalid integer value in locklevelnot filter of {}: {}", path.string(), e.what());
+					}
+				}
 
                 if (jf.contains("weaponstypes") && jf["weaponstypes"].is_array()) {
                     for (auto const& wt : jf["weaponstypes"]) {
@@ -2259,7 +2292,10 @@ namespace OIF {
                 continue;
             }
 
-            // -------- effects ----------
+            // ╔════════════════════════════════════╗
+			// ║              EFFECTS               ║
+			// ╚════════════════════════════════════╝
+
             if (!jr.contains("effect")) {
                 logger::warn("Skipping rule in {}: missing 'effect' field", path.string());
                 continue;
@@ -2283,6 +2319,7 @@ namespace OIF {
                 {"spawnitem", EffectType::kSpawnItem},
                 {"spawnspell", EffectType::kSpawnSpell},
                 {"spawnspellonitem", EffectType::kSpawnSpellOnItem},
+				{"applyspell", EffectType::kApplySpell},
                 {"spawnactor", EffectType::kSpawnActor},
                 {"spawnimpactdataset", EffectType::kSpawnImpactDataSet},
                 {"spawnexplosion", EffectType::kSpawnExplosion},
@@ -2322,9 +2359,18 @@ namespace OIF {
                 {"spawnartobjectonitem", EffectType::kSpawnArtObjectOnItem},
                 {"executeconsolecommand", EffectType::kExecuteConsoleCommand},
                 {"executeconsolecommandonitem", EffectType::kExecuteConsoleCommandOnItem},
+				{"executeconsolecommandonsource", EffectType::kExecuteConsoleCommandOnSource},
                 {"shownotification", EffectType::kShowNotification},
                 {"showmessagebox", EffectType::kShowMessageBox}
             };
+
+			static const std::unordered_map<EffectType, std::string> effectTypeReverseMap = []() {
+				std::unordered_map<EffectType, std::string> map;
+				for (const auto& [name, type] : effectTypeMap) {
+					map[type] = name;
+				}
+				return map;
+			}();
 
             for (const auto& effj : effectArray) {
                 if (!effj.is_object()) continue;
@@ -2337,9 +2383,7 @@ namespace OIF {
                     logger::warn("Unknown effect type '{}' in {}", typeStr, path.string());
                     continue;
                 }
-                eff.type = it->second;
-
-                eff.chance = effj.value("chance", r.filter.chance);
+				eff.type = it->second;
 
                 const std::vector<EffectType> effectsWithoutItems = {
                     EffectType::kRemoveItem,
@@ -2354,139 +2398,146 @@ namespace OIF {
                 bool needsItems = std::find(effectsWithoutItems.begin(), effectsWithoutItems.end(), eff.type) == effectsWithoutItems.end();
                 if (needsItems) {
                     if (effj.contains("items") && effj["items"].is_array()) {
-                        for (const auto& itemJson : effj["items"]) {
-                            EffectExtendedData extData;
-                            extData.formID = nullptr;
-                            extData.nonDeletable = itemJson.value("nondeletable", 0U);
-                            extData.spawnType = itemJson.value("spawntype", 4U);
-                            extData.fade = itemJson.value("fade", 1U);
-                            extData.count = itemJson.value("count", 1U);
-                            extData.radius = itemJson.value("radius", 150.0f);
-                            extData.scale = itemJson.value("scale", -1.0f);
-                            extData.chance = itemJson.value("chance", 100.0f);
-                            if (itemJson.contains("timer") && (itemJson["timer"].is_number() || itemJson["timer"].is_object())) {
-                                if (itemJson["timer"].is_number()) {
-                                    try {
-                                        extData.timer.time = itemJson["timer"].get<float>();
-                                        extData.timer.matchFilterRecheck = 0;
-                                    } catch (const std::exception& e) {
-                                        logger::warn("Invalid timer value in items of {}: {}", path.string(), e.what());
-                                    }
-                                } else if (itemJson["timer"].is_object()) {
-                                    const auto& timerObj = itemJson["timer"];
-                                    
-                                    if (timerObj.contains("time") && timerObj["time"].is_number()) {
-                                        try {
-                                            extData.timer.time = timerObj["time"].get<float>();
-                                        } catch (const std::exception& e) {
-                                            logger::warn("Invalid time value in timer of items in {}: {}", path.string(), e.what());
-                                        }
-                                    }
-                                    
-                                    if (timerObj.contains("matchfilterrecheck") && timerObj["matchfilterrecheck"].is_number_unsigned()) {
-                                        try {
-                                            extData.timer.matchFilterRecheck = timerObj["matchfilterrecheck"].get<std::uint32_t>();
-                                        } catch (const std::exception& e) {
-                                            logger::warn("Invalid matchFilterRecheck value in timer of items in {}: {}", path.string(), e.what());
-                                        }
-                                    }
-                                }
-                            }
-                            extData.duration = itemJson.value("duration", 1.0f);
-                            extData.string = itemJson.value("string", std::string{});
-                            extData.mode = itemJson.value("mode", 0U);
-                            extData.strings = itemJson.value("strings", std::vector<std::string>{});
-                            //extData.flagNames = itemJson.value("flagnames", std::vector<std::string>{});
-                            extData.rank = itemJson.value("rank", 0U);
+						for (const auto& itemJson : effj["items"]) {
+							EffectExtendedData extData;
+							extData.formID = nullptr;
+							extData.nonDeletable = itemJson.value("nondeletable", 0U);
+							extData.spawnType = itemJson.value("spawntype", 4U);
+							extData.fade = itemJson.value("fade", 1U);
+							extData.count = itemJson.value("count", 1U);
+							extData.radius = itemJson.value("radius", 150.0f);
+							extData.scale = itemJson.value("scale", -1.0f);
+							extData.chance = itemJson.value("chance", 100.0f);
+							if (itemJson.contains("timer") && (itemJson["timer"].is_number() || itemJson["timer"].is_object())) {
+								if (itemJson["timer"].is_number()) {
+									try {
+										extData.timer.time = itemJson["timer"].get<float>();
+										extData.timer.matchFilterRecheck = 0;
+									} catch (const std::exception& e) {
+										logger::warn("Invalid timer value in items of {}: {}", path.string(), e.what());
+									}
+								} else if (itemJson["timer"].is_object()) {
+									const auto& timerObj = itemJson["timer"];
 
-                            bool haveIdentifier = false;
+									if (timerObj.contains("time") && timerObj["time"].is_number()) {
+										try {
+											extData.timer.time = timerObj["time"].get<float>();
+										} catch (const std::exception& e) {
+											logger::warn("Invalid time value in timer of items in {}: {}", path.string(), e.what());
+										}
+									}
 
-                            if (itemJson.contains("formid") && itemJson["formid"].is_string()) {
-                                std::string formId = itemJson["formid"].get<std::string>();
-                                if (auto* form = GetFormFromIdentifier<RE::TESForm>(formId)) {
-                                    extData.formID = form;
-                                    extData.isFormList = false;
-                                    extData.index = -1;
-                                    haveIdentifier = true;
-                                } else {
-                                    logger::warn("Invalid formid '{}' in items of {}", formId, path.string());
-                                }
-                            }
+									if (timerObj.contains("matchfilterrecheck") && timerObj["matchfilterrecheck"].is_number_unsigned()) {
+										try {
+											extData.timer.matchFilterRecheck = timerObj["matchfilterrecheck"].get<std::uint32_t>();
+										} catch (const std::exception& e) {
+											logger::warn("Invalid matchFilterRecheck value in timer of items in {}: {}", path.string(), e.what());
+										}
+									}
+								}
+							}
+							extData.duration = itemJson.value("duration", 1.0f);
+							extData.string = itemJson.value("string", std::string{});
+							extData.mode = itemJson.value("mode", 0U);
+							extData.strings = itemJson.value("strings", std::vector<std::string>{});
+							//extData.flagNames = itemJson.value("flagnames", std::vector<std::string>{});
+							extData.rank = itemJson.value("rank", 0U);
 
-                            else if (itemJson.contains("editorid") && itemJson["editorid"].is_string()) {
-                                std::string editorId = itemJson["editorid"].get<std::string>();
-                                if (auto* form = GetFormFromEditorID<RE::TESForm>(editorId)) {
-                                    extData.formID = form;
-                                    extData.isFormList = false;
-                                    extData.index = -1;
-                                    haveIdentifier = true;
-                                } else {
-                                    logger::warn("Invalid editorid '{}' in items of {}", editorId, path.string());
-                                }
-                            }
+							bool haveIdentifier = false;
 
-                            else if (itemJson.contains("formlist") && itemJson["formlist"].is_array()) {
-                                for (const auto& formListEntry : itemJson["formlist"]) {
-                                    if (formListEntry.is_object() && formListEntry.contains("formid") && formListEntry["formid"].is_string()) {
-                                        std::string formListId = formListEntry["formid"].get<std::string>();
-                                        int idx = formListEntry.value("index", -1);
+							if (itemJson.contains("formid") && itemJson["formid"].is_string()) {
+								std::string formId = itemJson["formid"].get<std::string>();
+								if (auto* form = GetFormFromIdentifier<RE::TESForm>(formId)) {
+									extData.formID = form;
+									extData.isFormList = false;
+									extData.index = -1;
+									haveIdentifier = true;
+								} else {
+									logger::warn("Invalid formid '{}' in items of {}", formId, path.string());
+								}
+							}
 
-                                        auto* list = GetFormFromIdentifier<RE::BGSListForm>(formListId);
-                                        if (list) {
-                                            extData.formID = list;
-                                            extData.isFormList = true;
-                                            extData.index = idx;
-                                            eff.items.emplace_back(extData.formID, extData);
-                                        } else {
-                                            logger::warn("Invalid formlist '{}' in items of {}", formListId, path.string());
-                                        }
-                                    } else if (formListEntry.is_object() && formListEntry.contains("editorid") && formListEntry["editorid"].is_string()) {
-                                        std::string editorId = formListEntry["editorid"].get<std::string>();
-                                        int idx = formListEntry.value("index", -1);
+							else if (itemJson.contains("editorid") && itemJson["editorid"].is_string()) {
+								std::string editorId = itemJson["editorid"].get<std::string>();
+								if (auto* form = GetFormFromEditorID<RE::TESForm>(editorId)) {
+									extData.formID = form;
+									extData.isFormList = false;
+									extData.index = -1;
+									haveIdentifier = true;
+								} else {
+									logger::warn("Invalid editorid '{}' in items of {}", editorId, path.string());
+								}
+							}
 
-                                        auto* list = GetFormFromEditorID<RE::BGSListForm>(editorId);
-                                        if (list) {
-                                            extData.formID = list;
-                                            extData.isFormList = true;
-                                            extData.index = idx;
-                                            eff.items.emplace_back(extData.formID, extData);
-                                        } else {
-                                            logger::warn("Invalid formlist '{}' in items of {}", editorId, path.string());
-                                        }
-                                    }
-                                    else {
-                                        logger::warn("Invalid formlist entry in items of {}", path.string());
-                                    }
-                                }
-                            }
+							else if (itemJson.contains("formlist") && itemJson["formlist"].is_array()) {
+								for (const auto& formListEntry : itemJson["formlist"]) {
+									if (formListEntry.is_object() && formListEntry.contains("formid") && formListEntry["formid"].is_string()) {
+										std::string formListId = formListEntry["formid"].get<std::string>();
+										int idx = formListEntry.value("index", -1);
 
-                            const std::vector<EffectType> effectsWithoutForm = {
-                                EffectType::kApplyIngestible,
-                                EffectType::kRemoveLight,
-                                EffectType::kEnableLight,
-                                EffectType::kDisableLight,
-                                EffectType::kPlayIdle,
-                                EffectType::kToggleNode,
-                                //EffectType::kToggleShaderFlag,
-                                EffectType::kUnlockItem,
-                                EffectType::kLockItem,
-                                EffectType::kActivateItem,
-                                EffectType::kExecuteConsoleCommand,
-                                EffectType::kExecuteConsoleCommandOnItem,
-                                EffectType::kShowNotification,
-                                EffectType::kShowMessageBox
-                            };
+										auto* list = GetFormFromIdentifier<RE::BGSListForm>(formListId);
+										if (list) {
+											extData.formID = list;
+											extData.isFormList = true;
+											extData.index = idx;
+											eff.items.emplace_back(extData.formID, extData);
+										} else {
+											logger::warn("Invalid formlist '{}' in items of {}", formListId, path.string());
+										}
+									} else if (formListEntry.is_object() && formListEntry.contains("editorid") && formListEntry["editorid"].is_string()) {
+										std::string editorId = formListEntry["editorid"].get<std::string>();
+										int idx = formListEntry.value("index", -1);
 
-                            bool needsForm = std::find(effectsWithoutForm.begin(), effectsWithoutForm.end(), eff.type) == effectsWithoutForm.end();
+										auto* list = GetFormFromEditorID<RE::BGSListForm>(editorId);
+										if (list) {
+											extData.formID = list;
+											extData.isFormList = true;
+											extData.index = idx;
+											eff.items.emplace_back(extData.formID, extData);
+										} else {
+											logger::warn("Invalid formlist '{}' in items of {}", editorId, path.string());
+										}
+									} else {
+										logger::warn("Invalid formlist entry in items of {}", path.string());
+									}
+								}
+							}
 
-                            if (haveIdentifier || !needsForm) {
-                                auto formToAdd = needsForm ? extData.formID : nullptr;
-                                eff.items.emplace_back(formToAdd, extData);
-                            }
+							const std::vector<EffectType> effectsWithoutForm = {
+								EffectType::kApplyIngestible,
+								EffectType::kApplySpell,
+								EffectType::kRemoveLight,
+								EffectType::kEnableLight,
+								EffectType::kDisableLight,
+								EffectType::kPlayIdle,
+								EffectType::kToggleNode,
+								//EffectType::kToggleShaderFlag,
+								EffectType::kUnlockItem,
+								EffectType::kLockItem,
+								EffectType::kActivateItem,
+								EffectType::kExecuteConsoleCommand,
+								EffectType::kExecuteConsoleCommandOnItem,
+								EffectType::kExecuteConsoleCommandOnSource,
+								EffectType::kShowNotification,
+								EffectType::kShowMessageBox
+							};
 
-                            if (eff.items.empty() && needsForm) continue;
-                        }
-                    }
+							bool needsFormNot = std::find(effectsWithoutForm.begin(), effectsWithoutForm.end(), eff.type) == effectsWithoutForm.end();
+
+							if (haveIdentifier || !needsFormNot) {
+								auto formToAdd = needsFormNot ? extData.formID : nullptr;
+								eff.items.emplace_back(formToAdd, extData);
+							}
+
+							if (eff.items.empty() && !needsFormNot) {
+								logger::warn("Effect '{}' in {} requires formID, editorID, or formlist, but none were provided or the format is incorrect", effectTypeReverseMap.at(eff.type), path.string());
+								continue;
+							}
+						}
+					} else {
+						logger::warn("Effect '{}' in {} requires 'items', but none were provided or the format is incorrect", effectTypeReverseMap.at(eff.type), path.string());
+						continue;
+					}
                 }
                 r.effects.push_back(eff);
             }
@@ -2505,10 +2556,18 @@ namespace OIF {
         }
     }
 
-    // ------------------ Match ------------------
+
+//███████╗██╗██╗░░░░░████████╗███████╗██████╗░  ███╗░░░███╗░█████╗░████████╗░█████╗░██╗░░██╗
+//██╔════╝██║██║░░░░░╚══██╔══╝██╔════╝██╔══██╗  ████╗░████║██╔══██╗╚══██╔══╝██╔══██╗██║░░██║
+//█████╗░░██║██║░░░░░░░░██║░░░█████╗░░██████╔╝  ██╔████╔██║███████║░░░██║░░░██║░░╚═╝███████║
+//██╔══╝░░██║██║░░░░░░░░██║░░░██╔══╝░░██╔══██╗  ██║╚██╔╝██║██╔══██║░░░██║░░░██║░░██╗██╔══██║
+//██║░░░░░██║███████╗░░░██║░░░███████╗██║░░██║  ██║░╚═╝░██║██║░░██║░░░██║░░░╚█████╔╝██║░░██║
+//╚═╝░░░░░╚═╝╚══════╝░░░╚═╝░░░╚══════╝╚═╝░░╚═╝  ╚═╝░░░░░╚═╝╚═╝░░╚═╝░░░╚═╝░░░░╚════╝░╚═╝░░╚═╝
+
     bool RuleManager::MatchFilter(const Filter& f, const RuleContext& ctx, Rule& currentRule) const {
-        if (!ctx.baseObj) return false;
         if (!CheckTimeFilters(f)) return false;
+		if (!ctx.target || ctx.target->IsDeleted() || !ctx.target->GetBaseObject()) return false;
+		auto* baseObj = ctx.target->GetBaseObject();
 
         if (!f.nearby.empty()) {
             if (!ctx.target || !ctx.source) return false;
@@ -2593,18 +2652,18 @@ namespace OIF {
 
         if (!f.formTypes.empty()) {
             hasObjectIdentifiers = true;
-            if (f.formTypes.contains(ctx.baseObj->GetFormType())) {
+            if (f.formTypes.contains(baseObj->GetFormType())) {
                 objectIdentifierMatch = true;
             }
         }
-        if (!f.formTypesNot.empty() && f.formTypesNot.contains(ctx.baseObj->GetFormType())) return false;
+        if (!f.formTypesNot.empty() && f.formTypesNot.contains(baseObj->GetFormType())) return false;
         if (!f.formIDs.empty()) {
             hasObjectIdentifiers = true;
-            if (f.formIDs.contains(ctx.baseObj->GetFormID())) {
+            if (f.formIDs.contains(ctx.target->GetFormID())) {
                 objectIdentifierMatch = true;
             }
         }
-        if (!f.formIDsNot.empty() && f.formIDsNot.contains(ctx.baseObj->GetFormID())) return false;
+        if (!f.formIDsNot.empty() && f.formIDsNot.contains(baseObj->GetFormID())) return false;
         if (!f.formLists.empty()) {
             hasObjectIdentifiers = true;
             bool matched = false;
@@ -2616,7 +2675,7 @@ namespace OIF {
                     // Find the object index in a formlist
                     int foundIdx = -1;
                     for (int i = 0; i < static_cast<int>(list->forms.size()); ++i) {
-                        if (list->forms[i] && list->forms[i]->GetFormID() == ctx.baseObj->GetFormID()) {
+                        if (list->forms[i] && list->forms[i]->GetFormID() == baseObj->GetFormID()) {
                             foundIdx = i;
                             break;
                         }
@@ -2630,7 +2689,7 @@ namespace OIF {
                     // Check only one element in the list (according to the index)
                     if (entry.index < static_cast<int>(list->forms.size())) {
                         auto* el = list->forms[entry.index];
-                        if (el && el->GetFormID() == ctx.baseObj->GetFormID()) {
+                        if (el && el->GetFormID() == baseObj->GetFormID()) {
                             matched = true;
                             break;
                         }
@@ -2638,7 +2697,7 @@ namespace OIF {
                 } else {
                     // Check all the elements of the list
                     for (auto* el : list->forms) {
-                        if (el && el->GetFormID() == ctx.baseObj->GetFormID()) {
+                        if (el && el->GetFormID() == baseObj->GetFormID()) {
                             matched = true;
                             break;
                         }
@@ -2657,13 +2716,13 @@ namespace OIF {
                 if (!list) continue;
                 // Check all the elements of the list
                 for (auto* el : list->forms) {
-                    if (el && el->GetFormID() == ctx.baseObj->GetFormID()) return false;
+                    if (el && el->GetFormID() == baseObj->GetFormID()) return false;
                 }
             }
         }
         if (!f.keywords.empty()) {
             hasObjectIdentifiers = true;
-            auto* kwf = ctx.baseObj->As<RE::BGSKeywordForm>();
+            auto* kwf = baseObj->As<RE::BGSKeywordForm>();
             if (kwf) {
                 for (auto* kw : f.keywords) {
                     if (kw && kwf->HasKeyword(kw)) {
@@ -2674,7 +2733,7 @@ namespace OIF {
             }
         }
         if (!f.keywordsNot.empty()) {
-            auto* kwf = ctx.baseObj->As<RE::BGSKeywordForm>();
+            auto* kwf = baseObj->As<RE::BGSKeywordForm>();
             if (kwf) {
                 for (auto* kw : f.keywordsNot) {
                     if (kw && kwf->HasKeyword(kw)) return false;
@@ -2688,6 +2747,34 @@ namespace OIF {
                 return false;
             }
         }
+		if (f.lockLevel != -2) {
+			bool matched = false;
+			if (auto lockData = ctx.target->extraList.GetByType<RE::ExtraLock>()) {
+				if (auto* lock = lockData->lock) {
+					RE::LOCK_LEVEL lvl = lock->GetLockLevel(ctx.target);
+					if (lvl == GetLockLevel(f.lockLevel)) {
+						matched = true;
+					}
+				}
+			} else if (f.lockLevel == -1) {
+				matched = true;	 // No lock data means it's not locked
+			}
+			if (!matched) return false;
+		}
+		if (f.lockLevelNot != -2) {
+			bool matched = false;
+			if (auto lockData = ctx.target->extraList.GetByType<RE::ExtraLock>()) {
+				if (auto* lock = lockData->lock) {
+					RE::LOCK_LEVEL lvl = lock->GetLockLevel(ctx.target);
+					if (lvl == GetLockLevel(f.lockLevelNot)) {
+						matched = true;
+					}
+				}
+			} else if (f.lockLevelNot == -1) {
+				matched = true;
+			}
+			if (matched) return false;
+		}
         if (!f.perks.empty()) {
             if (!ctx.source) return false;
             auto* actor = ctx.source->As<RE::Actor>();
@@ -2980,12 +3067,17 @@ namespace OIF {
         return true;
     }
 
-    // ------------------ Apply ------------------
+
+//███████╗███████╗███████╗███████╗░█████╗░████████╗░██████╗  ░█████╗░██████╗░██████╗░██╗░░░░░██╗░░░██╗
+//██╔════╝██╔════╝██╔════╝██╔════╝██╔══██╗╚══██╔══╝██╔════╝  ██╔══██╗██╔══██╗██╔══██╗██║░░░░░╚██╗░██╔╝
+//█████╗░░█████╗░░█████╗░░█████╗░░██║░░╚═╝░░░██║░░░╚█████╗░  ███████║██████╔╝██████╔╝██║░░░░░░╚████╔╝░
+//██╔══╝░░██╔══╝░░██╔══╝░░██╔══╝░░██║░░██╗░░░██║░░░░╚═══██╗  ██╔══██║██╔═══╝░██╔═══╝░██║░░░░░░░╚██╔╝░░
+//███████╗██║░░░░░██║░░░░░███████╗╚█████╔╝░░░██║░░░██████╔╝  ██║░░██║██║░░░░░██║░░░░░███████╗░░░██║░░░
+//╚══════╝╚═╝░░░░░╚═╝░░░░░╚══════╝░╚════╝░░░░╚═╝░░░╚═════╝░  ╚═╝░░╚═╝╚═╝░░░░░╚═╝░░░░░╚══════╝░░░╚═╝░░░
+
     void RuleManager::ApplyEffect(const Effect& eff, const RuleContext& ctx, Rule& currentRule) const {     
         if (!ctx.target || !ctx.target->GetBaseObject()) return;
         if (!ctx.source || !ctx.source->GetBaseObject()) return;
-        if (!CheckLocationFilter(currentRule.filter, ctx, currentRule)) return;
-        if (!CheckWeatherFilter(currentRule.filter, currentRule)) return;
 
         SKSE::GetTaskInterface()->AddTask([this, eff, ctx, currentRule]() {
             auto* target = ctx.target;
@@ -3026,498 +3118,527 @@ namespace OIF {
                 logger::warn("Source formID is invalid");
                 return;
             }
-
-            static thread_local std::mt19937 rng(std::random_device{}());
-            float globalRoll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
-            if (globalRoll > eff.chance) return;
             
-                try {
-                    switch (eff.type) {
-                        case EffectType::kRemoveItem: Effects::RemoveItem(ctx); break;
-                        case EffectType::kDisableItem: Effects::DisableItem(ctx); break;
-                        case EffectType::kEnableItem: Effects::EnableItem(ctx); break;
-                        case EffectType::kSpillInventory: Effects::SpillInventory(ctx); break;
-                        case EffectType::kUnlockItem: Effects::UnlockItem(ctx); break;
-                        case EffectType::kLockItem: Effects::LockItem(ctx); break;
-                        case EffectType::kActivateItem: Effects::ActivateItem(ctx); break;
+            try {
+                switch (eff.type) {
+                    case EffectType::kRemoveItem: Effects::RemoveItem(ctx); break;
+                    case EffectType::kDisableItem: Effects::DisableItem(ctx); break;
+                    case EffectType::kEnableItem: Effects::EnableItem(ctx); break;
+                    case EffectType::kSpillInventory: Effects::SpillInventory(ctx); break;
+                    case EffectType::kUnlockItem: Effects::UnlockItem(ctx); break;
+                    case EffectType::kLockItem: Effects::LockItem(ctx); break;
+                    case EffectType::kActivateItem: Effects::ActivateItem(ctx); break;
                             
-                        case EffectType::kSpawnItem: 
-                        {
-                            ProcessEffect<RE::TESBoundObject, ItemSpawnData>(
-                                eff, ctx, currentRule, true,
-                                [](auto* item, const EffectExtendedData& ext) {
-                                    return ItemSpawnData(item, ext.string, ext.count, ext.spawnType, ext.fade, ext.scale);
-                                },
-                                Effects::SpawnItem
-                            );
-                        }
-                        break;
-
-                        case EffectType::kSwapItem:
-                        {
-                            ProcessEffect<RE::TESBoundObject, ItemSpawnData>(
-                                eff, ctx, currentRule, true,
-                                [](auto* item, const EffectExtendedData& ext) {
-                                    return ItemSpawnData(item, ext.string, ext.count, ext.spawnType, ext.fade, ext.scale, ext.nonDeletable);
-                                },
-                                Effects::SwapItem
-                            );
-                        }
-                        break;
-
-                        case EffectType::kSpawnLeveledItem:
-                        {
-                            ProcessEffect<RE::TESLevItem, LvlItemSpawnData>(
-                                eff, ctx, currentRule, true,
-                                [](auto* lvli, const EffectExtendedData& ext) {
-                                    return LvlItemSpawnData(lvli, ext.string, ext.count, ext.spawnType, ext.fade, ext.scale);
-                                },
-                                Effects::SpawnLeveledItem
-                            );
-                        }
-                        break;
-
-                        case EffectType::kSwapLeveledItem:
-                        {
-                            ProcessEffect<RE::TESLevItem, LvlItemSpawnData>(
-                                eff, ctx, currentRule, true,
-                                [](auto* lvli, const EffectExtendedData& ext) {
-                                    return LvlItemSpawnData(lvli, ext.string, ext.count, ext.spawnType, ext.fade, ext.scale, ext.nonDeletable);
-                                },
-                                Effects::SwapLeveledItem
-                            );
-                        }
-                        break;
-                        
-                        case EffectType::kSpawnSpell:
-                        {
-                            ProcessEffect<RE::SpellItem, SpellSpawnData>(
-                                eff, ctx, currentRule, true,
-                                [](auto* spell, const EffectExtendedData& ext) {
-                                    return SpellSpawnData(spell, ext.count, ext.radius);
-                                },
-                                Effects::SpawnSpell
-                            );
-                        }
-                        break;
-                        
-                        case EffectType::kSpawnSpellOnItem:
-                        {
-                            ProcessEffect<RE::SpellItem, SpellSpawnData>(
-                                eff, ctx, currentRule, true,
-                                [](auto* spell, const EffectExtendedData& ext) {
-                                    return SpellSpawnData(spell, ext.count);
-                                },
-                                Effects::SpawnSpellOnItem
-                            );
-                            break;
-                        }
-
-                        case EffectType::kSpawnLeveledSpell:
-                        {
-                            ProcessEffect<RE::TESLevSpell, LvlSpellSpawnData>(
-                                eff, ctx, currentRule, true,
-                                [](auto* lvls, const EffectExtendedData& ext) {
-                                    return LvlSpellSpawnData(lvls, ext.count, ext.radius);
-                                },
-                                Effects::SpawnLeveledSpell
-                            );
-                        }
-                        break;
-
-                        case EffectType::kSpawnLeveledSpellOnItem:
-                        {
-                            ProcessEffect<RE::TESLevSpell, LvlSpellSpawnData>(
-                                eff, ctx, currentRule, true,
-                                [](auto* lvls, const EffectExtendedData& ext) {
-                                    return LvlSpellSpawnData(lvls, ext.count);
-                                },
-                                Effects::SpawnLeveledSpellOnItem
-                            );
-                        }
-                        break;
-                        
-                        case EffectType::kSpawnActor:
-                        {
-                            ProcessEffect<RE::TESNPC, ActorSpawnData>(
-                                eff, ctx, currentRule, true,
-                                [](auto* actor, const EffectExtendedData& ext) {
-                                    return ActorSpawnData(actor, ext.string, ext.count, ext.spawnType, ext.fade, ext.scale);
-                                },
-                                Effects::SpawnActor
-                            );
-                        }
-                        break;
-
-                        case EffectType::kSwapActor:
-                        {
-                            ProcessEffect<RE::TESNPC, ActorSpawnData>(
-                                eff, ctx, currentRule, true,
-                                [](auto* actor, const EffectExtendedData& ext) {
-                                    return ActorSpawnData(actor, ext.string, ext.count, ext.spawnType, ext.fade, ext.scale, ext.nonDeletable);
-                                },
-                                Effects::SwapActor
-                            );
-                        }
-                        break;
-
-                        case EffectType::kSpawnLeveledActor:
-                        {
-                            ProcessEffect<RE::TESLevCharacter, LvlActorSpawnData>(
-                                eff, ctx, currentRule, true,
-                                [](auto* lvlc, const EffectExtendedData& ext) {
-                                    return LvlActorSpawnData(lvlc, ext.string, ext.count, ext.spawnType, ext.fade, ext.scale);
-                                },
-                                Effects::SpawnLeveledActor
-                            );
-                        }
-                        break;
-
-                        case EffectType::kSwapLeveledActor:
-                        {
-                            ProcessEffect<RE::TESLevCharacter, LvlActorSpawnData>(
-                                eff, ctx, currentRule, true,
-                                [](auto* lvlc, const EffectExtendedData& ext) {
-                                    return LvlActorSpawnData(lvlc, ext.string, ext.count, ext.spawnType, ext.fade, ext.scale, ext.nonDeletable);
-                                },
-                                Effects::SwapLeveledActor
-                            );
-                        }
-                        break;
-
-                        case EffectType::kSpawnImpactDataSet:
-                        {
-                            ProcessEffect<RE::BGSImpactDataSet, ImpactDataSetSpawnData>(
-                                eff, ctx, currentRule, true,
-                                [](auto* impact, const EffectExtendedData& ext) {
-                                    return ImpactDataSetSpawnData(impact, ext.count);
-                                },
-                                Effects::SpawnImpactDataSet
-                            );
-                        }
-                        break;
-                        
-                        case EffectType::kSpawnExplosion:
-                        {
-                            ProcessEffect<RE::BGSExplosion, ExplosionSpawnData>(
-                                eff, ctx, currentRule, true,
-                                [](auto* explosion, const EffectExtendedData& ext) {
-                                    return ExplosionSpawnData(explosion, ext.string, ext.count, ext.spawnType, ext.fade);
-                                },
-                                Effects::SpawnExplosion
-                            );
-                        }
-                        break;
-                        
-                        case EffectType::kPlaySound:
-                        {
-                            ProcessEffect<RE::BGSSoundDescriptorForm, SoundSpawnData>(
-                                eff, ctx, currentRule, true,
-                                [](auto* sound, const EffectExtendedData& ext) {
-                                    return SoundSpawnData(sound, ext.count);
-                                },
-                                Effects::PlaySound
-                            );
-                        }
-                        break;
-
-                        case EffectType::kApplyIngestible:
-                        {
-                            ProcessEffect<void, IngestibleApplyData>(
-                                eff, ctx, currentRule, false,
-                                [](std::nullptr_t, const EffectExtendedData& ext) {
-                                    return IngestibleApplyData(nullptr, 0, ext.radius);
-                                },
-                                Effects::ApplyIngestible
-                            );
-                        }
-                        break;
-
-                        case EffectType::kApplyOtherIngestible:
-                        {
-                            ProcessEffect<RE::MagicItem, IngestibleApplyData>(
-                                eff, ctx, currentRule, true,
-                                [](auto* ingestible, const EffectExtendedData& ext) {
-                                    return IngestibleApplyData(ingestible, ext.count, ext.radius);
-                                },
-                                Effects::ApplyOtherIngestible
-                            );
-                        }
-                        break;
-
-                        case EffectType::kSpawnLight:
-                        {
-                            ProcessEffect<RE::TESObjectLIGH, LightSpawnData>(
-                                eff, ctx, currentRule, true,
-                                [](auto* light, const EffectExtendedData& ext) {
-                                    return LightSpawnData(light, ext.string, ext.count, ext.spawnType, ext.fade, ext.scale);
-                                },
-                                Effects::SpawnLight
-                            );
-                        }
-                        break;
-
-                        case EffectType::kRemoveLight:
-                        {
-                            ProcessEffect<RE::TESObjectLIGH, LightRemoveData>(
-                                eff, ctx, currentRule, true,
-                                [](auto* light, const EffectExtendedData& ext) {
-                                    return LightRemoveData(light, ext.radius);
-                                },
-                                Effects::RemoveLight
-                            );
-                        }
-                        break;
-
-                        case EffectType::kEnableLight:
-                        {
-                            ProcessEffect<RE::TESObjectLIGH, LightRemoveData>(
-                                eff, ctx, currentRule, true,
-                                [](auto* light, const EffectExtendedData& ext) {
-                                    return LightRemoveData(light, ext.radius);
-                                },
-                                Effects::EnableLight
-                            );
-                        }
-                        break;
-
-                        case EffectType::kDisableLight:
-                        {
-                            ProcessEffect<RE::TESObjectLIGH, LightRemoveData>(
-                                eff, ctx, currentRule, true,
-                                [](auto* light, const EffectExtendedData& ext) {
-                                    return LightRemoveData(light, ext.radius);
-                                },
-                                Effects::DisableLight
-                            );
-                        }
-                        break;
-
-                        case EffectType::kPlayIdle:
-                        {
-                            ProcessEffect<void, PlayIdleData>(
-                                eff, ctx, currentRule, false,
-                                [&ctx](std::nullptr_t, const EffectExtendedData& ext) {
-                                    return PlayIdleData(ctx.source, ext.string, ext.duration > 0.0f ? ext.duration : 1.0f);
-                                },
-                                Effects::PlayIdle
-                            );
-                        }
-                        break;
-
-                        case EffectType::kSpawnEffectShader:
-                        {
-                            ProcessEffect<RE::TESEffectShader, EffectShaderSpawnData>(
-                                eff, ctx, currentRule, true,
-                                [](auto* shader, const EffectExtendedData& ext) {
-                                    return EffectShaderSpawnData(shader, ext.count, ext.radius, ext.duration);
-                                },
-                                Effects::SpawnEffectShader
-                            );
-                        }
-                        break;
-
-                        case EffectType::kSpawnEffectShaderOnItem:
-                        {
-                            ProcessEffect<RE::TESEffectShader, EffectShaderSpawnData>(
-                                eff, ctx, currentRule, true,
-                                [](auto* shader, const EffectExtendedData& ext) {
-                                    return EffectShaderSpawnData(shader, ext.count, ext.radius, ext.duration);
-                                },
-                                Effects::SpawnEffectShaderOnItem
-                            );
-                        }
-                        break;
-                        
-                        case EffectType::kToggleNode:
-                        {
-                            ProcessEffect<void, NodeData>(
-                                eff, ctx, currentRule, false,
-                                [](std::nullptr_t, const EffectExtendedData& ext) {
-                                    return NodeData(ext.mode, ext.strings);
-                                },
-                                Effects::ToggleNode
-                            );
-                        }
-                        break;
-
-                        case EffectType::kSpawnArtObject:
-                        {
-                            ProcessEffect<RE::BGSArtObject, ArtObjectData>(
-                                eff, ctx, currentRule, true,
-                                [](auto* artObject, const EffectExtendedData& ext) {
-                                    return ArtObjectData(artObject, ext.count, ext.radius, ext.duration);
-                                },
-                                Effects::SpawnArtObject
-                            );
-                        }
-
-                        case EffectType::kSpawnArtObjectOnItem:
-                        {
-                            ProcessEffect<RE::BGSArtObject, ArtObjectData>(
-                                eff, ctx, currentRule, true,
-                                [](auto* artObject, const EffectExtendedData& ext) {
-                                    return ArtObjectData(artObject, ext.count, ext.radius, ext.duration);
-                                },
-                                Effects::SpawnArtObjectOnItem
-                            );
-                        }
-
-                        /*case EffectType::kToggleShaderFlag:
-                        {
-                            std::vector<ShaderFlagData> shaderFlagData;
-                            for (const auto& [form, extData] : eff.items) {
-                                float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
-                                if (roll > extData.chance) continue;
-
-                                ShaderFlagData data;
-                                data.mode = extData.mode;
-                                data.flagNames = extData.flagNames;
-                                data.strings = extData.strings;
-                                data.chance = extData.chance;
-                                shaderFlagData.emplace_back(std::move(data));
-                            }
-                            if (!shaderFlagData.empty()) {
-                                Effects::ToggleShaderFlag(ctx, shaderFlagData);
-                            }
-                        }
-                        {
-                        
-                        }
-                        break;*/
-
-                        case EffectType::kAddContainerItem:
-                        case EffectType::kAddActorItem:
-                        case EffectType::kRemoveContainerItem:
-                        case EffectType::kRemoveActorItem:
-                        {
-                            ProcessEffect<RE::TESBoundObject, InventoryData>(
-                                eff, ctx, currentRule, true,
-                                [](auto* item, const EffectExtendedData& ext) {
-                                    return InventoryData(item, ext.count);
-                                },
-                                [eff](const RuleContext& ctx, const std::vector<InventoryData>& data) {
-                                    switch (eff.type) {
-                                        case EffectType::kAddContainerItem: Effects::AddContainerItem(ctx, data); break;
-                                        case EffectType::kAddActorItem: Effects::AddActorItem(ctx, data); break;
-                                        case EffectType::kRemoveContainerItem: Effects::RemoveContainerItem(ctx, data); break;
-                                        case EffectType::kRemoveActorItem: Effects::RemoveActorItem(ctx, data); break;
-                                        default: break;
-                                    }
-                                }
-                            );
-                        }
-                        break;
-
-                        case EffectType::kAddActorSpell:
-                        {
-                            ProcessEffect<RE::SpellItem, SpellSpawnData>(
-                                eff, ctx, currentRule, true,
-                                [](auto* spell, const EffectExtendedData& ext) {
-                                    return SpellSpawnData(spell, ext.count);
-                                },
-                                Effects::AddActorSpell
-                            );
-                        }
-                        break;
-
-                        case EffectType::kRemoveActorSpell:
-                        {
-                            ProcessEffect<RE::SpellItem, SpellSpawnData>(
-                                eff, ctx, currentRule, true,
-                                [](auto* spell, const EffectExtendedData& /*ext*/) {
-                                    return SpellSpawnData(spell);
-                                },
-                                Effects::RemoveActorSpell
-                            );
-                        }
-                        break;
-
-                        case EffectType::kAddActorPerk:
-                        {
-                            ProcessEffect<RE::BGSPerk, PerkData>(
-                                eff, ctx, currentRule, true,
-                                [](auto* perk, const EffectExtendedData& ext) {
-                                    return PerkData(perk, ext.rank);
-                                },
-                                Effects::AddActorPerk
-                            );
-                        }
-                        break;
-
-                        case EffectType::kRemoveActorPerk:
-                        {
-                            ProcessEffect<RE::BGSPerk, PerkData>(
-                                eff, ctx, currentRule, true,
-                                [](auto* perk, const EffectExtendedData& /*ext*/) {
-                                    return PerkData(perk);
-                                },
-                                Effects::RemoveActorPerk
-                            );
-                        }
-                        break;
-
-                        case EffectType::kExecuteConsoleCommand:
-                        {
-                            ProcessEffect<void, StringData>(
-                                eff, ctx, currentRule, true,
-                                [](std::nullptr_t, const EffectExtendedData& ext) {
-                                    return StringData(ext.string, ext.radius);
-                                },
-                                Effects::ExecuteConsoleCommand
-                            );
-                        }
-                        break;
-
-                        case EffectType::kExecuteConsoleCommandOnItem:
-                        {
-                            ProcessEffect<void, StringData>(
-                                eff, ctx, currentRule, false,
-                                [](std::nullptr_t, const EffectExtendedData& ext) {
-                                    return StringData(ext.string);
-                                },
-                                Effects::ExecuteConsoleCommandOnItem
-                            );
-                        }
-                        break;
-
-                        case EffectType::kShowNotification:
-                        {
-                            ProcessEffect<void, StringData>(
-                                eff, ctx, currentRule, false,
-                                [](std::nullptr_t, const EffectExtendedData& ext) {
-                                    return StringData(ext.string);
-                                },
-                                Effects::ShowNotification
-                            );
-                        }
-                        break;
-                        
-                        case EffectType::kShowMessageBox: 
-                        {
-                            ProcessEffect<void, StringData>(
-                                eff, ctx, currentRule, false,
-                                [](std::nullptr_t, const EffectExtendedData& ext) {
-                                    return StringData(ext.string);
-                                },
-                                Effects::ShowMessageBox
-                            );
-                        }
-                        break;
-                                
-                    default:
-                        logger::warn("Unknown effect type {}", static_cast<int>(eff.type));
+                    case EffectType::kSpawnItem: 
+                    {
+                        ProcessEffect<RE::TESBoundObject, ItemSpawnData>(
+                            eff, ctx, currentRule, true,
+                            [](auto* item, const EffectExtendedData& ext) {
+                                return ItemSpawnData(item, ext.string, ext.count, ext.spawnType, ext.fade, ext.scale);
+                            },
+                            Effects::SpawnItem
+                        );
                     }
-                } catch (const std::exception& e) {
-                    logger::error("Exception in effect task: {}", e.what());
-                } catch (...) {
-                    logger::error("Unknown exception in effect task");
+                    break;
+
+                    case EffectType::kSwapItem:
+                    {
+                        ProcessEffect<RE::TESBoundObject, ItemSpawnData>(
+                            eff, ctx, currentRule, true,
+                            [](auto* item, const EffectExtendedData& ext) {
+                                return ItemSpawnData(item, ext.string, ext.count, ext.spawnType, ext.fade, ext.scale, ext.nonDeletable);
+                            },
+                            Effects::SwapItem
+                        );
+                    }
+                    break;
+
+                    case EffectType::kSpawnLeveledItem:
+                    {
+                        ProcessEffect<RE::TESLevItem, LvlItemSpawnData>(
+                            eff, ctx, currentRule, true,
+                            [](auto* lvli, const EffectExtendedData& ext) {
+                                return LvlItemSpawnData(lvli, ext.string, ext.count, ext.spawnType, ext.fade, ext.scale);
+                            },
+                            Effects::SpawnLeveledItem
+                        );
+                    }
+                    break;
+
+                    case EffectType::kSwapLeveledItem:
+                    {
+                        ProcessEffect<RE::TESLevItem, LvlItemSpawnData>(
+                            eff, ctx, currentRule, true,
+                            [](auto* lvli, const EffectExtendedData& ext) {
+                                return LvlItemSpawnData(lvli, ext.string, ext.count, ext.spawnType, ext.fade, ext.scale, ext.nonDeletable);
+                            },
+                            Effects::SwapLeveledItem
+                        );
+                    }
+                    break;
+                        
+                    case EffectType::kSpawnSpell:
+                    {
+                        ProcessEffect<RE::SpellItem, SpellSpawnData>(
+                            eff, ctx, currentRule, true,
+                            [](auto* spell, const EffectExtendedData& ext) {
+                                return SpellSpawnData(spell, ext.count, ext.radius);
+                            },
+                            Effects::SpawnSpell
+                        );
+                    }
+                    break;
+                        
+                    case EffectType::kSpawnSpellOnItem:
+                    {
+                        ProcessEffect<RE::SpellItem, SpellSpawnData>(
+                            eff, ctx, currentRule, true,
+                            [](auto* spell, const EffectExtendedData& ext) {
+                                return SpellSpawnData(spell, ext.count);
+                            },
+                            Effects::SpawnSpellOnItem
+                        );
+                        break;
+                    }
+
+                    case EffectType::kSpawnLeveledSpell:
+                    {
+                        ProcessEffect<RE::TESLevSpell, LvlSpellSpawnData>(
+                            eff, ctx, currentRule, true,
+                            [](auto* lvls, const EffectExtendedData& ext) {
+                                return LvlSpellSpawnData(lvls, ext.count, ext.radius);
+                            },
+                            Effects::SpawnLeveledSpell
+                        );
+                    }
+                    break;
+
+                    case EffectType::kSpawnLeveledSpellOnItem:
+                    {
+                        ProcessEffect<RE::TESLevSpell, LvlSpellSpawnData>(
+                            eff, ctx, currentRule, true,
+                            [](auto* lvls, const EffectExtendedData& ext) {
+                                return LvlSpellSpawnData(lvls, ext.count);
+                            },
+                            Effects::SpawnLeveledSpellOnItem
+                        );
+                    }
+                    break;
+
+                	case EffectType::kApplySpell:
+					{
+						ProcessEffect<void, SpellSpawnData>(
+							eff, ctx, currentRule, false,
+							[](std::nullptr_t, const EffectExtendedData& ext) {
+									return SpellSpawnData(nullptr, 0, ext.radius);
+							},
+							Effects::ApplySpell
+						);
+					}
+					break;
+                        
+                    case EffectType::kSpawnActor:
+                    {
+                        ProcessEffect<RE::TESNPC, ActorSpawnData>(
+                            eff, ctx, currentRule, true,
+                            [](auto* actor, const EffectExtendedData& ext) {
+                                return ActorSpawnData(actor, ext.string, ext.count, ext.spawnType, ext.fade, ext.scale);
+                            },
+                            Effects::SpawnActor
+                        );
+                    }
+                    break;
+
+                    case EffectType::kSwapActor:
+                    {
+                        ProcessEffect<RE::TESNPC, ActorSpawnData>(
+                            eff, ctx, currentRule, true,
+                            [](auto* actor, const EffectExtendedData& ext) {
+                                return ActorSpawnData(actor, ext.string, ext.count, ext.spawnType, ext.fade, ext.scale, ext.nonDeletable);
+                            },
+                            Effects::SwapActor
+                        );
+                    }
+                    break;
+
+                    case EffectType::kSpawnLeveledActor:
+                    {
+                        ProcessEffect<RE::TESLevCharacter, LvlActorSpawnData>(
+                            eff, ctx, currentRule, true,
+                            [](auto* lvlc, const EffectExtendedData& ext) {
+                                return LvlActorSpawnData(lvlc, ext.string, ext.count, ext.spawnType, ext.fade, ext.scale);
+                            },
+                            Effects::SpawnLeveledActor
+                        );
+                    }
+                    break;
+
+                    case EffectType::kSwapLeveledActor:
+                    {
+                        ProcessEffect<RE::TESLevCharacter, LvlActorSpawnData>(
+                            eff, ctx, currentRule, true,
+                            [](auto* lvlc, const EffectExtendedData& ext) {
+                                return LvlActorSpawnData(lvlc, ext.string, ext.count, ext.spawnType, ext.fade, ext.scale, ext.nonDeletable);
+                            },
+                            Effects::SwapLeveledActor
+                        );
+                    }
+                    break;
+
+                    case EffectType::kSpawnImpactDataSet:
+                    {
+                        ProcessEffect<RE::BGSImpactDataSet, ImpactDataSetSpawnData>(
+                            eff, ctx, currentRule, true,
+                            [](auto* impact, const EffectExtendedData& ext) {
+                                return ImpactDataSetSpawnData(impact, ext.count);
+                            },
+                            Effects::SpawnImpactDataSet
+                        );
+                    }
+                    break;
+                        
+                    case EffectType::kSpawnExplosion:
+                    {
+                        ProcessEffect<RE::BGSExplosion, ExplosionSpawnData>(
+                            eff, ctx, currentRule, true,
+                            [](auto* explosion, const EffectExtendedData& ext) {
+                                return ExplosionSpawnData(explosion, ext.string, ext.count, ext.spawnType, ext.fade);
+                            },
+                            Effects::SpawnExplosion
+                        );
+                    }
+                    break;
+                        
+                    case EffectType::kPlaySound:
+                    {
+                        ProcessEffect<RE::BGSSoundDescriptorForm, SoundSpawnData>(
+                            eff, ctx, currentRule, true,
+                            [](auto* sound, const EffectExtendedData& ext) {
+                                return SoundSpawnData(sound, ext.count);
+                            },
+                            Effects::PlaySound
+                        );
+                    }
+                    break;
+
+                    case EffectType::kApplyIngestible:
+                    {
+                        ProcessEffect<void, IngestibleApplyData>(
+                            eff, ctx, currentRule, false,
+                            [](std::nullptr_t, const EffectExtendedData& ext) {
+                                return IngestibleApplyData(nullptr, 0, ext.radius);
+                            },
+                            Effects::ApplyIngestible
+                        );
+                    }
+                    break;
+
+                    case EffectType::kApplyOtherIngestible:
+                    {
+                        ProcessEffect<RE::MagicItem, IngestibleApplyData>(
+                            eff, ctx, currentRule, true,
+                            [](auto* ingestible, const EffectExtendedData& ext) {
+                                return IngestibleApplyData(ingestible, ext.count, ext.radius);
+                            },
+                            Effects::ApplyOtherIngestible
+                        );
+                    }
+                    break;
+
+                    case EffectType::kSpawnLight:
+                    {
+                        ProcessEffect<RE::TESObjectLIGH, LightSpawnData>(
+                            eff, ctx, currentRule, true,
+                            [](auto* light, const EffectExtendedData& ext) {
+                                return LightSpawnData(light, ext.string, ext.count, ext.spawnType, ext.fade, ext.scale);
+                            },
+                            Effects::SpawnLight
+                        );
+                    }
+                    break;
+
+                    case EffectType::kRemoveLight:
+                    {
+                        ProcessEffect<void, LightRemoveData>(
+                            eff, ctx, currentRule, false,
+							[](std::nullptr_t, const EffectExtendedData& ext) {
+                                return LightRemoveData(ext.radius);
+                            },
+                            Effects::RemoveLight
+                        );
+                    }
+                    break;
+
+                    case EffectType::kEnableLight:
+                    {
+                        ProcessEffect<void, LightRemoveData>(
+                            eff, ctx, currentRule, false,
+							[](std::nullptr_t, const EffectExtendedData& ext) {
+                                return LightRemoveData(ext.radius);
+                            },
+                            Effects::EnableLight
+                        );
+                    }
+                    break;
+
+                    case EffectType::kDisableLight:
+                    {
+                        ProcessEffect<void, LightRemoveData>(
+                            eff, ctx, currentRule, false,
+							[](std::nullptr_t, const EffectExtendedData& ext) {
+                                return LightRemoveData(ext.radius);
+                            },
+                            Effects::DisableLight
+                        );
+                    }
+                    break;
+
+                    case EffectType::kPlayIdle:
+                    {
+                        ProcessEffect<void, PlayIdleData>(
+                            eff, ctx, currentRule, false,
+                            [&ctx](std::nullptr_t, const EffectExtendedData& ext) {
+                                return PlayIdleData(ctx.source, ext.string, ext.duration > 0.0f ? ext.duration : 1.0f);
+                            },
+                            Effects::PlayIdle
+                        );
+                    }
+                    break;
+
+                    case EffectType::kSpawnEffectShader:
+                    {
+                        ProcessEffect<RE::TESEffectShader, EffectShaderSpawnData>(
+                            eff, ctx, currentRule, true,
+                            [](auto* shader, const EffectExtendedData& ext) {
+                                return EffectShaderSpawnData(shader, ext.count, ext.radius, ext.duration);
+                            },
+                            Effects::SpawnEffectShader
+                        );
+                    }
+                    break;
+
+                    case EffectType::kSpawnEffectShaderOnItem:
+                    {
+                        ProcessEffect<RE::TESEffectShader, EffectShaderSpawnData>(
+                            eff, ctx, currentRule, true,
+                            [](auto* shader, const EffectExtendedData& ext) {
+                                return EffectShaderSpawnData(shader, ext.count, ext.radius, ext.duration);
+                            },
+                            Effects::SpawnEffectShaderOnItem
+                        );
+                    }
+                    break;
+                        
+                    case EffectType::kToggleNode:
+                    {
+                        ProcessEffect<void, NodeData>(
+                            eff, ctx, currentRule, false,
+                            [](std::nullptr_t, const EffectExtendedData& ext) {
+                                return NodeData(ext.mode, ext.strings);
+                            },
+                            Effects::ToggleNode
+                        );
+                    }
+                    break;
+
+                    case EffectType::kSpawnArtObject:
+                    {
+                        ProcessEffect<RE::BGSArtObject, ArtObjectData>(
+                            eff, ctx, currentRule, true,
+                            [](auto* artObject, const EffectExtendedData& ext) {
+                                return ArtObjectData(artObject, ext.count, ext.radius, ext.duration);
+                            },
+                            Effects::SpawnArtObject
+                        );
+                    }
+
+                    case EffectType::kSpawnArtObjectOnItem:
+                    {
+                        ProcessEffect<RE::BGSArtObject, ArtObjectData>(
+                            eff, ctx, currentRule, true,
+                            [](auto* artObject, const EffectExtendedData& ext) {
+                                return ArtObjectData(artObject, ext.count, ext.radius, ext.duration);
+                            },
+                            Effects::SpawnArtObjectOnItem
+                        );
+                    }
+
+                    /*case EffectType::kToggleShaderFlag:
+                    {
+                        std::vector<ShaderFlagData> shaderFlagData;
+                        for (const auto& [form, extData] : eff.items) {
+                            float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
+                            if (roll > extData.chance) continue;
+
+                            ShaderFlagData data;
+                            data.mode = extData.mode;
+                            data.flagNames = extData.flagNames;
+                            data.strings = extData.strings;
+                            data.chance = extData.chance;
+                            shaderFlagData.emplace_back(std::move(data));
+                        }
+                        if (!shaderFlagData.empty()) {
+                            Effects::ToggleShaderFlag(ctx, shaderFlagData);
+                        }
+                    }
+                    {
+                        
+                    }
+                    break;*/
+
+                    case EffectType::kAddContainerItem:
+                    case EffectType::kAddActorItem:
+                    case EffectType::kRemoveContainerItem:
+                    case EffectType::kRemoveActorItem:
+                    {
+                        ProcessEffect<RE::TESBoundObject, InventoryData>(
+                            eff, ctx, currentRule, true,
+                            [](auto* item, const EffectExtendedData& ext) {
+                                return InventoryData(item, ext.count);
+                            },
+                            [eff](const RuleContext& ctx, const std::vector<InventoryData>& data) {
+                                switch (eff.type) {
+                                    case EffectType::kAddContainerItem: Effects::AddContainerItem(ctx, data); break;
+                                    case EffectType::kAddActorItem: Effects::AddActorItem(ctx, data); break;
+                                    case EffectType::kRemoveContainerItem: Effects::RemoveContainerItem(ctx, data); break;
+                                    case EffectType::kRemoveActorItem: Effects::RemoveActorItem(ctx, data); break;
+                                    default: break;
+                                }
+                            }
+                        );
+                    }
+                    break;
+
+                    case EffectType::kAddActorSpell:
+                    {
+                        ProcessEffect<RE::SpellItem, SpellSpawnData>(
+                            eff, ctx, currentRule, true,
+                            [](auto* spell, const EffectExtendedData& ext) {
+                                return SpellSpawnData(spell, ext.count);
+                            },
+                            Effects::AddActorSpell
+                        );
+                    }
+                    break;
+
+                    case EffectType::kRemoveActorSpell:
+                    {
+                        ProcessEffect<RE::SpellItem, SpellSpawnData>(
+                            eff, ctx, currentRule, true,
+                            [](auto* spell, const EffectExtendedData& /*ext*/) {
+                                return SpellSpawnData(spell);
+                            },
+                            Effects::RemoveActorSpell
+                        );
+                    }
+                    break;
+
+                    case EffectType::kAddActorPerk:
+                    {
+                        ProcessEffect<RE::BGSPerk, PerkData>(
+                            eff, ctx, currentRule, true,
+                            [](auto* perk, const EffectExtendedData& ext) {
+                                return PerkData(perk, ext.rank);
+                            },
+                            Effects::AddActorPerk
+                        );
+                    }
+                    break;
+
+                    case EffectType::kRemoveActorPerk:
+                    {
+                        ProcessEffect<RE::BGSPerk, PerkData>(
+                            eff, ctx, currentRule, true,
+                            [](auto* perk, const EffectExtendedData& /*ext*/) {
+                                return PerkData(perk);
+                            },
+                            Effects::RemoveActorPerk
+                        );
+                    }
+                    break;
+
+                    case EffectType::kExecuteConsoleCommand:
+                    {
+                        ProcessEffect<void, StringData>(
+                            eff, ctx, currentRule, true,
+                            [](std::nullptr_t, const EffectExtendedData& ext) {
+                                return StringData(ext.string, ext.radius);
+                            },
+                            Effects::ExecuteConsoleCommand
+                        );
+                    }
+                    break;
+
+                    case EffectType::kExecuteConsoleCommandOnItem:
+                    {
+                        ProcessEffect<void, StringData>(
+                            eff, ctx, currentRule, false,
+                            [](std::nullptr_t, const EffectExtendedData& ext) {
+                                return StringData(ext.string);
+                            },
+                            Effects::ExecuteConsoleCommandOnItem
+                        );
+                    }
+                    break;
+
+					case EffectType::kExecuteConsoleCommandOnSource:
+					{
+						ProcessEffect<void, StringData>(
+							eff, ctx, currentRule, false,
+							[](std::nullptr_t, const EffectExtendedData& ext) {
+								return StringData(ext.string);
+							},
+							Effects::ExecuteConsoleCommandOnSource);
+					}
+					break;
+
+                    case EffectType::kShowNotification:
+                    {
+                        ProcessEffect<void, StringData>(
+                            eff, ctx, currentRule, false,
+                            [](std::nullptr_t, const EffectExtendedData& ext) {
+                                return StringData(ext.string);
+                            },
+                            Effects::ShowNotification
+                        );
+                    }
+                    break;
+                        
+                    case EffectType::kShowMessageBox: 
+                    {
+                        ProcessEffect<void, StringData>(
+                            eff, ctx, currentRule, false,
+                            [](std::nullptr_t, const EffectExtendedData& ext) {
+                                return StringData(ext.string);
+                            },
+                            Effects::ShowMessageBox
+                        );
+                    }
+                    break;
+                                
+                default:
+                    logger::warn("Unknown effect type {}", static_cast<int>(eff.type));
                 }
+            } catch (const std::exception& e) {
+                logger::error("Exception in effect task: {}", e.what());
+            } catch (...) {
+                logger::error("Unknown exception in effect task");
+            }
         });
     }
     
 
-    // ------------------ Cleanup ------------------
+//████████╗██████╗░██╗░██████╗░░██████╗░███████╗██████╗░
+//╚══██╔══╝██╔══██╗██║██╔════╝░██╔════╝░██╔════╝██╔══██╗
+//░░░██║░░░██████╔╝██║██║░░██╗░██║░░██╗░█████╗░░██████╔╝
+//░░░██║░░░██╔══██╗██║██║░░╚██╗██║░░╚██╗██╔══╝░░██╔══██╗
+//░░░██║░░░██║░░██║██║╚██████╔╝╚██████╔╝███████╗██║░░██║
+//░░░╚═╝░░░╚═╝░░╚═╝╚═╝░╚═════╝░░╚═════╝░╚══════╝╚═╝░░╚═╝
+
+// ╔════════════════════════════════════╗
+// ║        CLEAN-UP FUNCTUION          ║
+// ╚════════════════════════════════════╝
+
     void RuleManager::CleanupCounters() {
         // Prevent unbounded growth of interaction counter map
         if (_interactionsCounts.size() > 500) {
@@ -3558,7 +3679,10 @@ namespace OIF {
         }
     }
 
-    // ------------------ Trigger ------------------
+// ╔════════════════════════════════════╗
+// ║          TRIGGER FUNCTION          ║
+// ╚════════════════════════════════════╝
+
     void RuleManager::Trigger(const RuleContext& ctx)
     {
         std::unique_lock lock(_ruleMutex);
@@ -3571,7 +3695,12 @@ namespace OIF {
         auto targetFormID = localTarget->GetFormID();
         auto sourceFormID = localSource->GetFormID();
 
-        // Deduplicate calls for the same target
+		// ╔════════════════════════════════════╗
+		// ║           DEDUPLICATION            ║
+		// ╚════════════════════════════════════╝
+        // Deduplicate hit calls for the same target in a short time frame
+		// The reason is that kHit event is used by multiple sinks and hooks, which can collide
+
         auto now = std::chrono::steady_clock::now();
 
         if (ctx.event == EventType::kHit) {
@@ -3605,13 +3734,18 @@ namespace OIF {
         for (std::size_t ruleIdx = 0; ruleIdx < _rules.size(); ++ruleIdx) {
             Rule& r = _rules[ruleIdx];
 
-            // Event type must be listed in the rule
             if (std::find(r.events.begin(), r.events.end(), ctx.event) == r.events.end()) continue;
 
             r.dynamicIndex = 0;
             if (!MatchFilter(r.filter, ctx, r)) continue;
+			if (!CheckLocationFilter(r.filter, ctx)) return;
+			if (!CheckWeatherFilter(r.filter)) return;
 
-            // 1. LIMIT CHECK BLOCK (important data which will be partially saved)
+            // ╔════════════════════════════════════╗
+			// ║         LIMIT CHECK BLOCK          ║
+			// ╚════════════════════════════════════╝
+			// Important data which will be partially saved
+
             bool limitCheckPassed = true;
             if (r.filter.limit > 0) {
                 Key limitKey{
@@ -3628,7 +3762,11 @@ namespace OIF {
             }
             if (!limitCheckPassed) continue;
 
-            // 2. INTERACTIONS CHECK BLOCK (temporary data - can be reset)
+            // ╔════════════════════════════════════╗
+			// ║      INTERACTIONS CHECK BLOCK      ║
+			// ╚════════════════════════════════════╝
+			// Temporary data - can be reset
+
             bool interactionCheckPassed = true;
             if (r.filter.interactions > 1) {
                 Key interactionKey{
@@ -3645,7 +3783,10 @@ namespace OIF {
             }
             if (!interactionCheckPassed) continue;
 
-            // 3. TIMER CHECK BLOCK
+            // ╔════════════════════════════════════╗
+			// ║         TIMER CHECK BLOCK          ║
+			// ╚════════════════════════════════════╝
+
             bool timerBlockApplied = false;
             if (r.filter.timer.time > 0.0f) {
                 float timerValue = r.filter.timer.time;
@@ -3715,10 +3856,14 @@ namespace OIF {
                                 if (!MatchFilter(r.filter, ctx, r)) return;
                             }
 
-                            for (const auto& eff : r.effects) {
-                                ApplyEffect(eff, ctx, r);
-                                timerBlockApplied = true;
-                            }
+							static thread_local std::mt19937 rng(std::random_device{}());
+							float globalRoll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
+							if (globalRoll < r.filter.chance) {
+								for (const auto& eff : r.effects) {
+									ApplyEffect(eff, ctx, r);
+								}
+								timerBlockApplied = true;
+							}
                         });
                     });
 
@@ -3739,13 +3884,24 @@ namespace OIF {
                 }
             }
 
-            // Apply every effect bound to this rule
+            // ╔════════════════════════════════════╗
+			// ║          EFFECTS APPLYING          ║
+			// ╚════════════════════════════════════╝
+
             if (!timerBlockApplied) {
-                for (const auto& eff : r.effects) {
-                    ApplyEffect(eff, ctx, r);
-                }
+				static thread_local std::mt19937 rng(std::random_device{}());
+				float globalRoll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
+				if (globalRoll < r.filter.chance) {
+					for (const auto& eff : r.effects) {
+						ApplyEffect(eff, ctx, r);
+					}
+				}
             }
         }
+
+		// ╔════════════════════════════════════╗
+		// ║              CLEAN-UP              ║
+		// ╚════════════════════════════════════╝
 
         CleanupCounters();
     }
