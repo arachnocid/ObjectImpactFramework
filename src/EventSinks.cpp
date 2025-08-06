@@ -1397,7 +1397,7 @@ namespace OIF
 	//		if (!rootNode) return;
 
 	//		// Body direction vector (hit landing direction)
-	//		RE::NiPoint3 bodyForward = rootNode->world.rotate * RE::NiPoint3{ 1.f, 1.f, 1.f };
+	//		RE::NiPoint3 bodyForward = rootNode->world.rotate * RE::NiPoint3{ 0.f, 1.f, 0.f };
 
 	//		start = rootNode->world.translate;
 	//		dir.x = bodyForward.x;
