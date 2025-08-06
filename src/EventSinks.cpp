@@ -39,56 +39,6 @@ namespace OIF
         RE::FormType::Light
     };
 
-	const std::vector<RE::COL_LAYER> targetLayers = {
-		RE::COL_LAYER::kAcousticSpace,		   // 21
-		RE::COL_LAYER::kActorZone,			   // 22
-		//RE::COL_LAYER::kAnimStatic,			   // 2
-		//RE::COL_LAYER::kAvoidBox,			   // 34
-		//RE::COL_LAYER::kBiped,				   // 8
-		//RE::COL_LAYER::kBipedNoCC,			   // 33
-		RE::COL_LAYER::kCamera,				   // 39
-		RE::COL_LAYER::kCameraSphere,		   // 36
-		RE::COL_LAYER::kCharController,		   // 30
-		//RE::COL_LAYER::kCloudTrap,			   // 16
-		//RE::COL_LAYER::kClutter,			   // 4
-		//RE::COL_LAYER::kClutterLarge,		   // 29
-		//RE::COL_LAYER::kCollisionBox,		   // 35
-		RE::COL_LAYER::kConeProjectile,		   // 38
-		RE::COL_LAYER::kDeadBip,			   // 32
-		//RE::COL_LAYER::kDebrisLarge,		   // 20
-		//RE::COL_LAYER::kDebrisSmall,		   // 19
-		RE::COL_LAYER::kDoorDetection,		   // 37
-		RE::COL_LAYER::kDroppingPick,		   // 46
-		//RE::COL_LAYER::kGasTrap,			   // 24
-		//RE::COL_LAYER::kGround,				   // 17
-		RE::COL_LAYER::kInvisibleWall,		   // 27
-		RE::COL_LAYER::kItemPicker,			   // 40
-		RE::COL_LAYER::kLOS,				   // 41
-		RE::COL_LAYER::kNonCollidable,		   // 15
-		RE::COL_LAYER::kPathingPick,		   // 42
-		RE::COL_LAYER::kPortal,				   // 18
-		RE::COL_LAYER::kProjectile,			   // 6
-		RE::COL_LAYER::kProjectileZone,		   // 23
-		//RE::COL_LAYER::kProps,				   // 10
-		RE::COL_LAYER::kShellCasting,		   // 25
-		RE::COL_LAYER::kSpell,				   // 7
-		RE::COL_LAYER::kSpellExplosion,		   // 45
-		RE::COL_LAYER::kStairHelper,		   // 31
-		//RE::COL_LAYER::kStatic,				   // 1
-		//RE::COL_LAYER::kTerrain,			   // 13
-		RE::COL_LAYER::kTransparent,		   // 3
-		RE::COL_LAYER::kTransparentSmallAnim,  // 28
-		RE::COL_LAYER::kTransparentWall,	   // 26
-		//RE::COL_LAYER::kTrap,				   // 14
-		//RE::COL_LAYER::kTrees,				   // 9
-		RE::COL_LAYER::kTrigger,			   // 12
-		RE::COL_LAYER::kUnidentified,		   // 0
-		RE::COL_LAYER::kUnused0,			   // 43
-		RE::COL_LAYER::kUnused1,			   // 44
-		//RE::COL_LAYER::kWater,				   // 11
-		//RE::COL_LAYER::kWeapon				   // 5
-	};
-
 
 //███████╗███╗░░██╗██╗░░░██╗███╗░░░███╗░██████╗
 //██╔════╝████╗░██║██║░░░██║████╗░████║██╔════╝
