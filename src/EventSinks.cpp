@@ -1382,7 +1382,7 @@ namespace OIF
 
 	//	if (isFirstPerson) {
 	//		// Camera position and direction (crosshair)
-	//		RE::NiPoint3 cameraNode = cam->currentState->camera->cameraRoot->world.rotate * RE::NiPoint3{ 1.f, 1.f, 1.f };
+	//		RE::NiPoint3 cameraNode = cam->currentState->camera->cameraRoot->world.rotate * RE::NiPoint3{ 0.f, 1.f, 0.f };
 
 	//		start = cam->currentState->camera->cameraRoot->world.translate;
 	//		dir.x = cameraNode.x;
