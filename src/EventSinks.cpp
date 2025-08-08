@@ -1335,6 +1335,7 @@ namespace OIF
 		bool isLeftAttack = false;
 		
 		// meleeRange = fCombatDistance * AttackerScale * WeaponReach + fObjectHit
+		// WeaponReach + fObjectHit calculations are not included anymore, the default range suits the task already
 		float reach = 141.0f * player->GetScale();
 
 		auto& actorState = player->GetActorRuntimeData().currentProcess;
