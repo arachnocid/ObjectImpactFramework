@@ -14,7 +14,7 @@ This guide explains how to set up those JSON files so you can create your own mo
 - **Filter Note**: An object must be defined by at least one of the three parameters - `formIDs`, `editorIDs`, `formLists`, `formTypes`, `keywords` - for the event to work. **Warning:** Equivalents with the `Not` ending do *not* count.
 - **Effect Additional Fields Note**: Make sure you check whether the effect requires the presence of the `items` field. Without specifying and filling out this field (at least with one identifier or, if the effect does not support identifiers, with any available field), the effect will *not* work.
 - **Priority Note**: Place effects with `"Remove"` and `"Swap"` prefixes at the very end of the event, otherwise the removed object may not have time to call other effects on itself before gets deleted.
-- **Non-collidable Objects Note**: Only `flora` and `tree` hits are supported. Since the system is based on workarounds and math, in rare cases it may behave unexpectedly and some impacts will be ignored.
+- **Non-collidable Objects Note**: Only `flora` and `tree` hits are supported. Since the system is based on workarounds and math, in rare cases it may behave unexpectedly, for example, it is difficult to hit sprawling non-collidable trees. **Warning:** When using melee attacks, the effect may sometimes occur before the attack animation is played.
 - You can modify existing JSON files without quitting the game, edit the file and reload the save.
 
 ---
@@ -107,7 +107,6 @@ Below are all possible filter parameters:
   - `"moveablestatic"`: Movable static objects.
   - `"tree"`: Trees.
   - `"light"`: Lights with 3D models (e.g., torches).
-  - `"grass"`: Grass.
  
 - **`formTypesNot`**: An array of strings specifying the types of objects that the rule should *not* apply to. Same format as `formTypes`.
 
@@ -160,6 +159,18 @@ Below are all possible filter parameters:
   - `1`: Object is initially disabled.
   - `2` (default): All objects allowed.
  
+- **`lockLevel`**: An integer specifying a lock level the object must have. **Note:** Do *not* use the filter with formTypes other than `door` and `container`.
+  - `-2` (default): Ignore lock level.
+  - `-1`: Unlocked.
+  - `0`: Novice.
+  - `1`: Apprentice.
+  - `2`: Adept.
+  - `3`: Expert.
+  - `4`: Master.
+  - `5`: Requires key.
+ 
+- **`lockLevelNot`**: An interger specifying a lock level the object must *not* have. Same format as `lockLevel`.
+ 
 - **`isPluginInstalled`**: An array of plugin names (e.g., `"MyMod.esp"`, `"Skyrim.esm"`) that must be loaded for the rule to apply.
 
 - **`isPluginNotInstalled`**: An array of plugin names that must *not* be loaded.
@@ -206,7 +217,7 @@ Below are all possible filter parameters:
     ```
 - **`nearbyObjectsNot`**: An array of objects that must *not* be in a certain radius around the target object. Same format as `nearbyObjects`.
 
-- **`locations`**: An array of cells, locations, or worldspaces where the rule should apply. Format: `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`), `"EditorIDName"` (e.g., `"VendorItemFood"`), or a formlist's formID/editorID.
+- **`locations`**: An array of cells, locations, or worldspaces where the rule should apply. Format: `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`), `"EditorIDName"` (e.g., `"VendorItemFood"`), or a formlist's formID/editorID. **Note:** The worldspace will *not* be detected and the event will be filtered out if the cell has no linked worldspace information.
 
 - **`locationsNot`**: An array of cells, locations, or worldspaces where the rule should *not* apply. Same format as `locations`.
 
@@ -341,6 +352,9 @@ Here are all possible `type` values and their supported fields:
  
 - **`ExecuteConsoleCommandOnItem`**: Executes a console command on the target object.
   - Supported fields: `string`, `chance`, `timer`.
+ 
+- **`ExecuteConsoleCommandOnSource`**: Executes a console command on an actor who interacted with the object.
+  - Supported fields: `string`, `chance`, `timer`.
 
 - **`ShowNotification`**: Shows a notification.
   - Supported fields: `string`, `chance`, `timer`.
@@ -422,7 +436,10 @@ Here are all possible `type` values and their supported fields:
 - **`SpawnLeveledSpellOnItem`**: Casts random leveled spells on the target object.
   - Supported fields: `formID`, `editorID`, `formList`, `count`, `chance`, `timer`.
 
-- **`ApplyIngestible`**: Applies the target object's effects (if it's an ingredient or ingestible) to nearby actors.
+- **`ApplySpell`**: Applies the target object's spell (if it's a scroll or a spell tome) to nearby actors.
+  - Supported fields: `radius`, `chance`, `timer`.
+
+- **`ApplyIngestible`**: Applies the target object's effects (if it's an ingredient or an ingestible) to nearby actors.
   - Supported fields: `radius`, `chance`, `timer`.
 
 - **`ApplyOtherIngestible`**: Applies effects from specified ingestibles to nearby actors. Can be used with any form type.
