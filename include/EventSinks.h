@@ -283,13 +283,13 @@ namespace OIF
 		static inline REL::Relocation<decltype(thunk)> func;
 	};
 
-	struct ConeImpact
-	{
-		static void thunk(RE::Projectile* a_proj, RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_hitPos,
-						  const RE::NiPoint3& a_velocity, RE::hkpCollidable* a_collidable, 
-						  std::int32_t a_arg6, std::uint32_t a_arg7);
-		static inline REL::Relocation<decltype(thunk)> func;
-	};
+	//struct ConeImpact
+	//{
+	//	static void thunk(RE::Projectile* a_proj, RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_hitPos,
+	//					  const RE::NiPoint3& a_velocity, RE::hkpCollidable* a_collidable, 
+	//					  std::int32_t a_arg6, std::uint32_t a_arg7);
+	//	static inline REL::Relocation<decltype(thunk)> func;
+	//};
 
 	struct ArrowImpact
 	{

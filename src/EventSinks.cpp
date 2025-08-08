@@ -1411,6 +1411,7 @@ namespace OIF
 			}
 		}
 
+		// Determine the attack direction and end point
 		auto* cam = RE::PlayerCamera::GetSingleton();
 		if (!cam || !cam->currentState || !cam->currentState->camera) return;
 
@@ -1424,6 +1425,7 @@ namespace OIF
 		}
 		RE::NiPoint3 end = start + dir * reach;
 		
+		// If the crosshair is over a valid target (harvestable), use its position as the end point
 		float foundGoodPosition = false;
 
 		auto crosshair = RE::CrosshairPickData::GetSingleton();
@@ -1437,7 +1439,6 @@ namespace OIF
 							case RE::FormType::Tree:
 								end = ref->GetPosition();
 								foundGoodPosition = true;
-								logger::warn("Found good position for crosshair target: {}", ref->GetFormID());
 								break;
 							default:
 								break;
@@ -1549,13 +1550,15 @@ namespace OIF
 		HandleProjectileImpact(a_proj, a_hitPos);
 	}
 
-	void ConeImpact::thunk(RE::Projectile* a_proj, RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_hitPos,
-						   const RE::NiPoint3& a_velocity, RE::hkpCollidable* a_collidable,
-						   std::int32_t a_arg6, std::uint32_t a_arg7)
-	{
-		func(a_proj, a_ref, a_hitPos, a_velocity, a_collidable, a_arg6, a_arg7);
-		HandleProjectileImpact(a_proj, a_hitPos);
-	}
+	// Currently not working as intended, needs further investigation
+	// Shouts do not seem to work on actors as they should
+	//void ConeImpact::thunk(RE::Projectile* a_proj, RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_hitPos,
+	//					   const RE::NiPoint3& a_velocity, RE::hkpCollidable* a_collidable,
+	//					   std::int32_t a_arg6, std::uint32_t a_arg7)
+	//{
+	//	func(a_proj, a_ref, a_hitPos, a_velocity, a_collidable, a_arg6, a_arg7);
+	//	HandleProjectileImpact(a_proj, a_hitPos);
+	//}
 
 	void ArrowImpact::thunk(RE::Projectile* a_proj, RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_hitPos,
 							const RE::NiPoint3& a_velocity, RE::hkpCollidable* a_collidable,
@@ -1597,7 +1600,7 @@ namespace OIF
 		BeamImpact::func = REL::Relocation<std::uintptr_t>(RE::BeamProjectile::VTABLE[0]).write_vfunc(0xBD, BeamImpact::thunk);
 		FlameImpact::func = REL::Relocation<std::uintptr_t>(RE::FlameProjectile::VTABLE[0]).write_vfunc(0xBD, FlameImpact::thunk);
 		GrenadeImpact::func = REL::Relocation<std::uintptr_t>(RE::GrenadeProjectile::VTABLE[0]).write_vfunc(0xBD, GrenadeImpact::thunk);
-		ConeImpact::func = REL::Relocation<std::uintptr_t>(RE::ConeProjectile::VTABLE[0]).write_vfunc(0xBD, ConeImpact::thunk);
+		//ConeImpact::func = REL::Relocation<std::uintptr_t>(RE::ConeProjectile::VTABLE[0]).write_vfunc(0xBD, ConeImpact::thunk);
 		ArrowImpact::func = REL::Relocation<std::uintptr_t>(RE::ArrowProjectile::VTABLE[0]).write_vfunc(0xBD, ArrowImpact::thunk);
     }
 }
