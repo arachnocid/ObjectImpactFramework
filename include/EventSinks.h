@@ -243,12 +243,12 @@ namespace OIF
         static constexpr std::size_t size = 0xAD;
     };
 
-	//struct AttackBlockHook
-	//{
-	//	static void thunk(RE::AttackBlockHandler* a_this, RE::ButtonEvent* a_event, RE::PlayerControlsData* a_data);
-	//	static inline REL::Relocation<decltype(thunk)> func;
-	//	static inline constexpr std::size_t size = 0x4;
-	//};
+	struct AttackBlockHook
+	{
+		static void thunk(RE::AttackBlockHandler* a_this, RE::ButtonEvent* a_event, RE::PlayerControlsData* a_data);
+		static inline REL::Relocation<decltype(thunk)> func;
+		static inline constexpr std::size_t size = 0x4;
+	};
 
 	// Credits to RavenKZP for the following hooks!
 	struct MissileImpact

@@ -39,6 +39,56 @@ namespace OIF
         RE::FormType::Light
     };
 
+	const std::vector<RE::COL_LAYER> targetLayers = {
+		RE::COL_LAYER::kAcousticSpace,		   // 21
+		RE::COL_LAYER::kActorZone,			   // 22
+		RE::COL_LAYER::kAnimStatic,			   // 2
+		RE::COL_LAYER::kAvoidBox,			   // 34
+		RE::COL_LAYER::kBiped,				   // 8
+		RE::COL_LAYER::kBipedNoCC,			   // 33
+		RE::COL_LAYER::kCamera,				   // 39
+		RE::COL_LAYER::kCameraSphere,		   // 36
+		RE::COL_LAYER::kCharController,		   // 30
+		RE::COL_LAYER::kCloudTrap,			   // 16
+		RE::COL_LAYER::kClutter,			   // 4
+		RE::COL_LAYER::kClutterLarge,		   // 29
+		RE::COL_LAYER::kCollisionBox,		   // 35
+		RE::COL_LAYER::kConeProjectile,		   // 38
+		RE::COL_LAYER::kDeadBip,			   // 32
+		RE::COL_LAYER::kDebrisLarge,		   // 20
+		RE::COL_LAYER::kDebrisSmall,		   // 19
+		RE::COL_LAYER::kDoorDetection,		   // 37
+		RE::COL_LAYER::kDroppingPick,		   // 46
+		RE::COL_LAYER::kGasTrap,			   // 24
+		RE::COL_LAYER::kGround,				   // 17
+		RE::COL_LAYER::kInvisibleWall,		   // 27
+		RE::COL_LAYER::kItemPicker,			   // 40
+		RE::COL_LAYER::kLOS,				   // 41
+		RE::COL_LAYER::kNonCollidable,		   // 15
+		RE::COL_LAYER::kPathingPick,		   // 42
+		RE::COL_LAYER::kPortal,				   // 18
+		RE::COL_LAYER::kProjectile,			   // 6
+		RE::COL_LAYER::kProjectileZone,		   // 23
+		RE::COL_LAYER::kProps,				   // 10
+		RE::COL_LAYER::kShellCasting,		   // 25
+		RE::COL_LAYER::kSpell,				   // 7
+		RE::COL_LAYER::kSpellExplosion,		   // 45
+		RE::COL_LAYER::kStairHelper,		   // 31
+		RE::COL_LAYER::kStatic,				   // 1
+		RE::COL_LAYER::kTerrain,			   // 13
+		RE::COL_LAYER::kTransparent,		   // 3
+		RE::COL_LAYER::kTransparentSmallAnim,  // 28
+		RE::COL_LAYER::kTransparentWall,	   // 26
+		RE::COL_LAYER::kTrap,				   // 14
+		RE::COL_LAYER::kTrees,				   // 9
+		RE::COL_LAYER::kTrigger,			   // 12
+		RE::COL_LAYER::kUnidentified,		   // 0
+		RE::COL_LAYER::kUnused0,			   // 43
+		RE::COL_LAYER::kUnused1,			   // 44
+		RE::COL_LAYER::kWater,				   // 11
+		RE::COL_LAYER::kWeapon				   // 5
+	};
+
 
 //███████╗███╗░░██╗██╗░░░██╗███╗░░░███╗░██████╗
 //██╔════╝████╗░██║██║░░░██║████╗░████║██╔════╝
@@ -1261,223 +1311,210 @@ namespace OIF
         }
     }
 
-	//void AttackBlockHook::thunk(RE::AttackBlockHandler* a_this, RE::ButtonEvent* a_event, RE::PlayerControlsData* a_data)
-	//{
-	//	func(a_this, a_event, a_data);
-	//	
-	//	if (a_event) {
-	//		if (!a_event->IsPressed() || a_event->IsHeld()) return;
-	//	}
+	void AttackBlockHook::thunk(RE::AttackBlockHandler* a_this, RE::ButtonEvent* a_event, RE::PlayerControlsData* a_data)
+	{
+		func(a_this, a_event, a_data);
+		
+		if (a_event) {
+			if (!a_event->IsPressed() || a_event->IsHeld()) return;
+		}
 
-	//	auto* player = RE::PlayerCharacter::GetSingleton();
-	//	if (!EventSinkBase::IsActorSafe(player)) return;
+		auto* player = RE::PlayerCharacter::GetSingleton();
+		if (!EventSinkBase::IsActorSafe(player)) return;
 
-	//	bool isWeaponDrawn = player->AsActorState()->IsWeaponDrawn();
-	//	if (!isWeaponDrawn) return;
+		bool isWeaponDrawn = player->AsActorState()->IsWeaponDrawn();
+		if (!isWeaponDrawn) return;
 
-	//	auto* playerNode = player->Get3D();
-	//	if (!playerNode) return;
+		auto* playerNode = player->Get3D();
+		if (!playerNode) return;
 
-	//	RE::TESForm* attackSource = nullptr;
-	//	WeaponType weaponType = WeaponType::Other;
-	//	AttackType attackType = AttackType::Regular;
-	//	DeliveryType deliveryType = DeliveryType::None;
-	//	bool isLeftAttack = false;
-	//	
-	//	// meleeRange = fCombatDistance * AttackerScale * WeaponReach + fObjectHit
-	//	float reach = 141.0f * player->GetScale();
+		RE::TESForm* attackSource = nullptr;
+		WeaponType weaponType = WeaponType::Other;
+		AttackType attackType = AttackType::Regular;
+		DeliveryType deliveryType = DeliveryType::None;
+		bool isLeftAttack = false;
+		
+		// meleeRange = fCombatDistance * AttackerScale * WeaponReach + fObjectHit
+		float reach = 141.0f * player->GetScale();
 
-	//	auto& actorState = player->GetActorRuntimeData().currentProcess;
-	//	if (!actorState) return;
+		auto& actorState = player->GetActorRuntimeData().currentProcess;
+		if (!actorState) return;
 
-	//	auto* highData = actorState->high;
-	//	if (!highData) return;
+		auto* highData = actorState->high;
+		if (!highData) return;
 
-	//	if (auto& attackData = highData->attackData) {
-	//		if (!attackData) return;
+		if (auto& attackData = highData->attackData) {
+			if (!attackData) return;
 
-	//		if (highData->muzzleFlash && highData->muzzleFlash->baseProjectile) {
-	//			// If the attack is a projectile, let the ProjectileImpactHook handle it
-	//			return;
-	//		} else if (auto* spell = attackData->data.attackSpell) {
-	//			attackSource = spell;
-	//			weaponType = GetSpellType(spell);
+			attackType = GetAttackType(attackData.get());
 
-	//			switch (spell->data.castingType) {
-	//			case RE::MagicSystem::CastingType::kConcentration:
-	//				attackType = AttackType::Continuous;
-	//				break;
-	//			case RE::MagicSystem::CastingType::kFireAndForget:
-	//				attackType = AttackType::FireAndForget;
-	//				break;
-	//			case RE::MagicSystem::CastingType::kConstantEffect:
-	//				attackType = AttackType::Constant;
-	//				break;
-	//			case RE::MagicSystem::CastingType::kScroll:
-	//				weaponType = WeaponType::Scroll;
-	//				break;
-	//			default:
-	//				break;
-	//			}
+			if (highData->muzzleFlash && highData->muzzleFlash->baseProjectile) {
+				// If the attack is a projectile, let the ProjectileImpactHook handle it
+				return;
+			} else if (auto* spell = attackData->data.attackSpell) {
+				attackSource = spell;
+				weaponType = GetSpellType(spell);
 
-	//			switch (spell->data.delivery) {
-	//			case RE::MagicSystem::Delivery::kSelf:
-	//				deliveryType = DeliveryType::Self;
-	//				break;
-	//			case RE::MagicSystem::Delivery::kAimed:
-	//				deliveryType = DeliveryType::Aimed;
-	//				break;
-	//			case RE::MagicSystem::Delivery::kTargetActor:
-	//				deliveryType = DeliveryType::TargetActor;
-	//				break;
-	//			case RE::MagicSystem::Delivery::kTargetLocation:
-	//				deliveryType = DeliveryType::TargetLocation;
-	//				break;
-	//			case RE::MagicSystem::Delivery::kTouch:
-	//				deliveryType = DeliveryType::Touch;
-	//				break;
-	//			case RE::MagicSystem::Delivery::kTotal:
-	//				deliveryType = DeliveryType::Total;
-	//				break;
-	//			default:
-	//				deliveryType = DeliveryType::None;
-	//				break;
-	//			}
-	//		} else {
-	//			isLeftAttack = attackData->IsLeftAttack();
-	//			if (isLeftAttack) {
-	//				attackSource = actorState->GetEquippedLeftHand();
-	//			} else {
-	//				attackSource = actorState->GetEquippedRightHand();
-	//			}
-	//			if (!attackSource) return;
+				switch (spell->data.castingType) {
+				case RE::MagicSystem::CastingType::kConcentration:
+					attackType = AttackType::Continuous;
+					break;
+				case RE::MagicSystem::CastingType::kFireAndForget:
+					attackType = AttackType::FireAndForget;
+					break;
+				case RE::MagicSystem::CastingType::kConstantEffect:
+					attackType = AttackType::Constant;
+					break;
+				case RE::MagicSystem::CastingType::kScroll:
+					weaponType = WeaponType::Scroll;
+					break;
+				default:
+					break;
+				}
 
-	//			attackType = GetAttackType(attackData.get());
-	//			if (auto* weapon = attackSource->As<RE::TESObjectWEAP>()) {
-	//				weaponType = GetWeaponType(weapon);
-	//				if (weaponType == WeaponType::OneHandAxe || weaponType == WeaponType::OneHandSword ||
-	//					weaponType == WeaponType::OneHandMace || weaponType == WeaponType::Dagger) {
-	//					reach *= weapon->GetReach() + 150;	// fObjectHitWeaponReach
-	//				} else if (weaponType == WeaponType::TwoHandAxe || weaponType == WeaponType::TwoHandSword) {
-	//					reach *= weapon->GetReach() + 112;	// fObjectHitTwoHandReach
-	//				} else if (weaponType == WeaponType::HandToHand) {
-	//					reach *= weapon->GetReach() + 64;  // fObjectHitH2HReach
-	//				} else {
-	//					reach *= weapon->GetReach() + 108;	// floor
-	//				}
-	//			}
+				switch (spell->data.delivery) {
+				case RE::MagicSystem::Delivery::kSelf:
+					deliveryType = DeliveryType::Self;
+					break;
+				case RE::MagicSystem::Delivery::kAimed:
+					deliveryType = DeliveryType::Aimed;
+					break;
+				case RE::MagicSystem::Delivery::kTargetActor:
+					deliveryType = DeliveryType::TargetActor;
+					break;
+				case RE::MagicSystem::Delivery::kTargetLocation:
+					deliveryType = DeliveryType::TargetLocation;
+					break;
+				case RE::MagicSystem::Delivery::kTouch:
+					deliveryType = DeliveryType::Touch;
+					break;
+				case RE::MagicSystem::Delivery::kTotal:
+					deliveryType = DeliveryType::Total;
+					break;
+				default:
+					deliveryType = DeliveryType::None;
+					break;
+				}
+			} else {
+				isLeftAttack = attackData->IsLeftAttack();
+				if (isLeftAttack) {
+					attackSource = actorState->GetEquippedLeftHand();
+				} else {
+					attackSource = actorState->GetEquippedRightHand();
+				}
+				if (!attackSource) return;
 
-	//			reach *= 0.75;	// logical impact zone
-	//		}
-	//	}
+				if (auto* weapon = attackSource->As<RE::TESObjectWEAP>()) {
+					weaponType = GetWeaponType(weapon);
+				}
+			}
+		}
 
-	//	auto* cam = RE::PlayerCamera::GetSingleton();
-	//	if (!cam || !cam->currentState || !cam->currentState->camera) return;
+		auto* cam = RE::PlayerCamera::GetSingleton();
+		if (!cam || !cam->currentState || !cam->currentState->camera) return;
 
-	//	RE::NiPoint3 start;
-	//	RE::NiPoint3 dir;
-	//	RE::NiPoint3 end;
+		RE::NiPoint3 start = player->GetPosition();
+		RE::NiPoint3 dir = playerNode->world.rotate * RE::NiPoint3{ 0.f, 1.f, 0.f };
+		dir.z = 0.f;
+		if (dir.SqrLength() < 1e-6f) {
+			dir = { 0.f, 1.f, 0.f };
+		} else {
+			dir.Unitize();
+		}
+		RE::NiPoint3 end = start + dir * reach;
+		
+		float foundGoodPosition = false;
 
-	//	bool isFirstPerson = !cam->GetRuntimeData().cameraStates[RE::CameraStates::kThirdPerson];
+		auto crosshair = RE::CrosshairPickData::GetSingleton();
+		if (crosshair) {
+			if (crosshair->target && crosshair->target->get()) {
+				if (auto* ref = crosshair->target->get().get()) {
+					if (EventSinkBase::IsItemSafe(ref)) {
+						if (auto* baseObj = ref->GetBaseObject()) {
+							switch (baseObj->GetFormType()) {
+							case RE::FormType::Flora:
+							case RE::FormType::Tree:
+								end = ref->GetPosition();
+								foundGoodPosition = true;
+								logger::warn("Found good position for crosshair target: {}", ref->GetFormID());
+								break;
+							default:
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
 
-	//	if (isFirstPerson) {
-	//		// Camera position and direction (crosshair)
-	//		RE::NiPoint3 cameraNode = cam->currentState->camera->cameraRoot->world.rotate * RE::NiPoint3{ 0.f, 1.f, 0.f };
+		auto* cell = player->GetParentCell();
+		if (!cell) return;
 
-	//		start = cam->currentState->camera->cameraRoot->world.translate;
-	//		dir.x = cameraNode.x;
-	//		dir.y = cameraNode.y;
-	//		dir.z = cameraNode.z;
-	//		dir.Unitize();
-	//	} else {
-	//		auto* rootNode = playerNode->GetObjectByName("NPC Root [Root]");
-	//		if (!rootNode) rootNode = playerNode->GetObjectByName("NPC Spine [Spn0]");
-	//		if (!rootNode) rootNode = playerNode->GetObjectByName("NPC Spine1 [Spn1]");
-	//		if (!rootNode) rootNode = playerNode->GetObjectByName("NPC Spine2 [Spn2]");
-	//		if (!rootNode) return;
+		std::vector<RE::TESObjectREFR*> validObjects;
 
-	//		// Body direction vector (hit landing direction)
-	//		RE::NiPoint3 bodyForward = rootNode->world.rotate * RE::NiPoint3{ 0.f, 1.f, 0.f };
+		cell->ForEachReferenceInRange(end, 65.0, [&](RE::TESObjectREFR* ref) 
+		{
+			if (!EventSinkBase::IsItemSafe(ref)) return RE::BSContainer::ForEachResult::kContinue;
+			auto* baseObj = ref->GetBaseObject();
+			if (!baseObj) return RE::BSContainer::ForEachResult::kContinue;
+			
+			switch (baseObj->GetFormType()) {
+			case RE::FormType::Flora:
+			case RE::FormType::Tree:
+				break;
+			default:
+				return RE::BSContainer::ForEachResult::kContinue;
+			}
 
-	//		start = rootNode->world.translate;
-	//		dir.x = bodyForward.x;
-	//		dir.y = bodyForward.y;
-	//		dir.z = bodyForward.z;
-	//		dir.Unitize();
-	//	}
-	//	
-	//	end = start + dir * reach;
+			bool a_arg2 = false;
+			if (!player->HasLineOfSight(ref, a_arg2)) return RE::BSContainer::ForEachResult::kContinue;
 
-	//	float radius = reach * 0.5f;
+			validObjects.emplace_back(ref);
 
-	//	auto* cell = player->GetParentCell();
-	//	if (!cell) return;
+			return RE::BSContainer::ForEachResult::kContinue;
+		});
 
-	//	std::vector<RE::TESObjectREFR*> validObjects;
+		if (validObjects.empty()) return;
 
-	//	cell->ForEachReferenceInRange(end, radius, [&](RE::TESObjectREFR* ref) 
-	//	{
-	//		if (!EventSinkBase::IsItemSafe(ref)) return RE::BSContainer::ForEachResult::kContinue;
-	//		auto* baseObj = ref->GetBaseObject();
-	//		if (!baseObj) return RE::BSContainer::ForEachResult::kContinue;
-	//			
-	//		switch (baseObj->GetFormType()) {
-	//		case RE::FormType::Flora:
-	//		case RE::FormType::Tree:
-	//			break;
-	//		default:
-	//			return RE::BSContainer::ForEachResult::kContinue;
-	//		}
+		static std::vector<std::future<void>> runningTasks;
+		static std::mutex tasksMutex;
 
-	//		bool a_arg2 = false;
-	//		if (!player->HasLineOfSight(ref, a_arg2)) return RE::BSContainer::ForEachResult::kContinue;
+		// Wait for the animation to finish before triggering the rule (approximate duration)
+		auto future = std::async(std::launch::async, [validObjects, player, attackSource, weaponType, attackType, deliveryType, duration = 0.6]() {
+			std::this_thread::sleep_for(std::chrono::duration<float>(duration));
 
-	//		validObjects.emplace_back(ref);
+			SKSE::GetTaskInterface()->AddTask([validObjects, player, attackSource, weaponType, attackType, deliveryType]() {
+				for (auto& ref : validObjects) {
+					if (EventSinkBase::IsItemSafe(ref)) {
+						RuleContext ctx{
+							EventType::kHit,
+							player->As<RE::Actor>(),
+							ref,
+							attackSource,
+							nullptr,
+							WeaponTypeToString(weaponType),
+							AttackTypeToString(attackType),
+							DeliveryTypeToString(deliveryType),
+							true
+						};
+						RuleManager::GetSingleton()->Trigger(ctx);
+					}
+				}
+			});
+		});
 
-	//		return RE::BSContainer::ForEachResult::kContinue;
-	//	});
+		{
+			std::lock_guard<std::mutex> lock(tasksMutex);
+			runningTasks.push_back(std::move(future));
 
-	//	if (validObjects.empty()) return;
-
-	//	static std::vector<std::future<void>> runningTasks;
-	//	static std::mutex tasksMutex;
-
-	//	// Wait for the animation to finish before triggering the rule (approximate duration)
-	//	auto future = std::async(std::launch::async, [validObjects, player, attackSource, weaponType, attackType, deliveryType, duration = 0.6]() {
-	//		std::this_thread::sleep_for(std::chrono::duration<float>(duration));
-
-	//		SKSE::GetTaskInterface()->AddTask([validObjects, player, attackSource, weaponType, attackType, deliveryType]() {
-	//			for (auto& ref : validObjects) {
-	//				if (EventSinkBase::IsItemSafe(ref)) {
-	//					RuleContext ctx{
-	//						EventType::kHit,
-	//						player->As<RE::Actor>(),
-	//						ref,
-	//						attackSource,
-	//						nullptr,
-	//						WeaponTypeToString(weaponType),
-	//						AttackTypeToString(attackType),
-	//						DeliveryTypeToString(deliveryType),
-	//						true
-	//					};
-	//					RuleManager::GetSingleton()->Trigger(ctx);
-	//				}
-	//			}
-	//		});
-	//	});
-
-	//	{
-	//		std::lock_guard<std::mutex> lock(tasksMutex);
-	//		runningTasks.push_back(std::move(future));
-
-	//		runningTasks.erase(
-	//			std::remove_if(runningTasks.begin(), runningTasks.end(),
-	//				[](const std::future<void>& f) {
-	//					return f.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
-	//				}),
-	//			runningTasks.end());
-	//	}
-	//}
+			runningTasks.erase(
+				std::remove_if(runningTasks.begin(), runningTasks.end(),
+					[](const std::future<void>& f) {
+						return f.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
+					}),
+				runningTasks.end());
+		}
+	}
 
 	void MissileImpact::thunk(RE::Projectile* a_proj, RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_hitPos,
 							  const RE::NiPoint3& a_velocity, RE::hkpCollidable* a_collidable,
@@ -1554,7 +1591,7 @@ namespace OIF
         ::stl::write_vfunc<RE::ReadyWeaponHandler, ReadyWeaponHook>();
         ::stl::write_vfunc<RE::Explosion, ExplosionHook>();
         ::stl::write_vfunc<RE::PlayerCharacter, UpdateHook>();
-		//::stl::write_vfunc<RE::AttackBlockHandler, AttackBlockHook>();
+		::stl::write_vfunc<RE::AttackBlockHandler, AttackBlockHook>();
 		MissileImpact::func = REL::Relocation<std::uintptr_t>(RE::MissileProjectile::VTABLE[0]).write_vfunc(0xBD, MissileImpact::thunk);
 		BeamImpact::func = REL::Relocation<std::uintptr_t>(RE::BeamProjectile::VTABLE[0]).write_vfunc(0xBD, BeamImpact::thunk);
 		FlameImpact::func = REL::Relocation<std::uintptr_t>(RE::FlameProjectile::VTABLE[0]).write_vfunc(0xBD, FlameImpact::thunk);
