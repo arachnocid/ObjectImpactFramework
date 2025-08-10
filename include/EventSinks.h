@@ -30,16 +30,14 @@ namespace OIF
         }
 
 		static bool IsActorSafe(RE::Actor* actor) {
-			if (!actor || actor->IsDeleted() || actor->IsDead() || !actor->GetBaseObject() || !actor->GetFormID()) return false;
-			auto formID = actor->GetFormID();
-			if (formID == 0 || formID == 0xFFFFFFFF) return false;
+			if (!actor || actor->IsDeleted() || actor->IsDead() || !actor->GetBaseObject()) return false;
 			try {
 				auto* baseObj = actor->GetBaseObject();
 				if (!baseObj) return false;
-        
+  
 				auto* cell = actor->GetParentCell();
 				if (!cell) return false;
-        
+    
 				return true;
 			} catch (...) {
 				return false;
@@ -48,9 +46,7 @@ namespace OIF
 
 		static bool IsItemSafe(RE::TESObjectREFR* item)
 		{
-			if (!item || item->IsDeleted() || !item->GetBaseObject() || !item->GetFormID()) return false;
-			auto formID = item->GetFormID();
-			if (formID == 0 || formID == 0xFFFFFFFF) return false;
+			if (!item || item->IsDeleted() || !item->GetBaseObject()) return false;
 			if (!EventSinkBase::IsRelevantObjectRef(item)) return false;
 			try {
 				auto* baseObj = item->GetBaseObject();
@@ -222,6 +218,7 @@ namespace OIF
 		static inline constexpr std::size_t size = 0xA2;
 	};
 
+	// Taken and adapted from Rain Extinguishes Fires source code
 	struct WeatherChangeHook
 	{
 		static void thunk(RE::TESRegion* a_region, RE::TESWeather* a_currentWeather);
@@ -250,6 +247,14 @@ namespace OIF
 		static inline constexpr std::size_t size = 0x4;
 	};
 
+	// Taken and adapted from Explosion Collision Fix source code
+	//struct ProcessProjectileHitHook
+	//{
+	//	static void thunk(RE::Projectile* a_proj, RE::TESObjectREFR* a_ref, RE::NiPoint3* a_hitPos, RE::hkVector4* a_arg, 
+	//					  RE::COL_LAYER a_collisionLayer, RE::MATERIAL_ID a_materialID, bool* a_handled);
+	//	static inline REL::Relocation<decltype(thunk)> func;
+	//};
+
 	// Credits to RavenKZP for the following hooks!
 	struct MissileImpact
 	{
@@ -275,13 +280,13 @@ namespace OIF
 		static inline REL::Relocation<decltype(thunk)> func;
 	};
 
-	struct GrenadeImpact
-	{
-		static void thunk(RE::Projectile* a_proj, RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_hitPos,
-						  const RE::NiPoint3& a_velocity, RE::hkpCollidable* a_collidable, 
-						  std::int32_t a_arg6, std::uint32_t a_arg7);
-		static inline REL::Relocation<decltype(thunk)> func;
-	};
+	//struct GrenadeImpact
+	//{
+	//	static void thunk(RE::Projectile* a_proj, RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_hitPos,
+	//					  const RE::NiPoint3& a_velocity, RE::hkpCollidable* a_collidable, 
+	//					  std::int32_t a_arg6, std::uint32_t a_arg7);
+	//	static inline REL::Relocation<decltype(thunk)> func;
+	//};
 
 	//struct ConeImpact
 	//{

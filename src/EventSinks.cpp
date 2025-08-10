@@ -286,8 +286,6 @@ namespace OIF
                
                 processedCount++;
 
-				if (!EventSinkBase::IsItemSafe(ref)) return RE::BSContainer::ForEachResult::kContinue;
-
                 RuleContext ctx{
                     eventType,
                     source, 
@@ -314,15 +312,7 @@ namespace OIF
 	{
 		if (!a_proj || a_proj->IsDeleted()) return;
 
-		RE::Actor* actor = RE::PlayerCharacter::GetSingleton();
-		if (auto actorCause = a_proj->GetProjectileRuntimeData().actorCause) {
-			if (auto& actorHandle = actorCause->actor) {
-				if (auto actorPtr = actorHandle.get()) {
-					if (actorPtr) actor = actorPtr.get();
-				}
-			}
-		}
-		if (!EventSinkBase::IsActorSafe(actor)) return;
+		auto& projData = a_proj->GetProjectileRuntimeData();
 
 		RE::TESForm* attackSource = a_proj;
 		RE::TESForm* projectileSource = a_proj;
@@ -330,6 +320,18 @@ namespace OIF
 		AttackType attackType = AttackType::Regular;
 		DeliveryType deliveryType = DeliveryType::None;
 		RE::TESObjectCELL* cell = a_proj->GetParentCell();
+
+		if (!a_proj || a_proj->IsDeleted()) return;
+
+		RE::Actor* actor = RE::PlayerCharacter::GetSingleton();
+		if (auto actorCause = projData.actorCause) {
+			if (auto& actorHandle = actorCause->actor) {
+				if (auto actorPtr = actorHandle.get()) {
+					if (actorPtr) actor = actorPtr.get();
+				}
+			}
+		}
+		if (!EventSinkBase::IsActorSafe(actor)) return;
 		
 		if (!cell) {
 			cell = actor->GetParentCell();
@@ -344,7 +346,9 @@ namespace OIF
 		RE::FormID projectileSourceFormID = projectileSource ? projectileSource->GetFormID() : 0;
 		RE::FormID cellFormID = cell ? cell->GetFormID() : 0;
 		
-		if (auto* projSpell = a_proj->GetProjectileRuntimeData().spell) {
+		if (!a_proj || a_proj->IsDeleted()) return;
+
+		if (auto* projSpell = projData.spell) {
 			if (auto* spell = projSpell->As<RE::SpellItem>()) {
 				attackSource = spell;
 				weaponType = GetSpellType(spell);
@@ -390,7 +394,7 @@ namespace OIF
 					break;
 				}
 			}
-		} else if (auto* projWeapon = a_proj->GetProjectileRuntimeData().weaponSource) {
+		} else if (auto* projWeapon = projData.weaponSource) {
 			attackSource = projWeapon;
 			weaponType = GetWeaponType(projWeapon);
 
@@ -401,7 +405,7 @@ namespace OIF
 					}
 				}
 			}
-		} else if (auto* projExplosion = a_proj->GetProjectileRuntimeData().explosion) {
+		} else if (auto* projExplosion = projData.explosion) {
 			attackSource = projExplosion;
 			weaponType = WeaponType::Explosion;
 		}
@@ -441,9 +445,7 @@ namespace OIF
 				default:
 					return RE::BSContainer::ForEachResult::kContinue;
 				}
-
-				if (!EventSinkBase::IsItemSafe(ref)) return RE::BSContainer::ForEachResult::kContinue;
-
+				
 				RuleContext ctx{
 					EventType::kHit,
 					actor,
@@ -491,13 +493,10 @@ namespace OIF
             auto* source = RE::TESForm::LookupByID<RE::Actor>(sourceID);
             auto* targetRef = RE::TESForm::LookupByID<RE::TESObjectREFR>(targetID);
             
-            if (!EventSinkBase::IsActorSafe(source) || !EventSinkBase::IsItemSafe(targetRef)) return;
-            
             RuleContext ctx{ 
                 EventType::kActivate, 
                 source, 
-                targetRef, 
-                targetRef->GetBaseObject()
+                targetRef
             };
             RuleManager::GetSingleton()->Trigger(ctx);
         });
@@ -616,8 +615,6 @@ namespace OIF
                     attackSource = weapon;
                 }
             }
-
-			if (!EventSinkBase::IsActorSafe(source) || !EventSinkBase::IsItemSafe(targetRef)) return;
 
             RuleContext ctx{ 
                 EventType::kHit,
@@ -793,8 +790,6 @@ namespace OIF
                     break;
             }
 
-			if (!EventSinkBase::IsActorSafe(caster) || !EventSinkBase::IsItemSafe(targetRef)) return;
-
             RuleContext ctx{
                 EventType::kHit,
                 caster,
@@ -829,82 +824,78 @@ namespace OIF
 
         if (isGrabbed) {
             SKSE::GetTaskInterface()->AddTask([source, targetRef]() {
-				if (EventSinkBase::IsActorSafe(source) && EventSinkBase::IsItemSafe(targetRef.get())) {   
+                RuleContext ctx{
+                    EventType::kGrab,
+                    source,
+					targetRef.get(),
+					targetRef->GetBaseObject()
+                };
+                RuleManager::GetSingleton()->Trigger(ctx);
+            });
+        } else {
+            SKSE::GetTaskInterface()->AddTask([source, targetRef]() {
+				bool isTelekinesis = false;
+                bool isThrown = false;
+
+                RE::TESForm* leftSpell = source->GetEquippedObject(true);
+                RE::TESForm* rightSpell = source->GetEquippedObject(false);
+                    
+                RE::MagicItem* leftMagicItem = leftSpell ? leftSpell->As<RE::MagicItem>() : nullptr;
+                RE::MagicItem* rightMagicItem = rightSpell ? rightSpell->As<RE::MagicItem>() : nullptr;
+                    
+                if ((leftSpell || rightSpell) && (leftMagicItem || rightMagicItem)) {
+                    bool hasGrabEffect = false;
+                    for (auto* spell : { leftMagicItem, rightMagicItem }) {
+                        if (spell) {
+                            for (auto* effect : spell->effects) {
+                                if (effect && effect->baseEffect) {
+                                    if (effect->baseEffect->data.archetype == RE::EffectArchetypes::ArchetypeID::kTelekinesis ||
+                                        effect->baseEffect->data.archetype == RE::EffectArchetypes::ArchetypeID::kGrabActor) {
+                                        hasGrabEffect = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        if (hasGrabEffect) break;
+                    }
+                    isTelekinesis = hasGrabEffect;
+                }
+
+                auto* inputHandler = InputHandler::GetSingleton();
+                bool wasRKeyReleased = inputHandler->WasKeyJustReleased();
+                    
+                if (auto threedimObj = targetRef->Get3D()) {
+                    if (auto collisionObj = threedimObj->GetCollisionObject()) {
+                        if (auto bhkBody = collisionObj->GetRigidBody()) {
+                            if (auto hkpBody = bhkBody->GetRigidBody()) {
+                                if (isTelekinesis || (!isTelekinesis && wasRKeyReleased)) {
+                                    int propertyId = isTelekinesis ? 314159 : 628318; // HK_PROPERTY_TELEKINESIS : HK_PROPERTY_GRABTHROWNOBJECT
+                                        
+                                    if (hkpBody->HasProperty(propertyId)) {
+                                        float now = duration_cast<duration<float>>(steady_clock::now() - startTime).count();
+                                        hkpBody->SetProperty(propertyId, now);
+                                    }
+                                        
+                                    hkpBody->AddContactListener(LandingSink::GetSingleton());
+                                }
+                                    
+                                if (wasRKeyReleased) {
+                                    isThrown = true;
+                                    InputHandler::GetSingleton()->ResetKeyState();
+                                }
+                            }
+                        }
+                    }
+                }
+                if (!isThrown) {
                     RuleContext ctx{
-                        EventType::kGrab,
+                        EventType::kRelease,
                         source,
 						targetRef.get(),
 						targetRef->GetBaseObject()
                     };
                     RuleManager::GetSingleton()->Trigger(ctx);
-                }
-            });
-        } else {
-            SKSE::GetTaskInterface()->AddTask([source, targetRef]() {
-				if (EventSinkBase::IsActorSafe(source) && EventSinkBase::IsItemSafe(targetRef.get())) {
-					bool isTelekinesis = false;
-                    bool isThrown = false;
-
-                    RE::TESForm* leftSpell = source->GetEquippedObject(true);
-                    RE::TESForm* rightSpell = source->GetEquippedObject(false);
-                    
-                    RE::MagicItem* leftMagicItem = leftSpell ? leftSpell->As<RE::MagicItem>() : nullptr;
-                    RE::MagicItem* rightMagicItem = rightSpell ? rightSpell->As<RE::MagicItem>() : nullptr;
-                    
-                    if ((leftSpell || rightSpell) && (leftMagicItem || rightMagicItem)) {
-                        bool hasGrabEffect = false;
-                        for (auto* spell : { leftMagicItem, rightMagicItem }) {
-                            if (spell) {
-                                for (auto* effect : spell->effects) {
-                                    if (effect && effect->baseEffect) {
-                                        if (effect->baseEffect->data.archetype == RE::EffectArchetypes::ArchetypeID::kTelekinesis ||
-                                            effect->baseEffect->data.archetype == RE::EffectArchetypes::ArchetypeID::kGrabActor) {
-                                            hasGrabEffect = true;
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                            if (hasGrabEffect) break;
-                        }
-                        isTelekinesis = hasGrabEffect;
-                    }
-
-                    auto* inputHandler = InputHandler::GetSingleton();
-                    bool wasRKeyReleased = inputHandler->WasKeyJustReleased();
-                    
-                    if (auto threedimObj = targetRef->Get3D()) {
-                        if (auto collisionObj = threedimObj->GetCollisionObject()) {
-                            if (auto bhkBody = collisionObj->GetRigidBody()) {
-                                if (auto hkpBody = bhkBody->GetRigidBody()) {
-                                    if (isTelekinesis || (!isTelekinesis && wasRKeyReleased)) {
-                                        int propertyId = isTelekinesis ? 314159 : 628318; // HK_PROPERTY_TELEKINESIS : HK_PROPERTY_GRABTHROWNOBJECT
-                                        
-                                        if (hkpBody->HasProperty(propertyId)) {
-                                            float now = duration_cast<duration<float>>(steady_clock::now() - startTime).count();
-                                            hkpBody->SetProperty(propertyId, now);
-                                        }
-                                        
-                                        hkpBody->AddContactListener(LandingSink::GetSingleton());
-                                    }
-                                    
-                                    if (wasRKeyReleased) {
-                                        isThrown = true;
-                                        InputHandler::GetSingleton()->ResetKeyState();
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    if (!isThrown) {
-                        RuleContext ctx{
-                            EventType::kRelease,
-                            source,
-							targetRef.get(),
-							targetRef->GetBaseObject()
-                        };
-                        RuleManager::GetSingleton()->Trigger(ctx);
-                    }
                 }
             });
         }
@@ -961,28 +952,26 @@ namespace OIF
             bodiesToCleanup.push_back(specialBody);
 
 			SKSE::GetTaskInterface()->AddTask([refr, objectID, isTelekinesis, isThrown, isDropped, this]() {
-				if (EventSinkBase::IsItemSafe(refr) && objectID) {
-					EventType eventType = EventType::kNone;
-					if (isTelekinesis) {
-						eventType = EventType::kTelekinesis;
-					} else if (isThrown) {
-						eventType = EventType::kThrow;
-					} else if (isDropped) {
-						eventType = EventType::kDrop;
-					}
-
-					RuleContext ctx{
-						eventType,
-						RE::PlayerCharacter::GetSingleton()->As<RE::Actor>(),
-						refr,
-						refr->GetBaseObject()
-					};
-					RuleManager::GetSingleton()->Trigger(ctx);
-
-					SKSE::GetTaskInterface()->AddTask([this, objectID]() {
-						processedObjects.erase(objectID);
-					});
+				EventType eventType = EventType::kNone;
+				if (isTelekinesis) {
+					eventType = EventType::kTelekinesis;
+				} else if (isThrown) {
+					eventType = EventType::kThrow;
+				} else if (isDropped) {
+					eventType = EventType::kDrop;
 				}
+
+				RuleContext ctx{
+					eventType,
+					RE::PlayerCharacter::GetSingleton()->As<RE::Actor>(),
+					refr,
+					refr->GetBaseObject()
+				};
+				RuleManager::GetSingleton()->Trigger(ctx);
+
+				SKSE::GetTaskInterface()->AddTask([this, objectID]() {
+					processedObjects.erase(objectID);
+				});
 			});
 
             SKSE::GetTaskInterface()->AddTask([this]() {
@@ -1015,24 +1004,22 @@ namespace OIF
 		if (!EventSinkBase::IsItemSafe(targetRef.get())) return RE::BSEventNotifyControl::kContinue;
 
 		SKSE::GetTaskInterface()->AddTask([targetRef, attached]() {
-			if (EventSinkBase::IsItemSafe(targetRef.get())) {
-				if (attached) {
-					RuleContext ctx{
-						EventType::kCellAttach,
-						RE::PlayerCharacter::GetSingleton()->As<RE::Actor>(),
-						targetRef.get(),
-						targetRef->GetBaseObject()
-					};
-					RuleManager::GetSingleton()->Trigger(ctx);
-				} else {
-					RuleContext ctx{
-						EventType::kCellDetach,
-						RE::PlayerCharacter::GetSingleton()->As<RE::Actor>(),
-						targetRef.get(),
-						targetRef->GetBaseObject()
-					};
-					RuleManager::GetSingleton()->Trigger(ctx);
-				}
+			if (attached) {
+				RuleContext ctx{
+					EventType::kCellAttach,
+					RE::PlayerCharacter::GetSingleton()->As<RE::Actor>(),
+					targetRef.get(),
+					targetRef->GetBaseObject()
+				};
+				RuleManager::GetSingleton()->Trigger(ctx);
+			} else {
+				RuleContext ctx{
+					EventType::kCellDetach,
+					RE::PlayerCharacter::GetSingleton()->As<RE::Actor>(),
+					targetRef.get(),
+					targetRef->GetBaseObject()
+				};
+				RuleManager::GetSingleton()->Trigger(ctx);
 			}
 		});
 
@@ -1049,22 +1036,20 @@ namespace OIF
 		std::int32_t stage = evn->newStage;
 
 		SKSE::GetTaskInterface()->AddTask([targetRef, stage]() {
-			if (EventSinkBase::IsItemSafe(targetRef.get())) {
-				RuleContext ctx{
-					EventType::kDestructionStageChange,
-					RE::PlayerCharacter::GetSingleton()->As<RE::Actor>(),
-					targetRef.get(),
-					nullptr,
-					nullptr,
-					"",
-					"",
-					"",
-					true,
-					nullptr,
-					stage
-				};
-				RuleManager::GetSingleton()->Trigger(ctx);
-			}
+			RuleContext ctx{
+				EventType::kDestructionStageChange,
+				RE::PlayerCharacter::GetSingleton()->As<RE::Actor>(),
+				targetRef.get(),
+				nullptr,
+				nullptr,
+				"",
+				"",
+				"",
+				true,
+				nullptr,
+				stage
+			};
+			RuleManager::GetSingleton()->Trigger(ctx);
 		});
 
 		return RE::BSEventNotifyControl::kContinue;
@@ -1180,15 +1165,20 @@ namespace OIF
 	void ExplosionHook::thunk(RE::Explosion* a_this)
 	{
 		func(a_this);
-		if (!EventSinkBase::IsItemSafe(a_this)) return;
+		if (!a_this || a_this->IsDeleted()) return;
 
+		auto& runtimeData = a_this->GetExplosionRuntimeData();
 		auto* baseObj = a_this->GetBaseObject();
 		auto explosionPos = a_this->GetPosition();
 		auto* cell = a_this->GetParentCell();
-		auto& runtimeData = a_this->GetExplosionRuntimeData();
 
-		if (runtimeData.damage <= 0.0f) return;
-		float explosionRadius = runtimeData.radius;
+		auto* explosionForm = skyrim_cast<RE::BGSExplosion*>(baseObj);
+		if (runtimeData.damage <= 0.0f) {
+			if (!explosionForm) return;
+			if (explosionForm->data.damage <= 0.0f) return;
+		}
+
+		float explosionRadius = explosionForm ? explosionForm->data.radius : runtimeData.radius;
 		if (explosionRadius <= 0.0f) return;
 
 		if (!baseObj || !cell) return;
@@ -1202,7 +1192,10 @@ namespace OIF
 				}
 			}
 		}
-		if (!EventSinkBase::IsActorSafe(actor)) return;
+		if (!EventSinkBase::IsActorSafe(actor)) {
+			actor = RE::PlayerCharacter::GetSingleton();
+			if (!EventSinkBase::IsActorSafe(actor)) return;
+		}
 
 		RE::TESForm* attackSource = a_this;
 
@@ -1232,8 +1225,6 @@ namespace OIF
 
 			cell->ForEachReferenceInRange(explosionPos, explosionRadius, [&](RE::TESObjectREFR* ref) -> RE::BSContainer::ForEachResult 
 			{
-				if (!EventSinkBase::IsItemSafe(ref)) return RE::BSContainer::ForEachResult::kContinue;
-
 				RuleContext ctx{
 					EventType::kHit,
 					actor,
@@ -1316,7 +1307,7 @@ namespace OIF
 		func(a_this, a_event, a_data);
 		
 		if (a_event) {
-			if (!a_event->IsPressed() || a_event->IsHeld()) return;
+			if (!a_event->IsDown() || a_event->IsHeld()) return;
 		}
 
 		auto* player = RE::PlayerCharacter::GetSingleton();
@@ -1329,6 +1320,7 @@ namespace OIF
 		if (!playerNode) return;
 
 		RE::TESForm* attackSource = nullptr;
+		RE::TESForm* projectileSource = nullptr;
 		WeaponType weaponType = WeaponType::Other;
 		AttackType attackType = AttackType::Regular;
 		DeliveryType deliveryType = DeliveryType::None;
@@ -1350,11 +1342,14 @@ namespace OIF
 			attackType = GetAttackType(attackData.get());
 
 			if (highData->muzzleFlash && highData->muzzleFlash->baseProjectile) {
-				// If the attack is a projectile, let the ProjectileImpactHook handle it
+				// If the attack is a projectile (except for Cone and Grenade), let the projectile impact Hooks handle it
 				return;
-			} else if (auto* spell = attackData->data.attackSpell) {
+			}
+
+			if (auto* spell = attackData->data.attackSpell) {
 				attackSource = spell;
 				weaponType = GetSpellType(spell);
+				logger::warn("AttackBlockHook: Spell detected, using it as attack source.");
 
 				switch (spell->data.castingType) {
 				case RE::MagicSystem::CastingType::kConcentration:
@@ -1482,10 +1477,10 @@ namespace OIF
 		static std::mutex tasksMutex;
 
 		// Wait for the animation to finish before triggering the rule (approximate duration)
-		auto future = std::async(std::launch::async, [validObjects, player, attackSource, weaponType, attackType, deliveryType, duration = 0.6]() {
+		auto future = std::async(std::launch::async, [a_event, validObjects, player, attackSource, projectileSource, weaponType, attackType, deliveryType, duration = 0.65]() {
 			std::this_thread::sleep_for(std::chrono::duration<float>(duration));
 
-			SKSE::GetTaskInterface()->AddTask([validObjects, player, attackSource, weaponType, attackType, deliveryType]() {
+			SKSE::GetTaskInterface()->AddTask([validObjects, player, attackSource, projectileSource, weaponType, attackType, deliveryType]() {
 				for (auto& ref : validObjects) {
 					if (EventSinkBase::IsItemSafe(ref)) {
 						RuleContext ctx{
@@ -1493,7 +1488,7 @@ namespace OIF
 							player->As<RE::Actor>(),
 							ref,
 							attackSource,
-							nullptr,
+							projectileSource,
 							WeaponTypeToString(weaponType),
 							AttackTypeToString(attackType),
 							DeliveryTypeToString(deliveryType),
@@ -1517,6 +1512,13 @@ namespace OIF
 				runningTasks.end());
 		}
 	}
+
+	//void ProcessProjectileHitHook::thunk(RE::Projectile* a_proj, RE::TESObjectREFR* a_ref, RE::NiPoint3* a_hitPos, RE::hkVector4* a_arg,
+	//									 RE::COL_LAYER a_collisionLayer, RE::MATERIAL_ID a_materialID, bool* a_handled)
+	//{
+	//	func(a_proj, a_ref, a_hitPos, a_arg, a_collisionLayer, a_materialID, a_handled);
+	//	HandleProjectileImpact(a_proj, *a_hitPos);
+	//}
 
 	void MissileImpact::thunk(RE::Projectile* a_proj, RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_hitPos,
 							  const RE::NiPoint3& a_velocity, RE::hkpCollidable* a_collidable,
@@ -1542,15 +1544,15 @@ namespace OIF
 		HandleProjectileImpact(a_proj, a_hitPos);
 	}
 
-	void GrenadeImpact::thunk(RE::Projectile* a_proj, RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_hitPos,
-							  const RE::NiPoint3& a_velocity, RE::hkpCollidable* a_collidable,
-							  std::int32_t a_arg6, std::uint32_t a_arg7)
-	{
-		func(a_proj, a_ref, a_hitPos, a_velocity, a_collidable, a_arg6, a_arg7);
-		HandleProjectileImpact(a_proj, a_hitPos);
-	}
-
 	// Currently not working as intended, needs further investigation
+	//void GrenadeImpact::thunk(RE::Projectile* a_proj, RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_hitPos,
+	//						  const RE::NiPoint3& a_velocity, RE::hkpCollidable* a_collidable,
+	//						  std::int32_t a_arg6, std::uint32_t a_arg7)
+	//{
+	//	func(a_proj, a_ref, a_hitPos, a_velocity, a_collidable, a_arg6, a_arg7);
+	//	HandleProjectileImpact(a_proj, a_hitPos);
+	//}
+
 	// Shouts do not seem to work on actors as they should
 	//void ConeImpact::thunk(RE::Projectile* a_proj, RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_hitPos,
 	//					   const RE::NiPoint3& a_velocity, RE::hkpCollidable* a_collidable,
@@ -1590,8 +1592,10 @@ namespace OIF
 
     void InstallHooks() 
     {
-        REL::Relocation<std::uintptr_t> weatherChangeHook{ REL::VariantID(25684, 26231, 25684), REL::VariantOffset(0x44F, 0x46C, 0x44F) }; // Taken from the Rain Extinguishes Fires source code
+        REL::Relocation<std::uintptr_t> weatherChangeHook{ REL::VariantID(25684, 26231, 25684), REL::VariantOffset(0x44F, 0x46C, 0x44F) };
         ::stl::write_thunk_call<WeatherChangeHook>(weatherChangeHook.address());
+		//REL::Relocation<std::uintptr_t> processProjectileHitHook{ REL::VariantID(44204, 43013, 44204), REL::VariantOffset(0x21F, 0x251, 0x21F) };
+		//::stl::write_thunk_call<ProcessProjectileHitHook>(processProjectileHitHook.address());
         ::stl::write_vfunc<RE::ReadyWeaponHandler, ReadyWeaponHook>();
         ::stl::write_vfunc<RE::Explosion, ExplosionHook>();
         ::stl::write_vfunc<RE::PlayerCharacter, UpdateHook>();
@@ -1599,7 +1603,7 @@ namespace OIF
 		MissileImpact::func = REL::Relocation<std::uintptr_t>(RE::MissileProjectile::VTABLE[0]).write_vfunc(0xBD, MissileImpact::thunk);
 		BeamImpact::func = REL::Relocation<std::uintptr_t>(RE::BeamProjectile::VTABLE[0]).write_vfunc(0xBD, BeamImpact::thunk);
 		FlameImpact::func = REL::Relocation<std::uintptr_t>(RE::FlameProjectile::VTABLE[0]).write_vfunc(0xBD, FlameImpact::thunk);
-		GrenadeImpact::func = REL::Relocation<std::uintptr_t>(RE::GrenadeProjectile::VTABLE[0]).write_vfunc(0xBD, GrenadeImpact::thunk);
+		//GrenadeImpact::func = REL::Relocation<std::uintptr_t>(RE::GrenadeProjectile::VTABLE[0]).write_vfunc(0xBD, GrenadeImpact::thunk);
 		//ConeImpact::func = REL::Relocation<std::uintptr_t>(RE::ConeProjectile::VTABLE[0]).write_vfunc(0xBD, ConeImpact::thunk);
 		ArrowImpact::func = REL::Relocation<std::uintptr_t>(RE::ArrowProjectile::VTABLE[0]).write_vfunc(0xBD, ArrowImpact::thunk);
     }

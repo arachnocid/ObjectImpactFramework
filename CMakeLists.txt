@@ -6,9 +6,5 @@ project(
 	LANGUAGES CXX
 )
 
-if (MSVC)
-    add_compile_options(/bigobj)
-endif()
-
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 include(XSEPlugin)

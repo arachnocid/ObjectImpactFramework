@@ -309,8 +309,11 @@ namespace OIF {
         }
 
 		// Remove 0x prefix if present
-		if (idStr.starts_with("0x") || idStr.starts_with("0X")) idStr = idStr.substr(2);
-		
+		if (idStr.size() > 2 && (idStr[0] == '0') && (idStr[1] == 'x' || idStr[1] == 'X')) idStr = idStr.substr(2);
+
+		// Handle FE prefix for ESL/ESPFE plugins
+		if (idStr.size() > 2 && (idStr[0] == 'F' || idStr[0] == 'f') && (idStr[1] == 'E' || idStr[1] == 'e')) idStr = idStr.substr(2);
+
 		// Remove any other prefix if present
 		const std::size_t keep = modInfo->IsLight() ? 3 : 6;
 		if (idStr.length() > keep) idStr = idStr.substr(idStr.length() - keep);
@@ -2659,7 +2662,7 @@ namespace OIF {
         if (!f.formTypesNot.empty() && f.formTypesNot.contains(baseObj->GetFormType())) return false;
         if (!f.formIDs.empty()) {
             hasObjectIdentifiers = true;
-            if (f.formIDs.contains(ctx.target->GetFormID())) {
+			if (f.formIDs.contains(baseObj->GetFormID())) {
                 objectIdentifierMatch = true;
             }
         }
@@ -3723,11 +3726,11 @@ namespace OIF {
                 lastCleanupTime = now;
             }
                     
-            if (recentlyProcessedItems.find(targetFormID) != recentlyProcessedItems.end()) {
+            if (recentlyProcessedItems.find(localTarget) != recentlyProcessedItems.end()) {
                 return;
             }
             
-            recentlyProcessedItems[targetFormID] = now;
+            recentlyProcessedItems[localTarget] = now;
         }
 
         // Walk through every rule and apply those whose filters match

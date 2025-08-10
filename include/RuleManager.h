@@ -563,7 +563,7 @@ namespace OIF
 		std::map<Key, std::uint32_t> _limitCounts;
 		std::map<Key, std::uint32_t> _interactionsCounts;
 
-		std::unordered_map<std::uint32_t, std::chrono::steady_clock::time_point> recentlyProcessedItems;
+		std::unordered_map<RE::TESObjectREFR*, std::chrono::steady_clock::time_point> recentlyProcessedItems;
         std::chrono::steady_clock::time_point lastCleanupTime;
 
 		mutable std::vector<Rule*> updateRules;
