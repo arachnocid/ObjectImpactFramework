@@ -39,56 +39,6 @@ namespace OIF
         RE::FormType::Light
     };
 
-	const std::vector<RE::COL_LAYER> targetLayers = {
-		RE::COL_LAYER::kAcousticSpace,		   // 21
-		RE::COL_LAYER::kActorZone,			   // 22
-		RE::COL_LAYER::kAnimStatic,			   // 2
-		RE::COL_LAYER::kAvoidBox,			   // 34
-		RE::COL_LAYER::kBiped,				   // 8
-		RE::COL_LAYER::kBipedNoCC,			   // 33
-		RE::COL_LAYER::kCamera,				   // 39
-		RE::COL_LAYER::kCameraSphere,		   // 36
-		RE::COL_LAYER::kCharController,		   // 30
-		RE::COL_LAYER::kCloudTrap,			   // 16
-		RE::COL_LAYER::kClutter,			   // 4
-		RE::COL_LAYER::kClutterLarge,		   // 29
-		RE::COL_LAYER::kCollisionBox,		   // 35
-		RE::COL_LAYER::kConeProjectile,		   // 38
-		RE::COL_LAYER::kDeadBip,			   // 32
-		RE::COL_LAYER::kDebrisLarge,		   // 20
-		RE::COL_LAYER::kDebrisSmall,		   // 19
-		RE::COL_LAYER::kDoorDetection,		   // 37
-		RE::COL_LAYER::kDroppingPick,		   // 46
-		RE::COL_LAYER::kGasTrap,			   // 24
-		RE::COL_LAYER::kGround,				   // 17
-		RE::COL_LAYER::kInvisibleWall,		   // 27
-		RE::COL_LAYER::kItemPicker,			   // 40
-		RE::COL_LAYER::kLOS,				   // 41
-		RE::COL_LAYER::kNonCollidable,		   // 15
-		RE::COL_LAYER::kPathingPick,		   // 42
-		RE::COL_LAYER::kPortal,				   // 18
-		RE::COL_LAYER::kProjectile,			   // 6
-		RE::COL_LAYER::kProjectileZone,		   // 23
-		RE::COL_LAYER::kProps,				   // 10
-		RE::COL_LAYER::kShellCasting,		   // 25
-		RE::COL_LAYER::kSpell,				   // 7
-		RE::COL_LAYER::kSpellExplosion,		   // 45
-		RE::COL_LAYER::kStairHelper,		   // 31
-		RE::COL_LAYER::kStatic,				   // 1
-		RE::COL_LAYER::kTerrain,			   // 13
-		RE::COL_LAYER::kTransparent,		   // 3
-		RE::COL_LAYER::kTransparentSmallAnim,  // 28
-		RE::COL_LAYER::kTransparentWall,	   // 26
-		RE::COL_LAYER::kTrap,				   // 14
-		RE::COL_LAYER::kTrees,				   // 9
-		RE::COL_LAYER::kTrigger,			   // 12
-		RE::COL_LAYER::kUnidentified,		   // 0
-		RE::COL_LAYER::kUnused0,			   // 43
-		RE::COL_LAYER::kUnused1,			   // 44
-		RE::COL_LAYER::kWater,				   // 11
-		RE::COL_LAYER::kWeapon				   // 5
-	};
-
 
 //███████╗███╗░░██╗██╗░░░██╗███╗░░░███╗░██████╗
 //██╔════╝████╗░██║██║░░░██║████╗░████║██╔════╝
@@ -312,6 +262,14 @@ namespace OIF
 	{
 		if (!a_proj || a_proj->IsDeleted()) return;
 
+		try {
+			if (!std::isfinite(a_hitPos.x) || !std::isfinite(a_hitPos.y) || !std::isfinite(a_hitPos.z)) {
+				return;
+			}
+		} catch (...) {
+			return;
+		}
+
 		auto& projData = a_proj->GetProjectileRuntimeData();
 
 		RE::TESForm* attackSource = a_proj;
@@ -320,8 +278,6 @@ namespace OIF
 		AttackType attackType = AttackType::Regular;
 		DeliveryType deliveryType = DeliveryType::None;
 		RE::TESObjectCELL* cell = a_proj->GetParentCell();
-
-		if (!a_proj || a_proj->IsDeleted()) return;
 
 		RE::Actor* actor = RE::PlayerCharacter::GetSingleton();
 		if (auto actorCause = projData.actorCause) {
@@ -340,14 +296,7 @@ namespace OIF
 			}
 			if (!cell) return;
 		}
-
-		RE::FormID actorFormID = actor ? actor->GetFormID() : 0;
-		RE::FormID attackSourceFormID = attackSource ? attackSource->GetFormID() : 0;
-		RE::FormID projectileSourceFormID = projectileSource ? projectileSource->GetFormID() : 0;
-		RE::FormID cellFormID = cell ? cell->GetFormID() : 0;
 		
-		if (!a_proj || a_proj->IsDeleted()) return;
-
 		if (auto* projSpell = projData.spell) {
 			if (auto* spell = projSpell->As<RE::SpellItem>()) {
 				attackSource = spell;
@@ -410,57 +359,45 @@ namespace OIF
 			weaponType = WeaponType::Explosion;
 		}
 
-		SKSE::GetTaskInterface()->AddTask([a_hitPos, actorFormID, attackSourceFormID, projectileSourceFormID, cellFormID, weaponType, attackType, deliveryType]() {
-			RE::Actor* actor = nullptr;
-			if (actorFormID != 0) actor = RE::TESForm::LookupByID<RE::Actor>(actorFormID);
-			if (!EventSinkBase::IsActorSafe(actor)) return;
+		std::vector<RE::TESObjectREFR*> validObjects;
 
-			RE::TESForm* attackSource = nullptr;
-			if (attackSourceFormID != 0) attackSource = RE::TESForm::LookupByID(attackSourceFormID);
+		cell->ForEachReferenceInRange(a_hitPos, 65.0, [&](RE::TESObjectREFR* ref) {
+			if (!EventSinkBase::IsItemSafe(ref)) return RE::BSContainer::ForEachResult::kContinue;
+			auto* baseObj = ref->GetBaseObject();
+			if (!baseObj) return RE::BSContainer::ForEachResult::kContinue;
 
-			RE::TESForm* projectileSource = nullptr;
-			if (projectileSourceFormID != 0) projectileSource = RE::TESForm::LookupByID(projectileSourceFormID);
-
-			RE::TESObjectCELL* cell = nullptr;
-			if (cellFormID != 0) {
-				cell = RE::TESForm::LookupByID<RE::TESObjectCELL>(cellFormID);
-			} else {
-				if (actor) cell = actor->GetParentCell();
-				if (!cell) {
-					if (auto* player = RE::PlayerCharacter::GetSingleton()) cell = player->GetParentCell();
-				}
-				if (!cell) return;
-			}
-			
-			cell->ForEachReferenceInRange(a_hitPos, 65.0, [&](RE::TESObjectREFR* ref) -> RE::BSContainer::ForEachResult 
-			{
-				if (!EventSinkBase::IsItemSafe(ref)) return RE::BSContainer::ForEachResult::kContinue;
-				auto* baseObj = ref->GetBaseObject();
-				if (!baseObj) return RE::BSContainer::ForEachResult::kContinue;
-				
-				switch (baseObj->GetFormType()) {
-				case RE::FormType::Flora:
-				case RE::FormType::Tree:
-					break;
-				default:
-					return RE::BSContainer::ForEachResult::kContinue;
-				}
-				
-				RuleContext ctx{
-					EventType::kHit,
-					actor,
-					ref,
-					attackSource,
-					projectileSource,
-					WeaponTypeToString(weaponType),
-					AttackTypeToString(attackType),
-					DeliveryTypeToString(deliveryType),
-					true
-				};
-				RuleManager::GetSingleton()->Trigger(ctx);
-				
+			switch (baseObj->GetFormType()) {
+			case RE::FormType::Activator:  // For some activators with bad collision (e.g., some levers can't be hit by arrows)
+			case RE::FormType::Flora:
+			case RE::FormType::Tree:
+				break;
+			default:
 				return RE::BSContainer::ForEachResult::kContinue;
-			});
+			}
+
+			validObjects.emplace_back(ref);
+			return RE::BSContainer::ForEachResult::kContinue;
+		});
+
+		if (validObjects.empty()) return;
+
+		SKSE::GetTaskInterface()->AddTask([validObjects, actor, attackSource, projectileSource, weaponType, attackType, deliveryType]() {
+			for (auto& ref : validObjects) {
+				if (EventSinkBase::IsItemSafe(ref)) {
+					RuleContext ctx{
+						EventType::kHit,
+						actor,
+						ref,
+						attackSource,
+						projectileSource,
+						WeaponTypeToString(weaponType),
+						AttackTypeToString(attackType),
+						DeliveryTypeToString(deliveryType),
+						true
+					};
+					RuleManager::GetSingleton()->Trigger(ctx);
+				}
+			}
 		});
 	}
 
@@ -1172,14 +1109,10 @@ namespace OIF
 		auto explosionPos = a_this->GetPosition();
 		auto* cell = a_this->GetParentCell();
 
-		auto* explosionForm = skyrim_cast<RE::BGSExplosion*>(baseObj);
-		if (runtimeData.damage <= 0.0f) {
-			if (!explosionForm) return;
-			if (explosionForm->data.damage <= 0.0f) return;
-		}
+		if (runtimeData.damage <= 0.0f) return;
 
-		float explosionRadius = explosionForm ? explosionForm->data.radius : runtimeData.radius;
-		if (explosionRadius <= 0.0f) return;
+		float explosionRadius = runtimeData.radius;
+		if (runtimeData.radius <= 0.0f) return;
 
 		if (!baseObj || !cell) return;
 
@@ -1307,14 +1240,15 @@ namespace OIF
 		func(a_this, a_event, a_data);
 		
 		if (a_event) {
-			if (!a_event->IsDown() || a_event->IsHeld()) return;
+			if (!a_event->IsDown()) return;
 		}
 
 		auto* player = RE::PlayerCharacter::GetSingleton();
-		if (!EventSinkBase::IsActorSafe(player)) return;
+		if (!EventSinkBase::IsActorSafe(player)) return;;
 
-		bool isWeaponDrawn = player->AsActorState()->IsWeaponDrawn();
-		if (!isWeaponDrawn) return;
+		if (player->AsActorState()) {
+			if (player->AsActorState()->GetWeaponState() != RE::WEAPON_STATE::kDrawn) return;
+		}
 
 		auto* playerNode = player->Get3D();
 		if (!playerNode) return;
@@ -1342,11 +1276,9 @@ namespace OIF
 			attackType = GetAttackType(attackData.get());
 
 			if (highData->muzzleFlash && highData->muzzleFlash->baseProjectile) {
-				// If the attack is a projectile (except for Cone and Grenade), let the projectile impact Hooks handle it
+				// If the attack is a projectile, let the projectile impact Hooks handle it
 				return;
-			}
-
-			if (auto* spell = attackData->data.attackSpell) {
+			} else if (auto* spell = attackData->data.attackSpell) {
 				attackSource = spell;
 				weaponType = GetSpellType(spell);
 				logger::warn("AttackBlockHook: Spell detected, using it as attack source.");
@@ -1447,29 +1379,36 @@ namespace OIF
 		auto* cell = player->GetParentCell();
 		if (!cell) return;
 
+		// vector of points to search around for valid objects
+		std::vector<RE::NiPoint3> searchPoints = {
+			end,
+			player->GetPosition()
+		};
+
 		std::vector<RE::TESObjectREFR*> validObjects;
 
-		cell->ForEachReferenceInRange(end, 65.0, [&](RE::TESObjectREFR* ref) 
-		{
-			if (!EventSinkBase::IsItemSafe(ref)) return RE::BSContainer::ForEachResult::kContinue;
-			auto* baseObj = ref->GetBaseObject();
-			if (!baseObj) return RE::BSContainer::ForEachResult::kContinue;
-			
-			switch (baseObj->GetFormType()) {
-			case RE::FormType::Flora:
-			case RE::FormType::Tree:
-				break;
-			default:
+		for (const auto& point : searchPoints) {
+			cell->ForEachReferenceInRange(point, 65.0, [&](RE::TESObjectREFR* ref) {
+				if (!EventSinkBase::IsItemSafe(ref)) return RE::BSContainer::ForEachResult::kContinue;
+				auto* baseObj = ref->GetBaseObject();
+				if (!baseObj) return RE::BSContainer::ForEachResult::kContinue;
+
+				switch (baseObj->GetFormType()) {
+				case RE::FormType::Flora:
+				case RE::FormType::Tree:
+					break;
+				default:
+					return RE::BSContainer::ForEachResult::kContinue;
+				}
+
+				//bool a_arg2 = false;
+				//if (!player->HasLineOfSight(ref, a_arg2)) return RE::BSContainer::ForEachResult::kContinue;
+
+				validObjects.emplace_back(ref);
+
 				return RE::BSContainer::ForEachResult::kContinue;
-			}
-
-			bool a_arg2 = false;
-			if (!player->HasLineOfSight(ref, a_arg2)) return RE::BSContainer::ForEachResult::kContinue;
-
-			validObjects.emplace_back(ref);
-
-			return RE::BSContainer::ForEachResult::kContinue;
-		});
+			});
+		}
 
 		if (validObjects.empty()) return;
 
@@ -1477,8 +1416,22 @@ namespace OIF
 		static std::mutex tasksMutex;
 
 		// Wait for the animation to finish before triggering the rule (approximate duration)
-		auto future = std::async(std::launch::async, [a_event, validObjects, player, attackSource, projectileSource, weaponType, attackType, deliveryType, duration = 0.65]() {
+		auto future = std::async(std::launch::async, [a_event, validObjects, player, attackSource, projectileSource, weaponType, attackType, deliveryType, duration = 0.5]() {
 			std::this_thread::sleep_for(std::chrono::duration<float>(duration));
+
+			if (player->AsActorState()) {
+				if (player->AsActorState()->GetAttackState() != RE::ATTACK_STATE_ENUM::kBowReleasing &&
+					player->AsActorState()->GetAttackState() != RE::ATTACK_STATE_ENUM::kBowReleased &&
+					player->AsActorState()->GetAttackState() != RE::ATTACK_STATE_ENUM::kBowFollowThrough &&
+					player->AsActorState()->GetAttackState() != RE::ATTACK_STATE_ENUM::kBowNextAttack &&
+					player->AsActorState()->GetAttackState() != RE::ATTACK_STATE_ENUM::kFiring &&
+					player->AsActorState()->GetAttackState() != RE::ATTACK_STATE_ENUM::kFired &&
+					player->AsActorState()->GetAttackState() != RE::ATTACK_STATE_ENUM::kBash &&
+					player->AsActorState()->GetAttackState() != RE::ATTACK_STATE_ENUM::kFollowThrough &&
+					player->AsActorState()->GetAttackState() != RE::ATTACK_STATE_ENUM::kNextAttack &&
+					player->AsActorState()->GetAttackState() != RE::ATTACK_STATE_ENUM::kSwing &&
+					player->AsActorState()->GetAttackState() != RE::ATTACK_STATE_ENUM::kHit) return;
+			}
 
 			SKSE::GetTaskInterface()->AddTask([validObjects, player, attackSource, projectileSource, weaponType, attackType, deliveryType]() {
 				for (auto& ref : validObjects) {
@@ -1513,39 +1466,8 @@ namespace OIF
 		}
 	}
 
-	//void ProcessProjectileHitHook::thunk(RE::Projectile* a_proj, RE::TESObjectREFR* a_ref, RE::NiPoint3* a_hitPos, RE::hkVector4* a_arg,
-	//									 RE::COL_LAYER a_collisionLayer, RE::MATERIAL_ID a_materialID, bool* a_handled)
-	//{
-	//	func(a_proj, a_ref, a_hitPos, a_arg, a_collisionLayer, a_materialID, a_handled);
-	//	HandleProjectileImpact(a_proj, *a_hitPos);
-	//}
-
-	void MissileImpact::thunk(RE::Projectile* a_proj, RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_hitPos,
-							  const RE::NiPoint3& a_velocity, RE::hkpCollidable* a_collidable,
-							  std::int32_t a_arg6, std::uint32_t a_arg7)
-	{
-		func(a_proj, a_ref, a_hitPos, a_velocity, a_collidable, a_arg6, a_arg7);
-		HandleProjectileImpact(a_proj, a_hitPos);
-	}
-
-	void BeamImpact::thunk(RE::Projectile* a_proj, RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_hitPos,
-						   const RE::NiPoint3& a_velocity, RE::hkpCollidable* a_collidable,
-						   std::int32_t a_arg6, std::uint32_t a_arg7)
-	{
-		func(a_proj, a_ref, a_hitPos, a_velocity, a_collidable, a_arg6, a_arg7);
-		HandleProjectileImpact(a_proj, a_hitPos);
-	}
-
-	void FlameImpact::thunk(RE::Projectile* a_proj, RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_hitPos,
-							const RE::NiPoint3& a_velocity, RE::hkpCollidable* a_collidable,
-							std::int32_t a_arg6, std::uint32_t a_arg7)
-	{
-		func(a_proj, a_ref, a_hitPos, a_velocity, a_collidable, a_arg6, a_arg7);
-		HandleProjectileImpact(a_proj, a_hitPos);
-	}
-
-	// Currently not working as intended, needs further investigation
-	//void GrenadeImpact::thunk(RE::Projectile* a_proj, RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_hitPos,
+	// Sinks cause crashes, need further investigation
+	//void MissileImpactHook::thunk(RE::Projectile* a_proj, RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_hitPos,
 	//						  const RE::NiPoint3& a_velocity, RE::hkpCollidable* a_collidable,
 	//						  std::int32_t a_arg6, std::uint32_t a_arg7)
 	//{
@@ -1553,8 +1475,7 @@ namespace OIF
 	//	HandleProjectileImpact(a_proj, a_hitPos);
 	//}
 
-	// Shouts do not seem to work on actors as they should
-	//void ConeImpact::thunk(RE::Projectile* a_proj, RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_hitPos,
+	//void BeamImpactHook::thunk(RE::Projectile* a_proj, RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_hitPos,
 	//					   const RE::NiPoint3& a_velocity, RE::hkpCollidable* a_collidable,
 	//					   std::int32_t a_arg6, std::uint32_t a_arg7)
 	//{
@@ -1562,13 +1483,30 @@ namespace OIF
 	//	HandleProjectileImpact(a_proj, a_hitPos);
 	//}
 
-	void ArrowImpact::thunk(RE::Projectile* a_proj, RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_hitPos,
-							const RE::NiPoint3& a_velocity, RE::hkpCollidable* a_collidable,
-							std::int32_t a_arg6, std::uint32_t a_arg7)
-	{
-		func(a_proj, a_ref, a_hitPos, a_velocity, a_collidable, a_arg6, a_arg7);
-		HandleProjectileImpact(a_proj, a_hitPos);
-	}
+	//void FlameImpactHook::thunk(RE::Projectile* a_proj, RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_hitPos,
+	//						const RE::NiPoint3& a_velocity, RE::hkpCollidable* a_collidable,
+	//						std::int32_t a_arg6, std::uint32_t a_arg7)
+	//{
+	//	func(a_proj, a_ref, a_hitPos, a_velocity, a_collidable, a_arg6, a_arg7);
+	//	HandleProjectileImpact(a_proj, a_hitPos);
+	//}
+
+	// Not working as intended, shouts do not seem to work on actors as they should
+	//void ConeImpactHook::thunk(RE::ConeProjectile* a_proj, RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_hitPos,
+	//					   const RE::NiPoint3& a_velocity, RE::hkpCollidable* a_collidable,
+	//					   std::int32_t a_arg6, std::uint32_t a_arg7)
+	//{
+	//	func(a_proj, a_ref, a_hitPos, a_velocity, a_collidable, a_arg6, a_arg7);
+	//	HandleProjectileImpact(a_proj, a_hitPos);
+	//}
+
+	//void ArrowImpactHook::thunk(RE::Projectile* a_proj, RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_hitPos,
+	//						const RE::NiPoint3& a_velocity, RE::hkpCollidable* a_collidable,
+	//						std::int32_t a_arg6, std::uint32_t a_arg7)
+	//{
+	//	func(a_proj, a_ref, a_hitPos, a_velocity, a_collidable, a_arg6, a_arg7);
+	//	HandleProjectileImpact(a_proj, a_hitPos);
+	//}
 
 
 //██████╗░███████╗░██████╗░██╗░██████╗████████╗██████╗░░█████╗░████████╗██╗░█████╗░███╗░░██╗
@@ -1587,6 +1525,8 @@ namespace OIF
         holder->GetEventSource<RE::TESCellAttachDetachEvent>()->AddEventSink(CellAttachDetachSink::GetSingleton());
         holder->GetEventSource<RE::TESMagicEffectApplyEvent>()->AddEventSink(MagicEffectApplySink::GetSingleton());
         holder->GetEventSource<RE::TESDestructionStageChangedEvent>()->AddEventSink(DestructionStageChangedSink::GetSingleton());
+		
+		// Currently disabled, still in development
 		//holder->GetEventSource<RE::TESContainerChangedEvent>()->AddEventSink(DropSink::GetSingleton());
     }
 
@@ -1594,17 +1534,16 @@ namespace OIF
     {
         REL::Relocation<std::uintptr_t> weatherChangeHook{ REL::VariantID(25684, 26231, 25684), REL::VariantOffset(0x44F, 0x46C, 0x44F) };
         ::stl::write_thunk_call<WeatherChangeHook>(weatherChangeHook.address());
-		//REL::Relocation<std::uintptr_t> processProjectileHitHook{ REL::VariantID(44204, 43013, 44204), REL::VariantOffset(0x21F, 0x251, 0x21F) };
-		//::stl::write_thunk_call<ProcessProjectileHitHook>(processProjectileHitHook.address());
-        ::stl::write_vfunc<RE::ReadyWeaponHandler, ReadyWeaponHook>();
+		::stl::write_vfunc<RE::ReadyWeaponHandler, ReadyWeaponHook>();
         ::stl::write_vfunc<RE::Explosion, ExplosionHook>();
-        ::stl::write_vfunc<RE::PlayerCharacter, UpdateHook>();
+		::stl::write_vfunc<RE::PlayerCharacter, UpdateHook>();
 		::stl::write_vfunc<RE::AttackBlockHandler, AttackBlockHook>();
-		MissileImpact::func = REL::Relocation<std::uintptr_t>(RE::MissileProjectile::VTABLE[0]).write_vfunc(0xBD, MissileImpact::thunk);
-		BeamImpact::func = REL::Relocation<std::uintptr_t>(RE::BeamProjectile::VTABLE[0]).write_vfunc(0xBD, BeamImpact::thunk);
-		FlameImpact::func = REL::Relocation<std::uintptr_t>(RE::FlameProjectile::VTABLE[0]).write_vfunc(0xBD, FlameImpact::thunk);
-		//GrenadeImpact::func = REL::Relocation<std::uintptr_t>(RE::GrenadeProjectile::VTABLE[0]).write_vfunc(0xBD, GrenadeImpact::thunk);
-		//ConeImpact::func = REL::Relocation<std::uintptr_t>(RE::ConeProjectile::VTABLE[0]).write_vfunc(0xBD, ConeImpact::thunk);
-		ArrowImpact::func = REL::Relocation<std::uintptr_t>(RE::ArrowProjectile::VTABLE[0]).write_vfunc(0xBD, ArrowImpact::thunk);
+		
+		// Currently disabled due to instability issues
+		//::stl::write_vfunc<RE::MissileProjectile, MissileImpactHook>();
+		//::stl::write_vfunc<RE::BeamProjectile, BeamImpactHook>();
+		//::stl::write_vfunc<RE::FlameProjectile, FlameImpactHook>();
+		//::stl::write_vfunc<RE::ConeProjectile, ConeImpactHook>();
+		//::stl::write_vfunc<RE::ArrowProjectile, ArrowImpactHook>();
     }
 }

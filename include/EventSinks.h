@@ -198,6 +198,7 @@ namespace OIF
 			static DropSink sink;
 			return &sink;
 		}
+
 		RE::BSEventNotifyControl ProcessEvent(
 			const RE::TESContainerChangedEvent* evn,
 			RE::BSTEventSource<RE::TESContainerChangedEvent>*) override;
@@ -247,62 +248,51 @@ namespace OIF
 		static inline constexpr std::size_t size = 0x4;
 	};
 
-	// Taken and adapted from Explosion Collision Fix source code
-	//struct ProcessProjectileHitHook
-	//{
-	//	static void thunk(RE::Projectile* a_proj, RE::TESObjectREFR* a_ref, RE::NiPoint3* a_hitPos, RE::hkVector4* a_arg, 
-	//					  RE::COL_LAYER a_collisionLayer, RE::MATERIAL_ID a_materialID, bool* a_handled);
-	//	static inline REL::Relocation<decltype(thunk)> func;
-	//};
-
 	// Credits to RavenKZP for the following hooks!
-	struct MissileImpact
-	{
-		static void thunk(RE::Projectile* a_proj, RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_hitPos,
-						  const RE::NiPoint3& a_velocity, RE::hkpCollidable* a_collidable, 
-						  std::int32_t a_arg6, std::uint32_t a_arg7);		
-		static inline REL::Relocation<decltype(thunk)> func;
-	};
+	//struct MissileImpactHook
+	//{
+	//	static void thunk(RE::Projectile* a_proj, RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_hitPos,
+	//					  const RE::NiPoint3& a_velocity, RE::hkpCollidable* a_collidable, 
+	//					  std::int32_t a_arg6, std::uint32_t a_arg7);		
+	//	static inline REL::Relocation<decltype(thunk)> func;
+	//	static constexpr std::size_t size = 0xBD;
+	//};
 
-	struct BeamImpact
-	{
-		static void thunk(RE::Projectile* a_proj, RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_hitPos,
-						  const RE::NiPoint3& a_velocity, RE::hkpCollidable* a_collidable, 
-						  std::int32_t a_arg6, std::uint32_t a_arg7);		
-		static inline REL::Relocation<decltype(thunk)> func;
-	};
+	//struct BeamImpactHook
+	//{
+	//	static void thunk(RE::Projectile* a_proj, RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_hitPos,
+	//					  const RE::NiPoint3& a_velocity, RE::hkpCollidable* a_collidable, 
+	//					  std::int32_t a_arg6, std::uint32_t a_arg7);		
+	//	static inline REL::Relocation<decltype(thunk)> func;
+	//	static constexpr std::size_t size = 0xBD;
+	//};
 
-	struct FlameImpact
-	{
-		static void thunk(RE::Projectile* a_proj, RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_hitPos,
-						  const RE::NiPoint3& a_velocity, RE::hkpCollidable* a_collidable, 
-						  std::int32_t a_arg6, std::uint32_t a_arg7);		
-		static inline REL::Relocation<decltype(thunk)> func;
-	};
+	//struct FlameImpactHook
+	//{
+	//	static void thunk(RE::Projectile* a_proj, RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_hitPos,
+	//					  const RE::NiPoint3& a_velocity, RE::hkpCollidable* a_collidable, 
+	//					  std::int32_t a_arg6, std::uint32_t a_arg7);		
+	//	static inline REL::Relocation<decltype(thunk)> func;
+	//	static constexpr std::size_t size = 0xBD;
+	//};
 
-	//struct GrenadeImpact
+	//struct ConeImpactHook
 	//{
 	//	static void thunk(RE::Projectile* a_proj, RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_hitPos,
 	//					  const RE::NiPoint3& a_velocity, RE::hkpCollidable* a_collidable, 
 	//					  std::int32_t a_arg6, std::uint32_t a_arg7);
 	//	static inline REL::Relocation<decltype(thunk)> func;
+	// 	static constexpr std::size_t size = 0xBD;
 	//};
 
-	//struct ConeImpact
+	//struct ArrowImpactHook
 	//{
 	//	static void thunk(RE::Projectile* a_proj, RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_hitPos,
 	//					  const RE::NiPoint3& a_velocity, RE::hkpCollidable* a_collidable, 
-	//					  std::int32_t a_arg6, std::uint32_t a_arg7);
+	//					  std::int32_t a_arg6, std::uint32_t a_arg7);		
 	//	static inline REL::Relocation<decltype(thunk)> func;
+	//	static constexpr std::size_t size = 0xBD;
 	//};
-
-	struct ArrowImpact
-	{
-		static void thunk(RE::Projectile* a_proj, RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_hitPos,
-						  const RE::NiPoint3& a_velocity, RE::hkpCollidable* a_collidable, 
-						  std::int32_t a_arg6, std::uint32_t a_arg7);		
-		static inline REL::Relocation<decltype(thunk)> func;
-	};
 
 
 //██████╗░███████╗░██████╗░██╗░██████╗████████╗██████╗░░█████╗░████████╗██╗░█████╗░███╗░░██╗
