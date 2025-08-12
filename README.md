@@ -7,7 +7,6 @@ This guide explains how to set up those JSON files so you can create your own mo
 ## Users Info
 
 - Place your JSON files in: `Data/SKSE/Plugins/ObjectImpactFramework/`
-- **Check the Log**: If something doesn't work, look at the mod's log file for error messages. The log can be found in `Documents/My Games/Skyrim Special Edition/SKSE/ObjectImpactFramework.log`
 
 ## Mod Authors Info
 
@@ -15,6 +14,7 @@ This guide explains how to set up those JSON files so you can create your own mo
 - **Effect Additional Fields Note**: Make sure you check whether the effect requires the presence of the `items` field. Without specifying and filling out this field (at least with one identifier or, if the effect does not support identifiers, with any available field), the effect will *not* work.
 - **Priority Note**: Place effects with `"Remove"` and `"Swap"` prefixes at the very end of the event, otherwise the removed object may not have time to call other effects on itself before gets deleted.
 - **Non-collidable Objects Note**: Only `flora` and `tree` hits are supported. Since the system is based on workarounds and math, in rare cases it may behave unexpectedly, for example, it is difficult to hit sprawling non-collidable trees. **Warning:** When using melee attacks, the effect may sometimes occur before the attack animation is played.
+- **Check the Log**: If something doesn't work, look at the mod's log file for error messages. The log can be found in `Documents/My Games/Skyrim Special Edition/SKSE/ObjectImpactFramework.log`
 - You can modify existing JSON files without quitting the game, edit the file and reload the save.
 
 ---
