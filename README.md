@@ -52,7 +52,7 @@ Each rule in your JSON file defines a specific behavior for the mod. Rules are w
   - `"OnUpdate"`: Triggered every 250 milliseconds.
   - `"DestructionStageChange"`: Triggered on object's destruction stage change. The effect will *not* be applied to the scene when the object is disabled or deleted.
   
-- **`filter`**: Defines the conditions under which the rule applies. This is an object that specifies which objects or interactions the rule targets. At least one of `formTypes`, `formIDs`, `editorIDs`, `formLists`, or `keywords` must be provided to identify target objects.
+- **`filter`**: Defines the targeted objects and the conditions under which a rule applies to them. At least one of `formTypes`, `formIDs`, `editorIDs`, `formLists`, or `keywords` must be provided to identify target objects.
 
 - **`effect`**: Describes what happens when the rule is triggered. Each effect has a `type` and, for most types, an `items` array specifying what to spawn, swap, or apply.
 
@@ -65,10 +65,10 @@ Here's a basic example of a rule:
         "filter": {
             "formTypes": ["activator"]
         },
-        "effect": {
+        "effect": [{
             "type": "SpawnItem",
             "items": [{"formID": "Skyrim.esm:0xF"}]
-        }
+        }]
     }
 ]
 ```
@@ -85,7 +85,7 @@ Below are all possible filter parameters:
 
 ### General Filters
 
-- **`formTypes`** (one of the required fields to choose from): An array of strings specifying the types of objects the rule applies to. **Note:** The object *must* have a collision. Possible values:
+- **`formTypes`** (one of the required fields to choose from): An array of strings specifying the types of objects the rule applies to. Possible values:
   - `"activator"`: Standard activators (e.g., levers, buttons).
   - `"talkingactivator"`: Activators that can "speak" (e.g., some quest-related objects).
   - `"weapon"`: Weapons like swords or bows (lying around in the world).
@@ -103,14 +103,14 @@ Below are all possible filter parameters:
   - `"door"`: Doors and gates.
   - `"flora"`: Harvestable plants and hanging animals.
   - `"container"`: Containers like chests or barrels.
-  - `"static"`: Non-movable world objects (e.g., statues).
+  - `"static"`: Static objects (e.g., statues).
   - `"moveablestatic"`: Movable static objects.
   - `"tree"`: Trees.
   - `"light"`: Lights with 3D models (e.g., torches).
  
 - **`formTypesNot`**: An array of strings specifying the types of objects that the rule should *not* apply to. Same format as `formTypes`.
 
-- **`formIDs`** (one of the required fields to choose from): An array of strings identifying specific objects by their Form ID in the format `"modName:formID"`. Examples:
+- **`formIDs`** (one of the required fields to choose from): An array of strings identifying specific objects by their formID in the format `"modName:formID"`. Examples:
   - `"Skyrim.esm:0x123456"` (for esp/esm plugins).
   - `"MyMod.esl:0x456"` (for esl/espfe plugins).
   - `"Dawnguard.esm:00123456"` (alternate format with leading zeros (esp/esm)).
@@ -118,11 +118,11 @@ Below are all possible filter parameters:
 
 - **`formIDsNot`**: An array of strings identifying specific objects that the rule should *not* apply to. Same format as `formIDs`.
 
-- **`editorIDs`** (one of the required fields to choose from): An array of strings identifying specific objects by their Editor ID in the format `"EditorIDName"`. Example: `"VendorItemClutter"`.
+- **`editorIDs`** (one of the required fields to choose from): An array of strings identifying specific objects by their editorID in the format `"EditorIDName"`. Example: `"VendorItemClutter"`.
 
 - **`editorIDsNot`**: An array of strings identifying specific objects that the rule should *not* apply to. Same format as `editorIDs`.
 
-- **`formLists`** (one of the required fields to choose from): An array of objects referencing formlists (lists of forms defined in a mod). Each entry has:
+- **`formLists`** (one of the required fields to choose from): An array of objects referencing formlists. Each entry has:
   - **`formID`**: The formlist's form ID in `"modName:formID"` format (use this or `editorID`).
   - **`editorID`**: The formlist's editor ID in `"EditorIDName"` format (use this or `formID`).
   - **`index`** (optional): An integer specifying which item in the formlist to use. Example:
@@ -144,9 +144,9 @@ Below are all possible filter parameters:
 
 - **`chance`**: A number between 0 and 100 representing the percentage chance the rule triggers. Defaults to 100 if omitted.
 
-- **`interactions`**: An integer specifying how many interactions (e.g., hits or activations) are required before the effect triggers. Defaults to 1. Now works with all event types.
+- **`interactions`**: An integer specifying how many interactions (e.g., hits or activations) are required before the effect triggers. Defaults to 1.
 
-- **`limit`**: An integer setting the maximum number of times the rule can trigger per object. No limit if omitted. Now works with all event types.
+- **`limit`**: An integer setting the maximum number of interactions per object. No limit if omitted.
 
 - **`questItemStatus`**: An integer specifying quest item status requirements. Only works with **ACTIVE** player quests:
   - `0` (default): Object must not be a quest item.
@@ -191,7 +191,7 @@ Below are all possible filter parameters:
   "timer": {"time": "1.0", "matchFilterRecheck": 1}
   ```
 
-- **`time`**: An array of time conditions that must be active for the rule to apply. Format: `["Hour >= 10", "DayOfWeek = 1"]`. Available entries:
+- **`time`**: An array of in-game time conditions that must be active for the rule to apply. Format: `["Hour >= 10", "DayOfWeek = 1"]`. Available entries:
   - `Minute`
   - `Hour`
   - `Day`
@@ -200,13 +200,13 @@ Below are all possible filter parameters:
   - `Year`
   - `GameTime`
  
-- **`timeNot`**: An array of time conditions that must *not* be active. Same format as `time`.
+- **`timeNot`**: An array of in-game time conditions that must *not* be active. Same format as `time`.
 
 ### Proximity-Based Filters
 
 - **`nearbyObjects`**: An array of objects that must be in a certain radius around the target object for the rule should apply. Each entry has:
-  - **`formID`**: The object formID or a formlist's formID in `"modName:formID"` format (use this or `editorID`). Accepts formlists' formIDs as well.
-  - **`editorID`**: The editorID in `"EditorIDName"` format (use this or `formID`). Accepts formlists' editorIDs as well.
+  - **`formID`**: The object formID or a formlist's formID in `"modName:formID"` format (use this or `editorID`).
+  - **`editorID`**: The object editorID or a formlist's editorID in `"EditorIDName"` format (use this or `formID`).
   - **`radius`**: An integer specifying in what radius to search. Example:
  
     ```json
@@ -255,13 +255,14 @@ Below are all possible filter parameters:
 
 - **`levelNot`**: An array of level conditions that the event source actor must *not* meet. Same format as `level`.
 
-- **`isSneaking`**: An integer specifying whether the event source actor is in this state.
-- **`isSwimming`**:
-- **`isInCombat`**:
-- **`isMounted`**:
-- **`isDualCasting`**:
-- **`isSprinting`**:
-- **`isWeaponDrawn`**:
+An integer specifying whether the event source actor is in the state of:
+- **`isSneaking`**: Sneaking.
+- **`isSwimming`**: Swimming.
+- **`isInCombat`**: Combat.
+- **`isMounted`**: Being mounted.
+- **`isDualCasting`**: Dual casting.
+- **`isSprinting`**: Sprinting.
+- **`isWeaponDrawn`**: Drawn weapon.
   - `0`: Source actor is *not* in this state.
   - `1`: Source actor is in this state.
   - `2` (default): All states allowed.
@@ -330,7 +331,7 @@ For rules with the `"Hit"` event, additional filters can refine which attacks tr
  
 - **`deliveryTypesNot`**: An array of spell delivery types that must *not* be used. Same format as `deliveryTypes`.
 
-- **`allowProjectiles`**: Controls whether projectiles are allowed. Possible values:
+- **`allowProjectiles`**: An integer specifying whether projectiles are allowed. Possible values:
   - `0`: Projectiles are not allowed.
   - `1` (default): Projectiles are allowed.
 
