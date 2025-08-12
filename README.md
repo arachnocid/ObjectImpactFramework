@@ -54,7 +54,7 @@ Each rule in your JSON file defines a specific behavior for the mod. Rules are w
   
 - **`filter`**: Defines the conditions under which the rule applies. This is an object that specifies which objects or interactions the rule targets. At least one of `formTypes`, `formIDs`, `editorIDs`, `formLists`, or `keywords` must be provided to identify target objects.
 
-- **`effect`**: Describes what happens when the rule is triggered. This can be a single effect (an object) or multiple effects (an array of objects). Each effect has a `type` and, for most types, an optional `items` array specifying what to spawn, swap, or apply.
+- **`effect`**: Describes what happens when the rule is triggered. Each effect has a `type` and, for most types, an `items` array specifying what to spawn, swap, or apply.
 
 Here's a basic example of a rule:
 
