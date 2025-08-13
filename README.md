@@ -343,7 +343,7 @@ For rules with the `"Hit"` event, additional filters can refine which attacks tr
 
 ## Effects: What Happens When the Rule Triggers
 
-The `effect` field defines the outcome when a rule is triggered. It can be a single effect (an object) or multiple effects (an array of objects). Each effect has a mandatory `type` field and, for most types, an optional `items` array.
+The `effect` field defines the outcome when a rule is triggered. Each effect has a mandatory `type` field and, for most types, an `items` array.
 
 Here are all possible `type` values and their supported fields:
 
@@ -354,7 +354,7 @@ Here are all possible `type` values and their supported fields:
 - **`ExecuteConsoleCommandOnItem`**: Executes a console command on the target object.
   - Supported fields: `string`, `chance`, `timer`.
  
-- **`ExecuteConsoleCommandOnSource`**: Executes a console command on an actor who interacted with the object.
+- **`ExecuteConsoleCommandOnSource`**: Executes a console command on an actor who interacted with the target object.
   - Supported fields: `string`, `chance`, `timer`.
 
 - **`ShowNotification`**: Shows a notification.
@@ -383,58 +383,58 @@ Here are all possible `type` values and their supported fields:
   - No `items` array required.
  
 ### Inventory Management
-- **`SpillInventory`**: Spills the contents of a container.
+- **`SpillInventory`**: Spills the contents of the target container.
   - No `items` array required.
 
-- **`AddContainerItem`**: Adds specified items to the contents of a container.
+- **`AddContainerItem`**: Adds specified items to the contents of the target container.
   - Supported fields: `formID`, `editorID`, `formList`, `chance`, `timer`.
  
-- **`AddActorItem`**: Adds specified items to the inventory of an actor who interacted with the object.
+- **`AddActorItem`**: Adds specified items to the inventory of an actor who interacted with the target object.
   - Supported fields: `formID`, `editorID`, `formList`, `chance`, `timer`.
  
-- **`RemoveContainerItem`**: Removes specified items from the contents of a container.
+- **`RemoveContainerItem`**: Removes specified items from the contents of the target container.
   - Supported fields: `formID`, `editorID`, `formList`, `chance`, `timer`.
  
-- **`RemoveActorItem`**: Removes specified items from the inventory of an actor who interacted with the object.
+- **`RemoveActorItem`**: Removes specified items from the inventory of an actor who interacted with the target object.
   - Supported fields: `formID`, `editorID`, `formList`, `chance`, `timer`.
 
 ### Item Spawning & Swapping
-- **`SpawnItem`**: Spawns specific items at the object's location.
+- **`SpawnItem`**: Spawns specific items at the target object's location.
   - Supported fields: `formID`, `editorID`, `formList`, `count`, `scale`, `fade`, `spawnType`, `string`, `chance`, `timer`.
 
-- **`SpawnLeveledItem`**: Spawns random leveled items based on the player's level.
+- **`SpawnLeveledItem`**: Spawns random leveled items at the target object's location (based on the player's level).
   - Supported fields: `formID`, `editorID`, `formList`, `count`, `scale`, `fade`, `spawnType`, `string`, `chance`, `timer`.
 
-- **`SwapItem`**: Replaces the target object with another specific item.
+- **`SwapItem`**: Replaces the target object with another specified item.
   - Supported fields: `formID`, `editorID`, `formList`, `count`, `scale`, `fade`, `spawnType`, `string`, `nonDeletable`, `chance`, `timer`.
 
-- **`SwapLeveledItem`**: Replaces the target object with a random leveled item.
+- **`SwapLeveledItem`**: Replaces the target object with a random leveled item (based on the player's level).
   - Supported fields: `formID`, `editorID`, `formList`, `count`, `scale`, `fade`, `spawnType`, `string`, `nonDeletable`, `chance`, `timer`.
 
 ### Actor Spawning & Swapping
-- **`SpawnActor`**: Spawns specific actors at the object's location.
+- **`SpawnActor`**: Spawns specified actors at the target object's location.
   - Supported fields: `formID`, `editorID`, `formList`, `count`, `scale`, `fade`, `spawnType`, `string`, `chance`, `timer`.
 
-- **`SpawnLeveledActor`**: Spawns random leveled actors.
+- **`SpawnLeveledActor`**: Spawns random leveled actors at the target object's location (based on the player's level).
   - Supported fields: `formID`, `editorID`, `formList`, `count`, `scale`, `fade`, `spawnType`, `string`, `chance`, `timer`.
 
-- **`SwapActor`**: Replaces the target object with specific actors.
+- **`SwapActor`**: Replaces the target object with specified actors.
   - Supported fields: `formID`, `editorID`, `formList`, `count`, `scale`, `fade`, `spawnType`, `string`, `nonDeletable`, `chance`, `timer`.
 
-- **`SwapLeveledActor`**: Replaces the target object with random leveled actors.
+- **`SwapLeveledActor`**: Replaces the target object with random leveled actors (based on the player's level).
   - Supported fields: `formID`, `editorID`, `formList`, `count`, `scale`, `fade`, `spawnType`, `string`, `nonDeletable`, `chance`, `timer`.
 
 ### Magic Effects
-- **`SpawnSpell`**: Casts spells on nearby actors.
+- **`SpawnSpell`**: Casts specified spells on nearby actors.
   - Supported fields: `formID`, `editorID`, `formList`, `count`, `radius`, `chance`, `timer`.
 
-- **`SpawnLeveledSpell`**: Casts random leveled spells on nearby actors.
+- **`SpawnLeveledSpell`**: Casts random leveled spells on nearby actors (based on the player's level).
   - Supported fields: `formID`, `editorID`, `formList`, `count`, `radius`, `chance`, `timer`.
 
-- **`SpawnSpellOnItem`**: Casts spells on the target object.
+- **`SpawnSpellOnItem`**: Casts specified spells on the target object.
   - Supported fields: `formID`, `editorID`, `formList`, `chance`, `chance`, `timer`.
 
-- **`SpawnLeveledSpellOnItem`**: Casts random leveled spells on the target object.
+- **`SpawnLeveledSpellOnItem`**: Casts random leveled spells on the target object (based on the player's level).
   - Supported fields: `formID`, `editorID`, `formList`, `count`, `chance`, `timer`.
 
 - **`ApplySpell`**: Applies the target object's spell (if it's a scroll or a spell tome) to nearby actors.
@@ -459,16 +459,16 @@ Here are all possible `type` values and their supported fields:
   - Supported fields: `formID`, `editorID`, `formList`, `chance`, `timer`.
 
 ### Visual & Audio Effects
-- **`PlaySound`**: Plays a sound descriptor.
+- **`PlaySound`**: Plays a sound descriptor on the target object.
   - Supported fields: `formID`, `editorID`, `formList`, `count`, `chance`, `timer`.
 
-- **`PlayIdle`**: Plays an animation on an actor who interacted with the object. [List of available animation names](https://forums.nexusmods.com/topic/11007808-le-list-of-animation-events-for-debugsendanimationevent/?do=findComment&comment=105617168).
+- **`PlayIdle`**: Plays an animation on an actor who interacted with the target object. [List of available animation names](https://forums.nexusmods.com/topic/11007808-le-list-of-animation-events-for-debugsendanimationevent/?do=findComment&comment=105617168).
   - Supported fields: `string`, `duration`, `chance`, `timer`.
  
-- **`SpawnImpactDataSet`**: Plays an impact data set (not to be confused with impacts).
+- **`SpawnImpactDataSet`**: Plays an impact data set on the target object (not to be confused with impacts).
   - Supported fields: `formID`, `editorID`, `formList`, `count`, `chance`, `timer`.
 
-- **`SpawnExplosion`**: Triggers an explosion at the object's location.
+- **`SpawnExplosion`**: Triggers an explosion at the target object's location.
   - Supported fields: `formID`, `editorID`, `formList`, `count`, `fade`, `spawnType`, `chance`, `timer`.
 
 - **`SpawnEffectShader`**: Spawns effect shaders on nearby actors.
@@ -483,11 +483,11 @@ Here are all possible `type` values and their supported fields:
 - **`SpawnArtObjectOnItem`**:  Spawns art objects on the target object.
   - Supported fields: `formID`, `editorID`, `formList`, `count`, `duration`, `chance`, `timer`.
  
-- **`ToggleNode`**: Toggles nodes on and off (scales to 0.00001 or 1.0).
+- **`ToggleNode`**: Toggles the target object's nodes on and off (scales to 0.00001 or 1.0).
   - Supported fields: `mode`, `strings`, `chance`, `timer`.
 
 ### Lighting Effects
-- **`SpawnLight`**: Spawns a light at the object's location.
+- **`SpawnLight`**: Spawns a light at the target object's location.
   - Supported fields: `formID`, `editorID`, `formList`, `count`, `fade`, `spawnType`, `string`, `chance`, `timer`.
 
 - **`RemoveLight`**: Deletes lights.
@@ -505,13 +505,13 @@ Here are all possible `type` values and their supported fields:
 
 For effect types that support an `items` array, you can specify detailed configurations. Each item in the array can include:
 
-- **`formID`**: A specific Form ID in `"modName:formID"` format (e.g., `"Skyrim.esm:0xF"` for a gold coin).
+- **`formID`**: A specific formID in `"modName:formID"` format (e.g., `"Skyrim.esm:0xF"` for a gold coin).
 
-- **`editorID`**: A specific Editor ID in `"EditorIDName` format (e.g., `"VendorItemClutter"` for clutter).
+- **`editorID`**: A specific editorID in `"EditorIDName` format (e.g., `"VendorItemClutter"` for clutter).
 
 - **`formList`**: An array of formlist entries.
-  - **`formID`**: The formlist's form ID in `"modName:formID"` format (use this or `editorID`).
-  - **`editorID`**: The formlist's editor ID in `"EditorIDName"` format (use this or `formID`).
+  - **`formID`**: The formlist's formID in `"modName:formID"` format (use this or `editorID`).
+  - **`editorID`**: The formlist's editorID in `"EditorIDName"` format (use this or `formID`).
   - **`index`** (optional): An integer specifying which item in the formlist to use:
     - `-1` (default): All items at once.
     - `-2`: Parallel relationship for mirrored formlists.
@@ -538,29 +538,29 @@ For effect types that support an `items` array, you can specify detailed configu
     "timer": {"time": "1.0", "matchFilterRecheck": 1}
     ```
 
-- **`count`**: An integer specifying how many instances to spawn or swap. Defaults to 1.
+- **`count`**: An integer specifying how many instances to spawn or how many times to perform a particular action. Defaults to 1.
 
-- **`radius`**: Specifies the radius in game units for effect application. Defaults vary by effect type.
+- **`radius`**: Specifies the radius in game units for effect application. Defaults to 100.
 
 - **`duration`**: For `PlayIdle`, defaults to 1.0 (lower values make animation faster). For **effect shaders** and **art objects**, specifies how long the effect lasts.
 
 - **`string`**: Used for various effects. Takes one entry. For **spawn** and **swap** effects, used to take node name. For `PlayIdle`, used to take animation name.
 
-- **`strings`**: Used for various effects. Takes multiple entries. For `ToggleNode`, used to take node names.
+- **`strings`**: Used for various effects. Takes multiple entries. For `ToggleNode`, used to take multiple node names.
 
 - **`mode`**: Used for various effects. Currently used for `ToggleNode` effect to specify the disable or enable mode.
   - `0` (default): Disable.
   - `1`: Enable.
  
-- **`nonDeletable`**: Used for **swap** functions only. During swap, the original object is deactivated and a new one appears in its place. This value determines whether the original object is deleted (`0`) or only disabled (`1`).
+- **`nonDeletable`**: Used for `swap` functions only. During swap, the original object is deactivated and a new one appears in its place. This value determines whether the original object is deleted (`0`) or only disabled (`1`).
 
-- **`scale`**: Used for **spawn/swap** functions only. Allows you to select the scale of the spawned item. By default, it is copied from the target object.
+- **`scale`**: Used for `spawn`/`swap` functions only. Allows you to select the scale of the spawned item. By default, it is copied from the target object.
 
-- **`fade`**: Used for **spawn/swap** functions only. Determines whether the object will have a fade effect upon creation:
+- **`fade`**: Used for `spawn`/`swap` functions only. Determines whether the object will have a fade effect upon creation:
   - `0`: Without fade effect (do **not** use with **explosions**).
   - `1` (default): With fade effect.
 
-- **`spawnType`**: Used for **spawn/swap** functions only. Allows you to select the type of how the object should be spawned. Options:
+- **`spawnType`**: Used for `spawn`/`swap` functions only. Allows you to select the type of how the object should be spawned. Options:
   - `0`: Common PlaceAtMe().
   - `1`: PlaceAtMe() spawning the object at the center of the original.
   - `2`: PlaceAtMe() spawning at the top of the original.
@@ -586,10 +586,10 @@ For effect types that support an `items` array, you can specify detailed configu
            "filter": {
                "formTypes": ["container"]
            },
-           "effect": {
+           "effect": [{
                "type": "SpawnItem",
                "items": [{"formID": "Skyrim.esm:0xF"}]
-           }
+           }]
        }
    ]
    ```
@@ -603,9 +603,9 @@ For effect types that support an `items` array, you can specify detailed configu
            "filter": {
                "formTypes": ["static"]
            },
-           "effect": {
+           "effect": [{
                "type": "RemoveItem"
-           }
+           }]
        }
    ]
    ```
@@ -619,13 +619,13 @@ For effect types that support an `items` array, you can specify detailed configu
            "filter": {
                "formTypes": ["container"]
            },
-           "effect": {
+           "effect": [{
                "type": "SpawnItem",
                "items": [
                    {"formID": "Skyrim.esm:0xF", "count": 5, "chance": 50, "scale": 1.5},
                    {"formID": "Skyrim.esm:0xA", "count": 2, "chance": 30, "fade": 1}
                ]
-           }
+           }]
        }
    ]
    ```
@@ -639,10 +639,10 @@ For effect types that support an `items` array, you can specify detailed configu
            "filter": {
                "formTypes": ["tree"]
            },
-           "effect": {
+           "effect": [{
                "type": "SpawnExplosion",
                "items": [{"formID": "Skyrim.esm:0x123456"}]
-           }
+           }]
        }
    ]
    ```
@@ -656,7 +656,7 @@ For effect types that support an `items` array, you can specify detailed configu
            "filter": {
                "formTypes": ["container"]
            },
-           "effect": {
+           "effect": [{
                "type": "SpawnItem",
                "items": [
                    {
@@ -668,7 +668,7 @@ For effect types that support an `items` array, you can specify detailed configu
                        "chance": 100
                    }
                ]
-           }
+           }]
        }
    ]
    ```
@@ -682,10 +682,10 @@ For effect types that support an `items` array, you can specify detailed configu
            "filter": {
                "formTypes": ["activator"]
            },
-           "effect": {
+           "effect": [{
                "type": "PlayIdle",
                "items": [{"string": "IdleName", "duration": 0.5}]
-           }
+           }]
        }
    ]
    ```
@@ -699,7 +699,7 @@ For effect types that support an `items` array, you can specify detailed configu
            "filter": {
                "formTypes": ["static"]
            },
-           "effect": {
+           "effect": [{
                "type": "SpawnEffectShaderOnItem",
                "items": [
                    {
@@ -707,7 +707,7 @@ For effect types that support an `items` array, you can specify detailed configu
                        "duration": 5.0
                    }
                ]
-           }
+           }]
        }
    ]
    ```
@@ -724,7 +724,7 @@ For effect types that support an `items` array, you can specify detailed configu
                "actorValues": ["Health >= 50"],
                "level": [">= 10"]
            },
-           "effect": {
+           "effect": [{
                "type": "SpawnSpell",
                "items": [
                    {
@@ -732,7 +732,7 @@ For effect types that support an `items` array, you can specify detailed configu
                        "radius": 500
                    }
                ]
-           }
+           }]
        }
    ]
    ```
@@ -748,10 +748,10 @@ For effect types that support an `items` array, you can specify detailed configu
                 "questItemStatus": 2,
                 "hasItem": ["Skyrim.esm:0x123456"]
             },
-            "effect": {
+            "effect": [{
                 "type": "PlaySound",
                 "items": [{"formID": "Skyrim.esm:0x456789"}]
-            }
+            }]
         }
     ]
     ```
@@ -765,10 +765,10 @@ For effect types that support an `items` array, you can specify detailed configu
             "filter": {
                 "formTypes": ["ingredient"]
             },
-            "effect": {
+            "effect": [{
                 "type": "ApplyIngestible",
                 "items": [{"radius": 300, "chance": 75}]
-            }
+            }]
         }
     ]
     ```
