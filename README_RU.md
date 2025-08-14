@@ -256,18 +256,15 @@
   **ИИ атрибуты:**
   - `Aggression`, `Confidence`, `Assistance`, `Morality`, `Mood`
 
-  **Статы:**
+  **Боевые статы:**
   - `AttackDamageMult`, `CriticalChance`, `MeleeDamage`, `UnarmedDamage`
   - `WeaponSpeedMult`, `LeftWeaponSpeedMultiply`, `SpeedMult`
   - `DamageResist`, `ReflectDamage`
- 
+
   **Условия:**
   - `EnduranceCondition`, `PerceptionCondition`
   - `LeftAttackCondition`, `RightAttackCondition`
   - `LeftMobilityCondition`, `RightMobilityCondition`
-
-  **Особые перки:**
-  - `ArmorPerks`, `ShieldPerks`, `VampirePerks`, `WerewolfPerks`
 
   **Прочие значения:**
   - `Fame`, `Infamy`, `Energy`, `JumpingBonus`, `MovementNoiseMult`
@@ -318,6 +315,9 @@
 
   **Красноречие:**
   - `Speech`, `SpeechcraftModifier`, `SpeechcraftPowerModifier`, `SpeechcraftSkillAdvance`
+
+  **Особые перки:**
+  - `ArmorPerks`, `ShieldPerks`, `VampirePerks`, `WerewolfPerks`
 
 - **`actorValuesNot`**: массив условий по значениям источника события, которым он *не* должен соответствовать. Формат тот же, что и у `actorValues`.
 
