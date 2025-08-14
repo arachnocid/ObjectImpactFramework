@@ -247,7 +247,83 @@ Below are all possible filter parameters:
 
 - **`actorRacesNot`**: An array of keywords that the event source actor must *not* have. Same format as `actorRaces`.
 
-- **`actorValues`**: An array of actor value conditions that the event source actor must meet. Format: `["Health >= 10", "Aggression = 0"]`.
+- **`actorValues`**: An array of actor value conditions that the event source actor must meet. Format: `["Health >= 10", "Aggression = 0"]`. Available entries:
+
+  **Core Attributes:**
+  - `Health`, `Magicka`, `Stamina`
+  - `HealRate`, `HealRateMult`, `MagickaRate`, `MagickaRateMult`, `StaminaRate`, `StaminaRateMult`
+
+  **Combat Skills:**
+  - `OneHanded`, `TwoHanded`, `Archery`, `Block`
+  - `OneHandedModifier`, `OneHandedPowerModifier`, `OneHandedSkillAdvance`
+  - `TwoHandedModifier`, `TwoHandedPowerModifier`, `TwoHandedSkillAdvance`
+  - `MarksmanModifier`, `MarksmanPowerModifier`, `MarksmanSkillAdvance`
+
+  **Magic Schools:**
+  - `Destruction`, `Alteration`, `Restoration`, `Illusion`, `Conjuration`
+  - `DestructionModifier`, `DestructionPowerModifier`, `DestructionSkillAdvance`
+  - `AlterationModifier`, `AlterationPowerModifier`, `AlterationSkillAdvance`
+  - `RestorationModifier`, `RestorationPowerModifier`, `RestorationSkillAdvance`
+  - `IllusionModifier`, `IllusionPowerModifier`, `IllusionSkillAdvance`
+  - `ConjurationModifier`, `ConjurationPowerModifier`, `ConjurationSkillAdvance`
+
+  **Armor Skills:**
+  - `HeavyArmor`, `LightArmor`
+  - `HeavyArmorModifier`, `HeavyArmorPowerModifier`, `HeavyArmorSkillAdvance`
+  - `LightArmorModifier`, `LightArmorPowerModifier`, `LightArmorSkillAdvance`
+
+  **Stealth Skills:**
+  - `Sneak`, `Lockpicking`, `Pickpocket`
+  - `SneakingModifier`, `SneakingPowerModifier`, `SneakingSkillAdvance`
+  - `LockpickingModifier`, `LockpickingPowerModifier`, `LockpickingSkillAdvance`
+  - `PickpocketModifier`, `PickpocketPowerModifier`, `PickpocketSkillAdvance`
+
+  **Crafting Skills:**
+  - `Smithing`, `Alchemy`, `Enchanting`
+  - `SmithingModifier`, `SmithingPowerModifier`, `SmithingSkillAdvance`
+  - `AlchemyModifier`, `AlchemyPowerModifier`, `AlchemySkillAdvance`
+  - `EnchantingModifier`, `EnchantingPowerModifier`, `EnchantingSkillAdvance`
+
+  **Social Skills:**
+  - `Speech`, `SpeechcraftModifier`, `SpeechcraftPowerModifier`, `SpeechcraftSkillAdvance`
+
+  **Combat Stats:**
+  - `AttackDamageMult`, `CriticalChance`, `MeleeDamage`, `UnarmedDamage`
+  - `WeaponSpeedMult`, `LeftWeaponSpeedMultiply`, `SpeedMult`
+  - `DamageResist`, `ReflectDamage`
+
+  **Resistances:**
+  - `ResistFire`, `ResistFrost`, `ResistShock`, `ResistMagic`
+  - `ResistDisease`, `PoisonResist`
+
+  **Magic Effects:**
+  - `AbsorbChance`, `Invisibility`, `NightEye`, `Paralysis`, `Blindness`
+  - `WaterBreathing`, `WaterWalking`, `Telekinesis`
+  - `WardPower`, `WardDeflection`, `DetectLifeRange`
+
+  **AI Attributes:**
+  - `Aggression`, `Confidence`, `Assistance`, `Morality`, `Mood`
+
+  **Condition Values:**
+  - `EnduranceCondition`, `PerceptionCondition`
+  - `LeftAttackCondition`, `RightAttackCondition`
+  - `LeftMobilityCondition`, `RightMobilityCondition`
+
+  **Equipment:**
+  - `LeftItemCharge`, `RightItemCharge`
+  - `InventoryWeight`, `Mass`
+
+  **Special Perks:**
+  - `ArmorPerks`, `ShieldPerks`, `VampirePerks`, `WerewolfPerks`
+
+  **Dragon/Shout Related:**
+  - `DragonSouls`, `DragonRend`, `VoicePoints`, `VoiceRate`, `ShoutRecoveryMult`
+
+  **Misc Values:**
+  - `Fame`, `Infamy`, `Energy`, `JumpingBonus`, `MovementNoiseMult`
+  - `CombatHealthRegenMultiply`, `LastBribedIntimidated`, `LastFlattered`
+  - `FavorActive`, `FavorPointsBonus`, `FavorsPerDay`, `FavorsPerDayTimer`
+  - `GrabActorOffset`, `Grabbed`, `WaitingForPlayer`, `IgnoreCrippledLimbs`
 
 - **`actorValuesNot`**: An array of actor value conditions that the event source actor must *not* meet. Same format as `actorValues`.
 
