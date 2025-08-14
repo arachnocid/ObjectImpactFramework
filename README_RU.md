@@ -256,11 +256,6 @@
   **ИИ атрибуты:**
   - `Aggression`, `Confidence`, `Assistance`, `Morality`, `Mood`
 
-  **Боевые статы:**
-  - `AttackDamageMult`, `CriticalChance`, `MeleeDamage`, `UnarmedDamage`
-  - `WeaponSpeedMult`, `LeftWeaponSpeedMultiply`, `SpeedMult`
-  - `DamageResist`, `ReflectDamage`
-
   **Условия:**
   - `EnduranceCondition`, `PerceptionCondition`
   - `LeftAttackCondition`, `RightAttackCondition`
@@ -271,6 +266,11 @@
   - `CombatHealthRegenMultiply`, `LastBribedIntimidated`, `LastFlattered`
   - `FavorActive`, `FavorPointsBonus`, `FavorsPerDay`, `FavorsPerDayTimer`
   - `GrabActorOffset`, `Grabbed`, `WaitingForPlayer`, `IgnoreCrippledLimbs`
+
+  **Боевые статы:**
+  - `AttackDamageMult`, `CriticalChance`, `MeleeDamage`, `UnarmedDamage`
+  - `WeaponSpeedMult`, `LeftWeaponSpeedMultiply`, `SpeedMult`
+  - `DamageResist`, `ReflectDamage`
 
   **Оружие:**
   - `OneHanded`, `TwoHanded`, `Archery`, `Block`
