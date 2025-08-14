@@ -247,7 +247,77 @@
 
 - **`actorRacesNot`**: массив рас, которых не должно быть у источника события.
 
-- **`actorValues`**: массив условий по значениям источника события, которым он должен соответствовать. Формат: `["Health >= 10", "Aggression = 0"]`.
+- **`actorValues`**: массив условий по значениям источника события, которым он должен соответствовать. Формат: `["Health >= 10", "Aggression = 0"]`. Доступные значения:
+
+  **Базовые атрибуты:**
+  - `Health`, `Magicka`, `Stamina`
+  - `HealRate`, `HealRateMult`, `MagickaRate`, `MagickaRateMult`, `StaminaRate`, `StaminaRateMult`
+
+  **ИИ атрибуты:**
+  - `Aggression`, `Confidence`, `Assistance`, `Morality`, `Mood`
+
+  **Статы:**
+  - `AttackDamageMult`, `CriticalChance`, `MeleeDamage`, `UnarmedDamage`
+  - `WeaponSpeedMult`, `LeftWeaponSpeedMultiply`, `SpeedMult`
+  - `DamageResist`, `ReflectDamage`
+ 
+  **Условия:**
+  - `EnduranceCondition`, `PerceptionCondition`
+  - `LeftAttackCondition`, `RightAttackCondition`
+  - `LeftMobilityCondition`, `RightMobilityCondition`
+
+  **Особые перки:**
+  - `ArmorPerks`, `ShieldPerks`, `VampirePerks`, `WerewolfPerks`
+
+  **Прочие значения:**
+  - `Fame`, `Infamy`, `Energy`, `JumpingBonus`, `MovementNoiseMult`
+  - `CombatHealthRegenMultiply`, `LastBribedIntimidated`, `LastFlattered`
+  - `FavorActive`, `FavorPointsBonus`, `FavorsPerDay`, `FavorsPerDayTimer`
+  - `GrabActorOffset`, `Grabbed`, `WaitingForPlayer`, `IgnoreCrippledLimbs`
+
+  **Оружие:**
+  - `OneHanded`, `TwoHanded`, `Archery`, `Block`
+  - `OneHandedModifier`, `OneHandedPowerModifier`, `OneHandedSkillAdvance`
+  - `TwoHandedModifier`, `TwoHandedPowerModifier`, `TwoHandedSkillAdvance`
+  - `MarksmanModifier`, `MarksmanPowerModifier`, `MarksmanSkillAdvance`
+  - `LeftItemCharge`, `RightItemCharge`
+  - `InventoryWeight`, `Mass`
+
+  **Магия:**
+  - `Destruction`, `Alteration`, `Restoration`, `Illusion`, `Conjuration`
+  - `DestructionModifier`, `DestructionPowerModifier`, `DestructionSkillAdvance`
+  - `AlterationModifier`, `AlterationPowerModifier`, `AlterationSkillAdvance`
+  - `RestorationModifier`, `RestorationPowerModifier`, `RestorationSkillAdvance`
+  - `IllusionModifier`, `IllusionPowerModifier`, `IllusionSkillAdvance`
+  - `ConjurationModifier`, `ConjurationPowerModifier`, `ConjurationSkillAdvance`
+  - `AbsorbChance`, `Invisibility`, `NightEye`, `Paralysis`, `Blindness`
+  - `WaterBreathing`, `WaterWalking`, `Telekinesis`
+  - `WardPower`, `WardDeflection`, `DetectLifeRange`
+  - `ResistFire`, `ResistFrost`, `ResistShock`, `ResistMagic`
+  - `ResistDisease`, `PoisonResist`
+
+  **Крики:**
+  - `DragonSouls`, `DragonRend`, `VoicePoints`, `VoiceRate`, `ShoutRecoveryMult`
+
+  **Броня:**
+  - `HeavyArmor`, `LightArmor`
+  - `HeavyArmorModifier`, `HeavyArmorPowerModifier`, `HeavyArmorSkillAdvance`
+  - `LightArmorModifier`, `LightArmorPowerModifier`, `LightArmorSkillAdvance`
+
+  **Скрытность:**
+  - `Sneak`, `Lockpicking`, `Pickpocket`
+  - `SneakingModifier`, `SneakingPowerModifier`, `SneakingSkillAdvance`
+  - `LockpickingModifier`, `LockpickingPowerModifier`, `LockpickingSkillAdvance`
+  - `PickpocketModifier`, `PickpocketPowerModifier`, `PickpocketSkillAdvance`
+
+  **Крафт:**
+  - `Smithing`, `Alchemy`, `Enchanting`
+  - `SmithingModifier`, `SmithingPowerModifier`, `SmithingSkillAdvance`
+  - `AlchemyModifier`, `AlchemyPowerModifier`, `AlchemySkillAdvance`
+  - `EnchantingModifier`, `EnchantingPowerModifier`, `EnchantingSkillAdvance`
+
+  **Красноречие:**
+  - `Speech`, `SpeechcraftModifier`, `SpeechcraftPowerModifier`, `SpeechcraftSkillAdvance`
 
 - **`actorValuesNot`**: массив условий по значениям источника события, которым он *не* должен соответствовать. Формат тот же, что и у `actorValues`.
 
