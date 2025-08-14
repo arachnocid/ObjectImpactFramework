@@ -253,54 +253,6 @@ Below are all possible filter parameters:
   - `Health`, `Magicka`, `Stamina`
   - `HealRate`, `HealRateMult`, `MagickaRate`, `MagickaRateMult`, `StaminaRate`, `StaminaRateMult`
 
-  **Combat Skills:**
-  - `OneHanded`, `TwoHanded`, `Archery`, `Block`
-  - `OneHandedModifier`, `OneHandedPowerModifier`, `OneHandedSkillAdvance`
-  - `TwoHandedModifier`, `TwoHandedPowerModifier`, `TwoHandedSkillAdvance`
-  - `MarksmanModifier`, `MarksmanPowerModifier`, `MarksmanSkillAdvance`
-
-  **Magic Schools:**
-  - `Destruction`, `Alteration`, `Restoration`, `Illusion`, `Conjuration`
-  - `DestructionModifier`, `DestructionPowerModifier`, `DestructionSkillAdvance`
-  - `AlterationModifier`, `AlterationPowerModifier`, `AlterationSkillAdvance`
-  - `RestorationModifier`, `RestorationPowerModifier`, `RestorationSkillAdvance`
-  - `IllusionModifier`, `IllusionPowerModifier`, `IllusionSkillAdvance`
-  - `ConjurationModifier`, `ConjurationPowerModifier`, `ConjurationSkillAdvance`
-
-  **Armor Skills:**
-  - `HeavyArmor`, `LightArmor`
-  - `HeavyArmorModifier`, `HeavyArmorPowerModifier`, `HeavyArmorSkillAdvance`
-  - `LightArmorModifier`, `LightArmorPowerModifier`, `LightArmorSkillAdvance`
-
-  **Stealth Skills:**
-  - `Sneak`, `Lockpicking`, `Pickpocket`
-  - `SneakingModifier`, `SneakingPowerModifier`, `SneakingSkillAdvance`
-  - `LockpickingModifier`, `LockpickingPowerModifier`, `LockpickingSkillAdvance`
-  - `PickpocketModifier`, `PickpocketPowerModifier`, `PickpocketSkillAdvance`
-
-  **Crafting Skills:**
-  - `Smithing`, `Alchemy`, `Enchanting`
-  - `SmithingModifier`, `SmithingPowerModifier`, `SmithingSkillAdvance`
-  - `AlchemyModifier`, `AlchemyPowerModifier`, `AlchemySkillAdvance`
-  - `EnchantingModifier`, `EnchantingPowerModifier`, `EnchantingSkillAdvance`
-
-  **Social Skills:**
-  - `Speech`, `SpeechcraftModifier`, `SpeechcraftPowerModifier`, `SpeechcraftSkillAdvance`
-
-  **Combat Stats:**
-  - `AttackDamageMult`, `CriticalChance`, `MeleeDamage`, `UnarmedDamage`
-  - `WeaponSpeedMult`, `LeftWeaponSpeedMultiply`, `SpeedMult`
-  - `DamageResist`, `ReflectDamage`
-
-  **Resistances:**
-  - `ResistFire`, `ResistFrost`, `ResistShock`, `ResistMagic`
-  - `ResistDisease`, `PoisonResist`
-
-  **Magic Effects:**
-  - `AbsorbChance`, `Invisibility`, `NightEye`, `Paralysis`, `Blindness`
-  - `WaterBreathing`, `WaterWalking`, `Telekinesis`
-  - `WardPower`, `WardDeflection`, `DetectLifeRange`
-
   **AI Attributes:**
   - `Aggression`, `Confidence`, `Assistance`, `Morality`, `Mood`
 
@@ -309,21 +261,63 @@ Below are all possible filter parameters:
   - `LeftAttackCondition`, `RightAttackCondition`
   - `LeftMobilityCondition`, `RightMobilityCondition`
 
-  **Equipment:**
-  - `LeftItemCharge`, `RightItemCharge`
-  - `InventoryWeight`, `Mass`
-
-  **Special Perks:**
-  - `ArmorPerks`, `ShieldPerks`, `VampirePerks`, `WerewolfPerks`
-
-  **Dragon/Shout Related:**
-  - `DragonSouls`, `DragonRend`, `VoicePoints`, `VoiceRate`, `ShoutRecoveryMult`
-
   **Misc Values:**
   - `Fame`, `Infamy`, `Energy`, `JumpingBonus`, `MovementNoiseMult`
   - `CombatHealthRegenMultiply`, `LastBribedIntimidated`, `LastFlattered`
   - `FavorActive`, `FavorPointsBonus`, `FavorsPerDay`, `FavorsPerDayTimer`
   - `GrabActorOffset`, `Grabbed`, `WaitingForPlayer`, `IgnoreCrippledLimbs`
+
+  **Combat Stats:**
+  - `AttackDamageMult`, `CriticalChance`, `MeleeDamage`, `UnarmedDamage`
+  - `WeaponSpeedMult`, `LeftWeaponSpeedMultiply`, `SpeedMult`
+  - `DamageResist`, `ReflectDamage`
+
+  **Equipment:**
+  - `OneHanded`, `TwoHanded`, `Archery`, `Block`
+  - `OneHandedModifier`, `OneHandedPowerModifier`, `OneHandedSkillAdvance`
+  - `TwoHandedModifier`, `TwoHandedPowerModifier`, `TwoHandedSkillAdvance`
+  - `MarksmanModifier`, `MarksmanPowerModifier`, `MarksmanSkillAdvance`
+  - `LeftItemCharge`, `RightItemCharge`
+  - `InventoryWeight`, `Mass`
+
+  **Magic:**
+  - `Destruction`, `Alteration`, `Restoration`, `Illusion`, `Conjuration`
+  - `DestructionModifier`, `DestructionPowerModifier`, `DestructionSkillAdvance`
+  - `AlterationModifier`, `AlterationPowerModifier`, `AlterationSkillAdvance`
+  - `RestorationModifier`, `RestorationPowerModifier`, `RestorationSkillAdvance`
+  - `IllusionModifier`, `IllusionPowerModifier`, `IllusionSkillAdvance`
+  - `ConjurationModifier`, `ConjurationPowerModifier`, `ConjurationSkillAdvance`
+  - `AbsorbChance`, `Invisibility`, `NightEye`, `Paralysis`, `Blindness`
+  - `WaterBreathing`, `WaterWalking`, `Telekinesis`
+  - `WardPower`, `WardDeflection`, `DetectLifeRange`
+  - `ResistFire`, `ResistFrost`, `ResistShock`, `ResistMagic`
+  - `ResistDisease`, `PoisonResist`
+
+  **Shout Related:**
+  - `DragonSouls`, `DragonRend`, `VoicePoints`, `VoiceRate`, `ShoutRecoveryMult`
+
+  **Armor:**
+  - `HeavyArmor`, `LightArmor`
+  - `HeavyArmorModifier`, `HeavyArmorPowerModifier`, `HeavyArmorSkillAdvance`
+  - `LightArmorModifier`, `LightArmorPowerModifier`, `LightArmorSkillAdvance`
+
+  **Stealth:**
+  - `Sneak`, `Lockpicking`, `Pickpocket`
+  - `SneakingModifier`, `SneakingPowerModifier`, `SneakingSkillAdvance`
+  - `LockpickingModifier`, `LockpickingPowerModifier`, `LockpickingSkillAdvance`
+  - `PickpocketModifier`, `PickpocketPowerModifier`, `PickpocketSkillAdvance`
+
+  **Crafting:**
+  - `Smithing`, `Alchemy`, `Enchanting`
+  - `SmithingModifier`, `SmithingPowerModifier`, `SmithingSkillAdvance`
+  - `AlchemyModifier`, `AlchemyPowerModifier`, `AlchemySkillAdvance`
+  - `EnchantingModifier`, `EnchantingPowerModifier`, `EnchantingSkillAdvance`
+
+  **Speechcraft:**
+  - `Speech`, `SpeechcraftModifier`, `SpeechcraftPowerModifier`, `SpeechcraftSkillAdvance`
+
+  **Special Perks:**
+  - `ArmorPerks`, `ShieldPerks`, `VampirePerks`, `WerewolfPerks`
 
 - **`actorValuesNot`**: An array of actor value conditions that the event source actor must *not* meet. Same format as `actorValues`.
 
