@@ -577,7 +577,7 @@ namespace OIF {
         if (f.weathers.empty() && f.weathersNot.empty()) return true;
     
         auto* sky = RE::Sky::GetSingleton();
-        if (!sky || !sky->currentWeather) return true;  // If weather data is unavailable, skip the check
+        if (!sky || !sky->currentWeather) return false;  // If weather data is unavailable, make sure Trigger is not executed
     
         RE::FormID currentWeatherID = sky->currentWeather->GetFormID();
 

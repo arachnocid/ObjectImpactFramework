@@ -491,12 +491,12 @@ namespace OIF
                 }
             }
 
-            if (projectileForm) {
-                if (projectileForm->As<RE::BGSExplosion>()) return;
+			if (projectileForm) {
+				if (projectileForm->As<RE::BGSExplosion>()) return;
 				weaponType = WeaponType::Ranged;
-                attackSource = projectileForm;
-                projectileSource = projectileForm;
-            }
+				attackSource = projectileForm;
+				projectileSource = projectileForm;
+			}
 
             if (hitSourceForm) {
                 if (auto* spell = hitSourceForm->As<RE::SpellItem>()) {
@@ -1109,12 +1109,21 @@ namespace OIF
 		auto explosionPos = a_this->GetPosition();
 		auto* cell = a_this->GetParentCell();
 
-		if (runtimeData.damage <= 0.0f) return;
-
-		float explosionRadius = runtimeData.radius;
-		if (runtimeData.radius <= 0.0f) return;
-
 		if (!baseObj || !cell) return;
+
+		auto* explosionForm = skyrim_cast<RE::BGSExplosion*>(baseObj);
+		if (runtimeData.damage <= 0.0f) {
+			if (!explosionForm) return;
+			if (explosionForm->data.damage <= 0.0f) return;
+		}
+
+		float explosionRadius = 0.0f;
+		if (explosionForm) {
+			explosionRadius = explosionForm->data.radius;
+		} else {
+			explosionRadius = runtimeData.radius;
+		}
+		if (explosionRadius <= 0.0f) return;
 
 		RE::Actor* actor = RE::PlayerCharacter::GetSingleton();
 		if (auto actorCause = runtimeData.actorCause) {
@@ -1205,9 +1214,9 @@ namespace OIF
         });
     }
 
-    void UpdateHook::thunk(RE::PlayerCharacter* a_this)
+    void UpdateHook::thunk(RE::PlayerCharacter* a_this, float a_delta)
     {
-        func(a_this);
+		func(a_this, a_delta);
         if (!EventSinkBase::IsActorSafe(a_this)) return;
 
         static auto lastUpdateTime = std::chrono::steady_clock::now();
@@ -1278,7 +1287,9 @@ namespace OIF
 			if (highData->muzzleFlash && highData->muzzleFlash->baseProjectile) {
 				// If the attack is a projectile, let the projectile impact Hooks handle it
 				return;
-			} else if (auto* spell = attackData->data.attackSpell) {
+			}
+
+			if (auto* spell = attackData->data.attackSpell) {
 				attackSource = spell;
 				weaponType = GetSpellType(spell);
 				logger::warn("AttackBlockHook: Spell detected, using it as attack source.");
@@ -1338,7 +1349,7 @@ namespace OIF
 			}
 		}
 
-		// Determine the attack direction and end point
+		// Determine the attack direction and the end point
 		auto* cam = RE::PlayerCamera::GetSingleton();
 		if (!cam || !cam->currentState || !cam->currentState->camera) return;
 
@@ -1379,7 +1390,6 @@ namespace OIF
 		auto* cell = player->GetParentCell();
 		if (!cell) return;
 
-		// vector of points to search around for valid objects
 		std::vector<RE::NiPoint3> searchPoints = {
 			end,
 			player->GetPosition()

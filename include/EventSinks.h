@@ -236,7 +236,7 @@ namespace OIF
 
     struct UpdateHook
     {
-        static void thunk(RE::PlayerCharacter* a_this);
+		static void thunk(RE::PlayerCharacter* a_this, float a_delta);
         static inline REL::Relocation<decltype(thunk)> func;
         static constexpr std::size_t size = 0xAD;
     };
