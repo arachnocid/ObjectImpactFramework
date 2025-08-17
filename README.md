@@ -188,7 +188,7 @@ Below are all possible filter parameters:
     - `1`: Re-check.
 
   ```json
-  "timer": {"time": "1.0", "matchFilterRecheck": 1}
+  "timer": {"time": 1.0, "matchFilterRecheck": 1}
   ```
 
 - **`time`**: An array of in-game time conditions that must be active for the rule to apply. Format: `["Hour >= 10", "DayOfWeek = 1"]`. Available entries:
@@ -605,7 +605,7 @@ For effect types that support an `items` array, you can specify detailed configu
     - `1`: Re-check.
 
     ```json
-    "timer": {"time": "1.0", "matchFilterRecheck": 1}
+    "timer": {"time": 1.0, "matchFilterRecheck": 1}
     ```
 
 - **`count`**: An integer specifying how many instances to spawn or how many times to perform a particular action. Defaults to 1.
