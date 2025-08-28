@@ -49,7 +49,7 @@ Each rule in your JSON file defines a specific behavior for the mod. Rules are w
   - `"CellAttach"`: Triggered when an object is attached to a cell (works on location re-enter as well).
   - `"CellDetach"`: Triggered when an object is detached from a cell.
   - `"WeatherChange"`: Triggered on weather change.
-  - `"OnUpdate"`: Triggered every 250 milliseconds.
+  - `"OnUpdate"`: Triggered every 1 second.
   - `"DestructionStageChange"`: Triggered on object's destruction stage change. The effect will *not* be applied to the scene when the object is disabled or deleted.
   
 - **`filter`**: Defines the targeted objects and the conditions under which a rule applies to them. At least one of `formTypes`, `formIDs`, `editorIDs`, `formLists`, or `keywords` must be provided to identify target objects.
@@ -142,25 +142,39 @@ Below are all possible filter parameters:
 
 - **`keywordsNot`**: An array of keywords or formists of keyword the object must *not* have. Same format as `keywords`.
 
-- **`chance`**: A number between 0 and 100 representing the percentage chance the rule triggers. Defaults to 100 if omitted.
+- **`chance`**: A number between 0 and 100 representing the percentage chance the rule triggers (e.g., `"chance": 90.0`). Defaults to `100`.
+  **Optional** detailed entry (e.g., `"chance": {"min": 0.1, "max": 85.0}`):
+  - **`min`**: Minimal random value.
+  - **`max`**: Maximal random value.
 
-- **`interactions`**: An integer specifying how many interactions (e.g., hits or activations) are required before the effect triggers. Defaults to 1.
+- **`interactions`**: An integer specifying how many interactions (e.g., hits) are required to trigger the effect (e.g., `"interactions": 5`). Defaults to `1`.
+  **Optional** detailed entry (e.g., `"interactions": {"min": 1, "max": 5}`):
+  - **`min`**: Minimal random value.
+  - **`max`**: Maximal random value.
 
-- **`limit`**: An integer setting the maximum number of interactions per object. No limit if omitted.
+- **`limit`**: An integer setting the maximum number of interactions per object (e.g., `"limit": 5`). Defaults to `0` - no limit.
+  **Optional** detailed entry (e.g., `"limit": {"min": 0, "max": 10}`):
+  - **`min`**: Minimal random value.
+  - **`max`**: Maximal random value.
 
 - **`questItemStatus`**: An integer specifying quest item status requirements. Only works with **ACTIVE** player quests:
-  - `0` (default): Object must not be a quest item.
-  - `1`: Object must be a quest alias only.
-  - `2`: Object must be a full-fledged quest item.
-  - `3`: All objects allowed.
+  - `0` (default): Not a quest item.
+  - `1`: Quest alias only.
+  - `2`: A full-fledged quest item.
+  - `3`: All allowed.
  
 - **`isInitiallyDisabled`**: An integer specifying whether the object has the `kInitiallyDisabled` flag.
-  - `0`: Object is not initially disabled.
-  - `1`: Object is initially disabled.
-  - `2` (default): All objects allowed.
+  - `0`: Not initially disabled.
+  - `1`: Initially disabled.
+  - `2` (default): All allowed.
+
+ - **`isStacked`**: An integer specifying whether the object is a single reference or a stacked bunch.
+  - `0`: Not stacked.
+  - `1`: Stacked.
+  - `2` (default): All allowed.
  
 - **`lockLevel`**: An integer specifying a lock level the object must have. **Note:** Do *not* use the filter with formTypes other than `door` and `container`.
-  - `-2` (default): Ignore lock level.
+  - `-2` (default): All allowed.
   - `-1`: Unlocked.
   - `0`: Novice.
   - `1`: Apprentice.
@@ -182,7 +196,10 @@ Below are all possible filter parameters:
 ### Time-Based Filters
 
 - **`timer`**: A defined number of seconds before triggering the effect (e.g., `"timer": 1.0`). **Optional** detailed entry has:
-  - **`time`**: Number of seconds.
+  - **`time`**: Number of seconds. (e.g., `"timer": {"time": 1.0}`).
+    **Optional** detailed entry (e.g., `"timer": {"time": {"min": 1.0, "max": 10.0}}`:
+    - **`min`**: Minimal random value.
+    - **`max`**: Maximal random value.
   - **`matchFilterRecheck`**: Whether the effect needs to be canceled if conditions were violated while waiting.
     - `0`: No re-check.
     - `1`: Re-check.
@@ -220,6 +237,17 @@ Below are all possible filter parameters:
 - **`locations`**: An array of cells, locations, or worldspaces where the rule should apply. Format: `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`), `"EditorIDName"` (e.g., `"VendorItemFood"`), or a formlist's formID/editorID. **Note:** The worldspace will *not* be detected and the event will be filtered out if the cell has no linked worldspace information.
 
 - **`locationsNot`**: An array of cells, locations, or worldspaces where the rule should *not* apply. Same format as `locations`.
+
+- **`isInterior`**: An integer specifying whether the object is indoors.
+  - `0`: Not an interior.
+  - `1`: Interior.
+  - `2` (default): All allowed.
+
+- **`position`**: An integer specifying the object's position in relation to the source actor.
+  - `0`: Below the middle.
+  - `1`: Middle.
+  - `2`: Above the middle.
+  - `3` (default): All allowed.
 
 - **`weathers`**: An array of weathers that must be active for the rule to apply. Format: `"modName:formID"` (e.g., `"Skyrim.esm:0xABCDEF"`), `"EditorIDName"` (e.g., `"VendorItemFood"`), or a formlist's formID/editorID.
 
@@ -325,14 +353,16 @@ Below are all possible filter parameters:
 
 - **`levelNot`**: An array of level conditions that the event source actor must *not* meet. Same format as `level`.
 
-An integer specifying whether the event source actor is in the state of:
+An integer specifying whether the event source actor is in the state:
 - **`isSneaking`**: Sneaking.
 - **`isSwimming`**: Swimming.
 - **`isInCombat`**: Combat.
-- **`isMounted`**: Being mounted.
+- **`isMounted`**: Mounted.
 - **`isDualCasting`**: Dual casting.
 - **`isSprinting`**: Sprinting.
 - **`isWeaponDrawn`**: Drawn weapon.
+- **`isFirstPerson`**: First person.
+- **`isThirdPerson`**: Third person.
   - `0`: Source actor is *not* in this state.
   - `1`: Source actor is in this state.
   - `2` (default): All states allowed.
@@ -596,10 +626,16 @@ For effect types that support an `items` array, you can specify detailed configu
     ]
     ```
 
-- **`chance`**: A number between 0 and 100 for the percentage chance this item is used. Defaults to 100.
+- **`chance`**: A number between 0 and 100 for the percentage chance this item is used (e.g., `"chance": 90.0`). Defaults to `100`. 
+  **Optional** detailed entry (e.g., `"chance": {"min": 0.1, "max": 85.0}`):
+  - **`min`**: Minimal random value.
+  - **`max`**: Maximal random value.
 
 - **`timer`**: A defined number of seconds before triggering the effect (e.g., `"timer": 1.0`). **Optional** detailed entry has:
-  - **`time`**: Number of seconds.
+  - **`time`**: Number of seconds. (e.g., `"timer": {"time": 1.0}`).
+    **Optional** detailed entry (e.g., `"timer": {"time": {"min": 1.0, "max": 10.0}}`):
+    - **`min`**: Minimal random value.
+    - **`max`**: Maximal random value.
   - **`matchFilterRecheck`**: Whether the effect needs to be canceled if conditions were violated while waiting.
     - `0`: No re-check.
     - `1`: Re-check.
@@ -608,9 +644,20 @@ For effect types that support an `items` array, you can specify detailed configu
     "timer": {"time": 1.0, "matchFilterRecheck": 1}
     ```
 
-- **`count`**: An integer specifying how many instances to spawn or how many times to perform a particular action. Defaults to 1.
+- **`count`**: An integer specifying how many instances to spawn or how many times to perform a particular action (e.g., `"count": 2`). Defaults to `1`. 
+  **Optional** detailed entry (e.g., `"count": {"min": 1, "max": 5}`):
+  - **`min`**: Minimal random value.
+  - **`max`**: Maximal random value.
 
-- **`radius`**: Specifies the radius in game units for effect application. Defaults to 100.
+- **`radius`**: Specifies the radius in game units for effect application (e.g., `"radius": 100.0`). Defaults to `100.0`. 
+  **Optional** detailed entry (e.g., `"radius": {"min": 50.0, "max": 150.0}`):
+  - **`min`**: Minimal random value.
+  - **`max`**: Maximal random value.
+ 
+- **`scale`**: Used for `spawn`/`swap` functions only. Allows to select the scale of a spawned item (e.g., `"scale": 2.0`). By default, it is copied from the target object.
+  **Optional** detailed entry (e.g., `"scale": {"min": 1.5, "max": 3.0}`):
+  - **`min`**: Minimal random value.
+  - **`max`**: Maximal random value.
 
 - **`duration`**: For `PlayIdle`, defaults to 1.0 (lower values make animation faster). For **effect shaders** and **art objects**, specifies how long the effect lasts.
 
@@ -623,8 +670,6 @@ For effect types that support an `items` array, you can specify detailed configu
   - `1`: Enable.
  
 - **`nonDeletable`**: Used for `swap` functions only. During swap, the original object is deactivated and a new one appears in its place. This value determines whether the original object is deleted (`0`) or only disabled (`1`).
-
-- **`scale`**: Used for `spawn`/`swap` functions only. Allows you to select the scale of the spawned item. By default, it is copied from the target object.
 
 - **`fade`**: Used for `spawn`/`swap` functions only. Determines whether the object will have a fade effect upon creation:
   - `0`: Without fade effect (do **not** use with **explosions**).
