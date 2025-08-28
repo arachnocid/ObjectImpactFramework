@@ -246,7 +246,7 @@ Below are all possible filter parameters:
   - `1`: Interior.
   - `2` (default): All allowed.
 
-- **`position`**: An integer specifying the object's position in relation to the source actor.
+- **`position`**: An integer specifying the object's position in relation to the **player**.
   - `0`: Below the middle.
   - `1`: Middle.
   - `2`: Above the middle.
