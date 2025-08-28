@@ -143,16 +143,19 @@ Below are all possible filter parameters:
 - **`keywordsNot`**: An array of keywords or formists of keyword the object must *not* have. Same format as `keywords`.
 
 - **`chance`**: A number between 0 and 100 representing the percentage chance the rule triggers (e.g., `"chance": 90.0`). Defaults to `100`.
+
   **Optional** detailed entry (e.g., `"chance": {"min": 0.1, "max": 85.0}`):
   - **`min`**: Minimal random value.
   - **`max`**: Maximal random value.
 
 - **`interactions`**: An integer specifying how many interactions (e.g., hits) are required to trigger the effect (e.g., `"interactions": 5`). Defaults to `1`.
+
   **Optional** detailed entry (e.g., `"interactions": {"min": 1, "max": 5}`):
   - **`min`**: Minimal random value.
   - **`max`**: Maximal random value.
 
 - **`limit`**: An integer setting the maximum number of interactions per object (e.g., `"limit": 5`). Defaults to `0` - no limit.
+
   **Optional** detailed entry (e.g., `"limit": {"min": 0, "max": 10}`):
   - **`min`**: Minimal random value.
   - **`max`**: Maximal random value.
@@ -169,9 +172,9 @@ Below are all possible filter parameters:
   - `2` (default): All allowed.
 
  - **`isStacked`**: An integer specifying whether the object is a single reference or a stacked bunch.
-  - `0`: Not stacked.
-  - `1`: Stacked.
-  - `2` (default): All allowed.
+   - `0`: Not stacked.
+   - `1`: Stacked.
+   - `2` (default): All allowed.
  
 - **`lockLevel`**: An integer specifying a lock level the object must have. **Note:** Do *not* use the filter with formTypes other than `door` and `container`.
   - `-2` (default): All allowed.
@@ -627,12 +630,14 @@ For effect types that support an `items` array, you can specify detailed configu
     ```
 
 - **`chance`**: A number between 0 and 100 for the percentage chance this item is used (e.g., `"chance": 90.0`). Defaults to `100`. 
+
   **Optional** detailed entry (e.g., `"chance": {"min": 0.1, "max": 85.0}`):
   - **`min`**: Minimal random value.
   - **`max`**: Maximal random value.
 
 - **`timer`**: A defined number of seconds before triggering the effect (e.g., `"timer": 1.0`). **Optional** detailed entry has:
   - **`time`**: Number of seconds. (e.g., `"timer": {"time": 1.0}`).
+
     **Optional** detailed entry (e.g., `"timer": {"time": {"min": 1.0, "max": 10.0}}`):
     - **`min`**: Minimal random value.
     - **`max`**: Maximal random value.
@@ -645,16 +650,19 @@ For effect types that support an `items` array, you can specify detailed configu
     ```
 
 - **`count`**: An integer specifying how many instances to spawn or how many times to perform a particular action (e.g., `"count": 2`). Defaults to `1`. 
+
   **Optional** detailed entry (e.g., `"count": {"min": 1, "max": 5}`):
   - **`min`**: Minimal random value.
   - **`max`**: Maximal random value.
 
 - **`radius`**: Specifies the radius in game units for effect application (e.g., `"radius": 100.0`). Defaults to `100.0`. 
+
   **Optional** detailed entry (e.g., `"radius": {"min": 50.0, "max": 150.0}`):
   - **`min`**: Minimal random value.
   - **`max`**: Maximal random value.
  
 - **`scale`**: Used for `spawn`/`swap` functions only. Allows to select the scale of a spawned item (e.g., `"scale": 2.0`). By default, it is copied from the target object.
+
   **Optional** detailed entry (e.g., `"scale": {"min": 1.5, "max": 3.0}`):
   - **`min`**: Minimal random value.
   - **`max`**: Maximal random value.
