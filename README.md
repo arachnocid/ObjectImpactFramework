@@ -649,8 +649,8 @@ For effect types that support an `items` array, you can specify detailed configu
   - **`min`**: Minimal random value.
   - **`max`**: Maximal random value.
 
-- **`radius`**: Specifies the radius in game units for effect application (e.g., `"radius": 100`). Defaults to `100`. 
-  **Optional** detailed entry (e.g., `"radius": {"min": 50, "max": 150}`):
+- **`radius`**: Specifies the radius in game units for effect application (e.g., `"radius": 100.0`). Defaults to `100.0`. 
+  **Optional** detailed entry (e.g., `"radius": {"min": 50.0, "max": 150.0}`):
   - **`min`**: Minimal random value.
   - **`max`**: Maximal random value.
  
