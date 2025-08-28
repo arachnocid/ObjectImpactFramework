@@ -441,7 +441,18 @@ namespace OIF {
     }
 
     bool CheckTimeCondition(const TimeCondition& condition) {
-        auto* calendar = RE::Calendar::GetSingleton();
+		RE::Calendar* calendar = nullptr;
+
+		try {
+			calendar = RE::Calendar::GetSingleton();
+		} catch (const std::exception& e) {
+			logger::error("Exception getting Calendar singleton: {}", e.what());
+			return false;
+		} catch (...) {
+			logger::error("Unknown exception getting Calendar singleton");
+			return false;
+		}
+
         if (!calendar) return false;
         
         float currentValue = 0.0f;
@@ -575,6 +586,12 @@ namespace OIF {
     
     bool CheckWeatherFilter(const Filter& f) {
         if (f.weathers.empty() && f.weathersNot.empty()) return true;
+
+		auto* player = RE::PlayerCharacter::GetSingleton();
+		if (player) {
+			auto* cell = player->GetParentCell();
+			if (cell && cell->IsInteriorCell()) return true;  // If player is indoors, skip the weather check
+		}
     
         auto* sky = RE::Sky::GetSingleton();
         if (!sky || !sky->currentWeather) return false;  // If weather data is unavailable, make sure Trigger is not executed
@@ -852,29 +869,88 @@ namespace OIF {
                     }
                 }
 
-                if (jf.contains("chance") && jf["chance"].is_number()) {
-                    try {
-                        r.filter.chance = jf["chance"].get<float>();
-                    } catch (const std::exception& e) {
-                        logger::warn("Invalid float value in chance filter of {}: {}", path.string(), e.what());
-                    }
-                } 
+                if (jf.contains("chance") && (jf["chance"].is_number() || jf["chance"].is_object())) {
+					if (jf["chance"].is_number()) {
+						// Handle legacy format (simple number)
+						try {
+							r.filter.chance.value = jf["chance"].get<float>();
+							r.filter.chance.useRandom = false;
+						} catch (const std::exception& e) {
+							logger::warn("Invalid chance value in chance filter of {}: {}", path.string(), e.what());
+						}
+					} else if (jf["chance"].is_object()) {
+						// Handle new format (object with random)
+						const auto& chanceObj = jf["chance"];
 
-                if (jf.contains("interactions") && jf["interactions"].is_number_unsigned()) {
-                    try {
-                        r.filter.interactions = jf["interactions"].get<std::uint32_t>();
-                    } catch (const std::exception& e) {
-                        logger::warn("Invalid integer value in interactions filter of {}: {}", path.string(), e.what());
-                    }
-                }
+						if (chanceObj.contains("min") && chanceObj["min"].is_number() &&
+							chanceObj.contains("max") && chanceObj["max"].is_number()) {
+							try {
+								r.filter.chance.min = chanceObj["min"].get<float>();
+								r.filter.chance.max = chanceObj["max"].get<float>();
+								r.filter.chance.useRandom = true;
+								r.filter.chance.value = 100.0f;
+							} catch (const std::exception& e) {
+								logger::warn("Invalid random chance values in chance filter of {}: {}", path.string(), e.what());
+							}
+						} else {
+							logger::warn("Invalid chance object format in chance filter of {}: missing min/max values", path.string());
+						}
+					}
+				}
 
-                if (jf.contains("limit") && jf["limit"].is_number_unsigned()) {
-                    try {
-                        r.filter.limit = jf["limit"].get<std::uint32_t>();
-                    } catch (const std::exception& e) {
-                        logger::warn("Invalid integer value in limit filter of {}: {}", path.string(), e.what());
-                    }
-                }
+				if (jf.contains("interactions") && (jf["interactions"].is_number_unsigned() || jf["interactions"].is_object())) {
+					if (jf["interactions"].is_number_unsigned()) {
+						try {
+							r.filter.interactions.value = jf["interactions"].get<std::uint32_t>();
+							r.filter.interactions.useRandom = false;
+						} catch (const std::exception& e) {
+							logger::warn("Invalid interactions value in interactions filter of {}: {}", path.string(), e.what());
+						}
+					} else if (jf["interactions"].is_object()) {
+						const auto& interactionsObj = jf["interactions"];
+
+						if (interactionsObj.contains("min") && interactionsObj["min"].is_number_unsigned() &&
+							interactionsObj.contains("max") && interactionsObj["max"].is_number_unsigned()) {
+							try {
+								r.filter.interactions.min = interactionsObj["min"].get<std::uint32_t>();
+								r.filter.interactions.max = interactionsObj["max"].get<std::uint32_t>();
+								r.filter.interactions.useRandom = true;
+								r.filter.interactions.value = 1;
+							} catch (const std::exception& e) {
+								logger::warn("Invalid random interactions values in interactions filter of {}: {}", path.string(), e.what());
+							}
+						} else {
+							logger::warn("Invalid interactions object format in interactions filter of {}: missing min/max values", path.string());
+						}
+					}
+				}
+
+                if (jf.contains("limit") && (jf["limit"].is_number_unsigned() || jf["limit"].is_object())) {
+					if (jf["limit"].is_number_unsigned()) {
+						try {
+							r.filter.limit.value = jf["limit"].get<std::uint32_t>();
+							r.filter.limit.useRandom = false;
+						} catch (const std::exception& e) {
+							logger::warn("Invalid limit value in limit filter of {}: {}", path.string(), e.what());
+						}
+					} else if (jf["limit"].is_object()) {
+						const auto& limitObj = jf["limit"];
+
+						if (limitObj.contains("min") && limitObj["min"].is_number_unsigned() &&
+							limitObj.contains("max") && limitObj["max"].is_number_unsigned()) {
+							try {
+								r.filter.limit.min = limitObj["min"].get<std::uint32_t>();
+								r.filter.limit.max = limitObj["max"].get<std::uint32_t>();
+								r.filter.limit.useRandom = true;
+								r.filter.limit.value = 0;
+							} catch (const std::exception& e) {
+								logger::warn("Invalid random limit values in limit filter of {}: {}", path.string(), e.what());
+							}
+						} else {
+							logger::warn("Invalid limit object format in limit filter of {}: missing min/max values", path.string());
+						}
+					}
+				}
 
                 if (jf.contains("formtypes") && jf["formtypes"].is_array()) {
                     for (auto const& ft : jf["formtypes"]) {
@@ -2089,137 +2165,212 @@ namespace OIF {
                 }
 
                 if (jf.contains("nearbyobjects") && jf["nearbyobjects"].is_array()) {
-                    for (const auto& entry : jf["nearbyobjects"]) {
-                        if (entry.is_object()) {
-                            std::string formIdStr;
-                            float radius = 150.0f;
+					for (const auto& entry : jf["nearbyobjects"]) {
+						if (entry.is_object()) {
+							std::string formIdStr;
+							RadiusCondition radiusCondition;
 
-                            if (entry.contains("formid") && entry["formid"].is_string()) {
-                                formIdStr = entry["formid"].get<std::string>();
-                
-                                if (entry.contains("radius") && entry["radius"].is_number())
-                                    radius = entry["radius"].get<float>();
-                
-                                auto* form = GetFormFromIdentifier<RE::TESForm>(formIdStr);
-                                if (form) {
-                                    if (auto* formList = form->As<RE::BGSListForm>()) {
-                                        for (auto* el : formList->forms) {
-                                            if (el) {
-                                                r.filter.nearby.push_back({ el, radius });
-                                            }
-                                        }
-                                    } else {
-                                        r.filter.nearby.push_back({ form, radius });
-                                    }
-                                } else {
-                                    logger::warn("Invalid form '{}' in nearbyobjects filter of {}", formIdStr, path.string());
-                                }
-                            } else if (entry.contains("editorid") && entry["editorid"].is_string()) {
-                                formIdStr = entry["editorid"].get<std::string>();
-                
-                                if (entry.contains("radius") && entry["radius"].is_number())
-                                    radius = entry["radius"].get<float>();
-                
-                                auto* form = GetFormFromEditorID<RE::TESForm>(formIdStr);
-                                if (form) {
-                                    if (auto* formList = form->As<RE::BGSListForm>()) {
-                                        for (auto* el : formList->forms) {
-                                            if (el) {
-                                                r.filter.nearby.push_back({ el, radius });
-                                            }
-                                        }
-                                    } else {
-                                        r.filter.nearby.push_back({ form, radius });
-                                    }
-                                } else {
-                                    logger::warn("Invalid form '{}' in nearbyobjects filter of {}", formIdStr, path.string());
-                                }
-                            }
-                        }
-                    }
-                }
+							if (entry.contains("radius") && (entry["radius"].is_number() || entry["radius"].is_object())) {
+								if (entry["radius"].is_number()) {
+									try {
+										radiusCondition.value = entry["radius"].get<float>();
+										radiusCondition.useRandom = false;
+									} catch (const std::exception& e) {
+										logger::warn("Invalid radius value in nearbyobjects filter of {}: {}", path.string(), e.what());
+										radiusCondition.value = 100.0;
+									}
+								} else if (entry["radius"].is_object()) {
+									const auto& radiusObj = entry["radius"];
 
-                if (jf.contains("nearbyobjectsnot") && jf["nearbyobjectsnot"].is_array()) {
-                    for (const auto& entry : jf["nearbyobjectsnot"]) {
-                        if (entry.is_object()) {
-                            std::string formIdStr;
-                            float radius = 150.0f;
+									if (radiusObj.contains("min") && radiusObj["min"].is_number() &&
+										radiusObj.contains("max") && radiusObj["max"].is_number()) {
+										try {
+											radiusCondition.min = radiusObj["min"].get<float>();
+											radiusCondition.max = radiusObj["max"].get<float>();
+											radiusCondition.useRandom = true;
+											radiusCondition.value = 100.0;
+										} catch (const std::exception& e) {
+											logger::warn("Invalid random radius values in nearbyobjects filter of {}: {}", path.string(), e.what());
+											radiusCondition.value = 100.0;
+											radiusCondition.useRandom = false;
+										}
+									} else {
+										logger::warn("Invalid radius object format in nearbyobjects filter of {}: missing min/max values", path.string());
+										radiusCondition.value = 100.0;
+										radiusCondition.useRandom = false;
+									}
+								}
+							} else {
+								radiusCondition.value = 100.0;
+								radiusCondition.useRandom = false;
+							}
 
-                            if (entry.contains("formid") && entry["formid"].is_string()) {
-                                formIdStr = entry["formid"].get<std::string>();
-                
-                                if (entry.contains("radius") && entry["radius"].is_number())
-                                    radius = entry["radius"].get<float>();
-                
-                                auto* form = GetFormFromIdentifier<RE::TESForm>(formIdStr);
-                                if (form) {
-                                    if (auto* formList = form->As<RE::BGSListForm>()) {
-                                        for (auto* el : formList->forms) {
-                                            if (el) {
-                                                r.filter.nearbyNot.push_back({ el, radius });
-                                            }
-                                        }
-                                    } else {
-                                        r.filter.nearbyNot.push_back({ form, radius });
-                                    }
-                                } else {
-                                    logger::warn("Invalid form '{}' in nearbyobjectsnot filter of {}", formIdStr, path.string());
-                                }
-                            } else if (entry.contains("editorid") && entry["editorid"].is_string()) {
-                                formIdStr = entry["editorid"].get<std::string>();
-                
-                                if (entry.contains("radius") && entry["radius"].is_number())
-                                    radius = entry["radius"].get<float>();
-                
-                                auto* form = GetFormFromEditorID<RE::TESForm>(formIdStr);
-                                if (form) {
-                                    if (auto* formList = form->As<RE::BGSListForm>()) {
-                                        for (auto* el : formList->forms) {
-                                            if (el) {
-                                                r.filter.nearbyNot.push_back({ el, radius });
-                                            }
-                                        }
-                                    } else {
-                                        r.filter.nearbyNot.push_back({ form, radius });
-                                    }
-                                } else {
-                                    logger::warn("Invalid form '{}' in nearbyobjectsnot filter of {}", formIdStr, path.string());
-                                }
-                            }
-                        }
-                    }
-                }
+							if (entry.contains("formid") && entry["formid"].is_string()) {
+								formIdStr = entry["formid"].get<std::string>();
 
-                if (jf.contains("timer") && (jf["timer"].is_number() || jf["timer"].is_object())) {
-                    if (jf["timer"].is_number()) {
-                        // Handle legacy format (simple number)
-                        try {
-                            r.filter.timer.time = jf["timer"].get<float>();
-                            r.filter.timer.matchFilterRecheck = 0;
-                        } catch (const std::exception& e) {
-                            logger::warn("Invalid timer value in timer filter of {}: {}", path.string(), e.what());
-                        }
-                    } else if (jf["timer"].is_object()) {
-                        // Handle new format (object with time and matchFilterRecheck)
-                        const auto& timerObj = jf["timer"];
-                        
-                        if (timerObj.contains("time") && timerObj["time"].is_number()) {
-                            try {
-                                r.filter.timer.time = timerObj["time"].get<float>();
-                            } catch (const std::exception& e) {
-                                logger::warn("Invalid time value in timer filter of {}: {}", path.string(), e.what());
-                            }
-                        }
-                        
-                        if (timerObj.contains("matchfilterrecheck") && timerObj["matchfilterrecheck"].is_number_unsigned()) {
-                            try {
-                                r.filter.timer.matchFilterRecheck = timerObj["matchfilterrecheck"].get<std::uint32_t>();
-                            } catch (const std::exception& e) {
-                                logger::warn("Invalid matchFilterRecheck value in timer filter of {}: {}", path.string(), e.what());
-                            }
-                        }
-                    }
-                }
+								auto* form = GetFormFromIdentifier<RE::TESForm>(formIdStr);
+								if (form) {
+									if (auto* formList = form->As<RE::BGSListForm>()) {
+										for (auto* el : formList->forms) {
+											if (el) {
+												r.filter.nearby.push_back({ el, radiusCondition });
+											}
+										}
+									} else {
+										r.filter.nearby.push_back({ form, radiusCondition });
+									}
+								} else {
+									logger::warn("Invalid form '{}' in nearbyobjects filter of {}", formIdStr, path.string());
+								}
+							} else if (entry.contains("editorid") && entry["editorid"].is_string()) {
+								formIdStr = entry["editorid"].get<std::string>();
+
+								auto* form = GetFormFromEditorID<RE::TESForm>(formIdStr);
+								if (form) {
+									if (auto* formList = form->As<RE::BGSListForm>()) {
+										for (auto* el : formList->forms) {
+											if (el) {
+												r.filter.nearby.push_back({ el, radiusCondition });
+											}
+										}
+									} else {
+										r.filter.nearby.push_back({ form, radiusCondition });
+									}
+								} else {
+									logger::warn("Invalid form '{}' in nearbyobjects filter of {}", formIdStr, path.string());
+								}
+							}
+						}
+					}
+				}
+
+				if (jf.contains("nearbyobjectsnot") && jf["nearbyobjectsnot"].is_array()) {
+					for (const auto& entry : jf["nearbyobjectsnot"]) {
+						if (entry.is_object()) {
+							std::string formIdStr;
+							RadiusCondition radiusCondition;
+
+							if (entry.contains("radius") && (entry["radius"].is_number() || entry["radius"].is_object())) {
+								if (entry["radius"].is_number()) {
+									try {
+										radiusCondition.value = entry["radius"].get<float>();
+										radiusCondition.useRandom = false;
+									} catch (const std::exception& e) {
+										logger::warn("Invalid radius value in nearbyobjectsnot filter of {}: {}", path.string(), e.what());
+										radiusCondition.value = 100.0;
+									}
+								} else if (entry["radius"].is_object()) {
+									const auto& radiusObj = entry["radius"];
+
+									if (radiusObj.contains("min") && radiusObj["min"].is_number() &&
+										radiusObj.contains("max") && radiusObj["max"].is_number()) {
+										try {
+											radiusCondition.min = radiusObj["min"].get<float>();
+											radiusCondition.max = radiusObj["max"].get<float>();
+											radiusCondition.useRandom = true;
+											radiusCondition.value = 100.0;
+										} catch (const std::exception& e) {
+											logger::warn("Invalid random radius values in nearbyobjectsnot filter of {}: {}", path.string(), e.what());
+											radiusCondition.value = 100.0;
+											radiusCondition.useRandom = false;
+										}
+									} else {
+										logger::warn("Invalid radius object format in nearbyobjectsnot filter of {}: missing min/max values", path.string());
+										radiusCondition.value = 100.0;
+										radiusCondition.useRandom = false;
+									}
+								}
+							} else {
+								radiusCondition.value = 100.0;
+								radiusCondition.useRandom = false;
+							}
+
+							if (entry.contains("formid") && entry["formid"].is_string()) {
+								formIdStr = entry["formid"].get<std::string>();
+
+								auto* form = GetFormFromIdentifier<RE::TESForm>(formIdStr);
+								if (form) {
+									if (auto* formList = form->As<RE::BGSListForm>()) {
+										for (auto* el : formList->forms) {
+											if (el) {
+												r.filter.nearbyNot.push_back({ el, radiusCondition });
+											}
+										}
+									} else {
+										r.filter.nearbyNot.push_back({ form, radiusCondition });
+									}
+								} else {
+									logger::warn("Invalid form '{}' in nearbyobjectsnot filter of {}", formIdStr, path.string());
+								}
+							} else if (entry.contains("editorid") && entry["editorid"].is_string()) {
+								formIdStr = entry["editorid"].get<std::string>();
+
+								auto* form = GetFormFromEditorID<RE::TESForm>(formIdStr);
+								if (form) {
+									if (auto* formList = form->As<RE::BGSListForm>()) {
+										for (auto* el : formList->forms) {
+											if (el) {
+												r.filter.nearbyNot.push_back({ el, radiusCondition });
+											}
+										}
+									} else {
+										r.filter.nearbyNot.push_back({ form, radiusCondition });
+									}
+								} else {
+									logger::warn("Invalid form '{}' in nearbyobjectsnot filter of {}", formIdStr, path.string());
+								}
+							}
+						}
+					}
+				}
+
+				if (jf.contains("timer") && (jf["timer"].is_number() || jf["timer"].is_object())) {
+					if (jf["timer"].is_number()) {
+						try {
+							r.filter.timer.time.value = jf["timer"].get<float>();
+							r.filter.timer.time.useRandom = false;
+							r.filter.timer.matchFilterRecheck = 0;
+						} catch (const std::exception& e) {
+							logger::warn("Invalid timer value in timer filter of {}: {}", path.string(), e.what());
+						}
+					} else if (jf["timer"].is_object()) {
+						const auto& timerObj = jf["timer"];
+
+						if (timerObj.contains("time")) {
+							if (timerObj["time"].is_number()) {
+								try {
+									r.filter.timer.time.value = timerObj["time"].get<float>();
+									r.filter.timer.time.useRandom = false;
+								} catch (const std::exception& e) {
+									logger::warn("Invalid time value in timer filter of {}: {}", path.string(), e.what());
+								}
+							} else if (timerObj["time"].is_object()) {
+								const auto& timeObj = timerObj["time"];
+								if (timeObj.contains("min") && timeObj["min"].is_number() &&
+									timeObj.contains("max") && timeObj["max"].is_number()) {
+									try {
+										r.filter.timer.time.min = timeObj["min"].get<float>();
+										r.filter.timer.time.max = timeObj["max"].get<float>();
+										r.filter.timer.time.useRandom = true;
+										r.filter.timer.time.value = 0.0f;
+									} catch (const std::exception& e) {
+										logger::warn("Invalid random timer values in timer filter of {}: {}", path.string(), e.what());
+									}
+								} else {
+									logger::warn("Invalid timer time object format in timer filter of {}: missing min/max values", path.string());
+								}
+							}
+						}
+
+						if (timerObj.contains("matchfilterrecheck") && timerObj["matchfilterrecheck"].is_number_unsigned()) {
+							try {
+								r.filter.timer.matchFilterRecheck = timerObj["matchfilterrecheck"].get<std::uint32_t>();
+							} catch (const std::exception& e) {
+								logger::warn("Invalid matchFilterRecheck value in timer filter of {}: {}", path.string(), e.what());
+							}
+						}
+					}
+				}
 
                 if (jf.contains("time") && jf["time"].is_array()) {
                     for (auto const& tm : jf["time"]) {
@@ -2288,6 +2439,46 @@ namespace OIF {
                         logger::warn("Invalid destruction stage value in destructionstage filter of {}: {}", path.string(), e.what());
                     }
                 }
+
+				if (jf.contains("isstacked") && jf["isstacked"].is_number_unsigned()) {
+					try {
+						r.filter.isStacked = jf["isstacked"].get<std::uint32_t>();
+					} catch (const std::exception& e) {
+						logger::warn("Invalid isstacked value in isstacked filter of {}: {}", path.string(), e.what());
+					}
+				}
+
+				if (jf.contains("isinterior") && jf["isinterior"].is_number_unsigned()) {
+					try {
+						r.filter.isInterior = jf["isinterior"].get<std::uint32_t>();
+					} catch (const std::exception& e) {
+						logger::warn("Invalid isinterior value in isinterior filter of {}: {}", path.string(), e.what());
+					}
+				}
+
+				if (jf.contains("position") && jf["position"].is_number_unsigned()) {
+					try {
+						r.filter.position = jf["position"].get<std::uint32_t>();
+					} catch (const std::exception& e) {
+						logger::warn("Invalid position value in position filter of {}: {}", path.string(), e.what());
+					}
+				}
+
+				if (jf.contains("isFirstPerson") && jf["isFirstPerson"].is_number_unsigned()) {
+					try {
+						r.filter.isFirstPerson = jf["isFirstPerson"].get<std::uint32_t>();
+					} catch (const std::exception& e) {
+						logger::warn("Invalid isFirstPerson value in isFirstPerson filter of {}: {}", path.string(), e.what());
+					}
+				}
+
+				if (jf.contains("isThirdPerson") && jf["isThirdPerson"].is_number_unsigned()) {
+					try {
+						r.filter.isThirdPerson = jf["isThirdPerson"].get<std::uint32_t>();
+					} catch (const std::exception& e) {
+						logger::warn("Invalid isThirdPerson value in isThirdPerson filter of {}: {}", path.string(), e.what());
+					}
+				}
             }           
 
             if (!hasObjectIdentifier) {
@@ -2407,14 +2598,147 @@ namespace OIF {
 							extData.nonDeletable = itemJson.value("nondeletable", 0U);
 							extData.spawnType = itemJson.value("spawntype", 4U);
 							extData.fade = itemJson.value("fade", 1U);
-							extData.count = itemJson.value("count", 1U);
-							extData.radius = itemJson.value("radius", 150.0f);
-							extData.scale = itemJson.value("scale", -1.0f);
-							extData.chance = itemJson.value("chance", 100.0f);
+							extData.duration = itemJson.value("duration", 1.0f);
+							extData.string = itemJson.value("string", std::string{});
+							extData.mode = itemJson.value("mode", 0U);
+							extData.strings = itemJson.value("strings", std::vector<std::string>{});
+							//extData.flagNames = itemJson.value("flagnames", std::vector<std::string>{});
+							extData.rank = itemJson.value("rank", 0U);
+							if (itemJson.contains("count") && (itemJson["count"].is_number_unsigned() || itemJson["count"].is_object())) {
+								if (itemJson["count"].is_number_unsigned()) {
+									try {
+										extData.count.value = itemJson["count"].get<std::uint32_t>();
+										extData.count.useRandom = false;
+									} catch (const std::exception& e) {
+										logger::warn("Invalid count value in items of {}: {}", path.string(), e.what());
+									}
+								} else if (itemJson["count"].is_object()) {
+									const auto& countObj = itemJson["count"];
+									if (countObj.contains("min") && countObj["min"].is_number_unsigned() &&
+										countObj.contains("max") && countObj["max"].is_number_unsigned()) {
+										try {
+											extData.count.min = countObj["min"].get<std::uint32_t>();
+											extData.count.max = countObj["max"].get<std::uint32_t>();
+											extData.count.useRandom = true;
+											extData.count.value = 1;
+										} catch (const std::exception& e) {
+											logger::warn("Invalid random count values in items of {}: {}", path.string(), e.what());
+										}
+									} else {
+										logger::warn("Invalid count object format in items of {}: missing min/max values", path.string());
+									}
+								}
+							} else {
+								extData.count.value = 1;
+								extData.count.useRandom = false;
+							}
+
+							if (itemJson.contains("chance") && (itemJson["chance"].is_number() || itemJson["chance"].is_object())) {
+								if (itemJson["chance"].is_number()) {
+									try {
+										extData.chance.value = itemJson["chance"].get<float>();
+										extData.chance.useRandom = false;
+									} catch (const std::exception& e) {
+										logger::warn("Invalid chance value in items of {}: {}", path.string(), e.what());
+									}
+								} else if (itemJson["chance"].is_object()) {
+									const auto& chanceObj = itemJson["chance"];
+									if (chanceObj.contains("min") && chanceObj["min"].is_number() &&
+										chanceObj.contains("max") && chanceObj["max"].is_number()) {
+										try {
+											extData.chance.min = chanceObj["min"].get<float>();
+											extData.chance.max = chanceObj["max"].get<float>();
+											extData.chance.useRandom = true;
+											extData.chance.value = 100.0f;
+										} catch (const std::exception& e) {
+											logger::warn("Invalid random chance values in items of {}: {}", path.string(), e.what());
+										}
+									} else {
+										logger::warn("Invalid chance object format in items of {}: missing min/max values", path.string());
+									}
+								}
+							} else {
+								extData.chance.value = 100.0f;
+								extData.chance.useRandom = false;
+							}
+
+							if (itemJson.contains("radius") && (itemJson["radius"].is_number() || itemJson["radius"].is_object())) {
+								if (itemJson["radius"].is_number()) {
+									try {
+										extData.radius.value = itemJson["radius"].get<float>();
+										extData.radius.useRandom = false;
+									} catch (const std::exception& e) {
+										logger::warn("Invalid radius value in items of {}: {}", path.string(), e.what());
+										extData.radius.value = 100.0;
+										extData.radius.useRandom = false;
+									}
+								} else if (itemJson["radius"].is_object()) {
+									const auto& radiusObj = itemJson["radius"];
+
+									if (radiusObj.contains("min") && radiusObj["min"].is_number() &&
+										radiusObj.contains("max") && radiusObj["max"].is_number()) {
+										try {
+											extData.radius.min = radiusObj["min"].get<float>();
+											extData.radius.max = radiusObj["max"].get<float>();
+											extData.radius.useRandom = true;
+											extData.radius.value = 100.0;
+										} catch (const std::exception& e) {
+											logger::warn("Invalid random radius values in items of {}: {}", path.string(), e.what());
+											extData.radius.value = 100.0;
+											extData.radius.useRandom = false;
+										}
+									} else {
+										logger::warn("Invalid radius object format in items of {}: missing min/max values", path.string());
+										extData.radius.value = 100.0;
+										extData.radius.useRandom = false;
+									}
+								}
+							} else {
+								extData.radius.value = 100.0;
+								extData.radius.useRandom = false;
+							}
+
+							if (itemJson.contains("scale") && (itemJson["scale"].is_number() || itemJson["scale"].is_object())) {
+								if (itemJson["scale"].is_number()) {
+									try {
+										extData.scale.value = itemJson["scale"].get<float>();
+										extData.scale.useRandom = false;
+									} catch (const std::exception& e) {
+										logger::warn("Invalid scale value in items of {}: {}", path.string(), e.what());
+										extData.scale.value = -1.0f;
+										extData.scale.useRandom = false;
+									}
+								} else if (itemJson["scale"].is_object()) {
+									const auto& scaleObj = itemJson["scale"];
+
+									if (scaleObj.contains("min") && scaleObj["min"].is_number() &&
+										scaleObj.contains("max") && scaleObj["max"].is_number()) {
+										try {
+											extData.scale.min = scaleObj["min"].get<float>();
+											extData.scale.max = scaleObj["max"].get<float>();
+											extData.scale.useRandom = true;
+											extData.scale.value = -1.0f;
+										} catch (const std::exception& e) {
+											logger::warn("Invalid random scale values in items of {}: {}", path.string(), e.what());
+											extData.scale.value = -1.0f;
+											extData.scale.useRandom = false;
+										}
+									} else {
+										logger::warn("Invalid scale object format in items of {}: missing min/max values", path.string());
+										extData.scale.value = -1.0f;
+										extData.scale.useRandom = false;
+									}
+								}
+							} else {
+								extData.scale.value = -1.0f;
+								extData.scale.useRandom = false;
+							}
+
 							if (itemJson.contains("timer") && (itemJson["timer"].is_number() || itemJson["timer"].is_object())) {
 								if (itemJson["timer"].is_number()) {
 									try {
-										extData.timer.time = itemJson["timer"].get<float>();
+										extData.timer.time.value = itemJson["timer"].get<float>();
+										extData.timer.time.useRandom = false;
 										extData.timer.matchFilterRecheck = 0;
 									} catch (const std::exception& e) {
 										logger::warn("Invalid timer value in items of {}: {}", path.string(), e.what());
@@ -2422,11 +2746,29 @@ namespace OIF {
 								} else if (itemJson["timer"].is_object()) {
 									const auto& timerObj = itemJson["timer"];
 
-									if (timerObj.contains("time") && timerObj["time"].is_number()) {
-										try {
-											extData.timer.time = timerObj["time"].get<float>();
-										} catch (const std::exception& e) {
-											logger::warn("Invalid time value in timer of items in {}: {}", path.string(), e.what());
+									if (timerObj.contains("time")) {
+										if (timerObj["time"].is_number()) {
+											try {
+												extData.timer.time.value = timerObj["time"].get<float>();
+												extData.timer.time.useRandom = false;
+											} catch (const std::exception& e) {
+												logger::warn("Invalid time value in timer of items in {}: {}", path.string(), e.what());
+											}
+										} else if (timerObj["time"].is_object()) {
+											const auto& timeObj = timerObj["time"];
+											if (timeObj.contains("min") && timeObj["min"].is_number() &&
+												timeObj.contains("max") && timeObj["max"].is_number()) {
+												try {
+													extData.timer.time.min = timeObj["min"].get<float>();
+													extData.timer.time.max = timeObj["max"].get<float>();
+													extData.timer.time.useRandom = true;
+													extData.timer.time.value = 0.0f;
+												} catch (const std::exception& e) {
+													logger::warn("Invalid random timer values in items of {}: {}", path.string(), e.what());
+												}
+											} else {
+												logger::warn("Invalid timer time object format in items of {}: missing min/max values", path.string());
+											}
 										}
 									}
 
@@ -2439,12 +2781,6 @@ namespace OIF {
 									}
 								}
 							}
-							extData.duration = itemJson.value("duration", 1.0f);
-							extData.string = itemJson.value("string", std::string{});
-							extData.mode = itemJson.value("mode", 0U);
-							extData.strings = itemJson.value("strings", std::vector<std::string>{});
-							//extData.flagNames = itemJson.value("flagnames", std::vector<std::string>{});
-							extData.rank = itemJson.value("rank", 0U);
 
 							bool haveIdentifier = false;
 
@@ -2573,82 +2909,102 @@ namespace OIF {
 		auto* baseObj = ctx.target->GetBaseObject();
 
         if (!f.nearby.empty()) {
-            if (!ctx.target || !ctx.source) return false;
-            
-            std::vector<std::pair<RE::TESForm*, float>> nearbyPairs;
-            float maxRadius = 0.0f;
-            
-            for (const auto& nearbyEntry : f.nearby) {
-                if (!nearbyEntry.form) continue;
-                nearbyPairs.emplace_back(nearbyEntry.form, nearbyEntry.radius);
-                maxRadius = (std::max)(maxRadius, nearbyEntry.radius);
-            }
-            
-            if (nearbyPairs.empty()) return false;
-            
-            bool proximityConditionMet = false;
-            auto* tes = RE::TES::GetSingleton();
-            if (!tes) return false;
+			if (!ctx.target || ctx.target->IsDeleted() || !ctx.source) return false;
+			std::unordered_map<RE::FormID, float> nearbyMap;
+			float maxRadius = 0.0f;
+    
+			std::random_device rd;
+			std::mt19937 rng(rd());
+    
+			for (const auto& nearbyEntry : f.nearby) {
+				if (!nearbyEntry.form) continue;
         
-            tes->ForEachReferenceInRange(ctx.target, maxRadius, [&](RE::TESObjectREFR* ref) -> RE::BSContainer::ForEachResult {
-                if (!ref || ref->IsDeleted()) return RE::BSContainer::ForEachResult::kContinue;
-                
-                auto* baseObj = ref->GetBaseObject();
-                if (!baseObj) return RE::BSContainer::ForEachResult::kContinue;
-                
-                float distance = ctx.target->GetPosition().GetDistance(ref->GetPosition());
-                
-                for (const auto& [form, radius] : nearbyPairs) {
-                    if (baseObj->GetFormID() == form->GetFormID() && distance <= radius) {
-                        proximityConditionMet = true;
-                        return RE::BSContainer::ForEachResult::kStop;
-                    }
-                }
-                
-                return RE::BSContainer::ForEachResult::kContinue;
-            });
-                
-            if (!proximityConditionMet) return false;
-        }
+				float actualRadius = nearbyEntry.radius.value;
+				if (nearbyEntry.radius.useRandom) {
+					actualRadius = std::uniform_real_distribution<float>(nearbyEntry.radius.min, nearbyEntry.radius.max)(rng);
+				}
         
-        if (!f.nearbyNot.empty()) {
-            if (!ctx.target || !ctx.source) return false;
+				nearbyMap[nearbyEntry.form->GetFormID()] = actualRadius;
+				maxRadius = (std::max)(maxRadius, actualRadius);
+			}
+    
+			if (nearbyMap.empty()) return false;
+			auto* tes = RE::TES::GetSingleton();
+			if (!tes) return false;
+    
+			bool proximityConditionMet = false;
+			if (!ctx.target || ctx.target->IsDeleted() || !ctx.source) return false;
+			tes->ForEachReferenceInRange(ctx.target, maxRadius, [&](RE::TESObjectREFR* ref) -> RE::BSContainer::ForEachResult {
+				if (!ref || ref->IsDeleted()) return RE::BSContainer::ForEachResult::kContinue;
         
-            std::vector<std::pair<RE::TESForm*, float>> nearbyNotPairs;
-            float maxRadius = 0.0f;
+				auto* baseObj = ref->GetBaseObject();
+				if (!baseObj) return RE::BSContainer::ForEachResult::kContinue;
+                        
+				auto it = nearbyMap.find(baseObj->GetFormID());
+				if (it != nearbyMap.end()) {
+					if (!ctx.target || ctx.target->IsDeleted()) return RE::BSContainer::ForEachResult::kContinue;
+					auto targetPos = ctx.target->GetPosition();
+					float distance = targetPos.GetDistance(ref->GetPosition());
+					if (distance <= it->second) {
+						proximityConditionMet = true;
+						return RE::BSContainer::ForEachResult::kStop;
+					}
+				}
+        
+				return RE::BSContainer::ForEachResult::kContinue;
+			});
+        
+			if (!proximityConditionMet) return false;
+		}
+
+		if (!f.nearbyNot.empty()) {
+			if (!ctx.target || ctx.target->IsDeleted() || !ctx.source) return false;
+			std::unordered_map<RE::FormID, float> nearbyNotMap;
+			float maxRadius = 0.0f;
+    
+			std::random_device rd;
+			std::mt19937 rng(rd());
+    
+			for (const auto& nearbyEntry : f.nearbyNot) {
+				if (!nearbyEntry.form) continue;
+        
+				float actualRadius = nearbyEntry.radius.value;
+				if (nearbyEntry.radius.useRandom) {
+					actualRadius = std::uniform_real_distribution<float>(nearbyEntry.radius.min, nearbyEntry.radius.max)(rng);
+				}
+        
+				nearbyNotMap[nearbyEntry.form->GetFormID()] = actualRadius;
+				maxRadius = (std::max)(maxRadius, actualRadius);
+			}
+    
+			if (!nearbyNotMap.empty()) {
+				auto* tes = RE::TES::GetSingleton();
+				if (!tes) return false;
+				bool foundExcludedForm = false;
+				if (!ctx.target || ctx.target->IsDeleted() || !ctx.source) return false;
+				tes->ForEachReferenceInRange(ctx.target, maxRadius, [&](RE::TESObjectREFR* ref) -> RE::BSContainer::ForEachResult {
+					if (!ref || ref->IsDeleted()) return RE::BSContainer::ForEachResult::kContinue;
             
-            for (const auto& nearbyEntry : f.nearbyNot) {
-                if (!nearbyEntry.form) continue;
-                nearbyNotPairs.emplace_back(nearbyEntry.form, nearbyEntry.radius);
-                maxRadius = (std::max)(maxRadius, nearbyEntry.radius);
-            }
+					auto* baseObj = ref->GetBaseObject();
+					if (!baseObj) return RE::BSContainer::ForEachResult::kContinue;
+                                
+					auto it = nearbyNotMap.find(baseObj->GetFormID());
+					if (it != nearbyNotMap.end()) {
+						if (!ctx.target || ctx.target->IsDeleted()) return RE::BSContainer::ForEachResult::kContinue;
+						auto targetPos = ctx.target->GetPosition();
+						float distance = targetPos.GetDistance(ref->GetPosition());
+						if (distance <= it->second) {
+							foundExcludedForm = true;
+							return RE::BSContainer::ForEachResult::kStop;
+						}
+					}
             
-            if (!nearbyNotPairs.empty()) {
-                auto* tes = RE::TES::GetSingleton();
-                if (!tes) return false;
-        
-                bool foundExcludedForm = false;
-                tes->ForEachReferenceInRange(ctx.target, maxRadius, [&](RE::TESObjectREFR* ref) -> RE::BSContainer::ForEachResult {
-                    if (!ref || ref->IsDeleted()) return RE::BSContainer::ForEachResult::kContinue;
-                    
-                    auto* baseObj = ref->GetBaseObject();
-                    if (!baseObj) return RE::BSContainer::ForEachResult::kContinue;
-                    
-                    float distance = ctx.target->GetPosition().GetDistance(ref->GetPosition());
-                    
-                    for (const auto& [form, radius] : nearbyNotPairs) {
-                        if (baseObj->GetFormID() == form->GetFormID() && distance <= radius) {
-                            foundExcludedForm = true;
-                            return RE::BSContainer::ForEachResult::kStop;
-                        }
-                    }
-                    
-                    return RE::BSContainer::ForEachResult::kContinue;
-                });
-                    
-                if (foundExcludedForm) return false;
-            }
-        }
+					return RE::BSContainer::ForEachResult::kContinue;
+				});
+            
+				if (foundExcludedForm) return false;
+			}
+		}
 
         bool objectIdentifierMatch = false;
         bool hasObjectIdentifiers = false;
@@ -2777,6 +3133,81 @@ namespace OIF {
 				matched = true;
 			}
 			if (matched) return false;
+		}
+		if (f.isStacked != 2) {
+			if (f.isStacked == 0 && ctx.target->extraList.GetCount() > 1) return false;
+			if (f.isStacked == 1 && ctx.target->extraList.GetCount() <= 1) return false;
+		}
+		if (f.isInterior != 2) {
+			auto* cell = ctx.target->GetParentCell();
+			if (!cell) return false;
+			bool interior = cell->IsInteriorCell();
+			if (f.isInterior == 0 && interior) return false;
+			if (f.isInterior == 1 && !interior) return false;
+		}
+		if (f.position != 3) {
+			auto player = RE::PlayerCharacter::GetSingleton();
+			if (!player) return false;
+
+			NiPoint3 targetCenter = { 0.0f, 0.0f, 0.0f };
+			NiPoint3 playerCenter = { 0.0f, 0.0f, 0.0f };
+
+			if (auto* root = ctx.target->Get3D()) {
+				targetCenter = root->worldBound.center;
+			} else {
+				const auto& bmin = ctx.target->GetBoundMin();
+				const auto& bmax = ctx.target->GetBoundMax();
+				targetCenter = {
+					(bmin.x + bmax.x) * 0.5f,
+					(bmin.y + bmax.y) * 0.5f,
+					(bmin.z + bmax.z) * 0.5f
+				};
+			}
+
+			if (auto* root = player->Get3D()) {
+				playerCenter = root->worldBound.center;
+			} else {
+				const auto& pmin = player->GetBoundMin();
+				const auto& pmax = player->GetBoundMax();
+				playerCenter = {
+					(pmin.x + pmax.x) * 0.5f,
+					(pmin.y + pmax.y) * 0.5f,
+					(pmin.z + pmax.z) * 0.5f
+				};
+			}
+
+			uint32_t actualPosition;
+			if (targetCenter.z < playerCenter.z - 30.0f) {
+				actualPosition = 0;	 // below player's middle
+			} else if (targetCenter.z > playerCenter.z + 30.0f) {
+				actualPosition = 2;	 // above player's middle
+			} else {
+				actualPosition = 1;	 // player's middle
+			}
+
+			if (f.position != actualPosition) {
+				return false;
+			}
+		}
+		if (f.isFirstPerson != 2) {
+			auto* cam = RE::PlayerCamera::GetSingleton();
+			if (!cam || !cam->currentState || !cam->currentState->camera) return false;
+			if (cam->GetRuntimeData().cameraStates[RE::CameraStates::kFirstPerson] ||
+				cam->GetRuntimeData().cameraStates[RE::CameraStates::kVR]) {	// (Hopefully)
+				if (f.isFirstPerson == 0) return false;	// Not first person
+			} else {
+				if (f.isFirstPerson == 1) return false;	// First person
+			}
+		}
+		if (f.isThirdPerson != 2) {
+			auto* cam = RE::PlayerCamera::GetSingleton();
+			if (!cam || !cam->currentState || !cam->currentState->camera) return false;
+			if (cam->GetRuntimeData().cameraStates[RE::CameraStates::kThirdPerson] || 
+				cam->GetRuntimeData().cameraStates[RE::CameraStates::kVRThirdPerson]) {
+				if (f.isThirdPerson == 0) return false;	// Not third person
+			} else {
+				if (f.isThirdPerson == 1) return false;	// Third person
+			}
 		}
         if (!f.perks.empty()) {
             if (!ctx.source) return false;
@@ -3233,7 +3664,7 @@ namespace OIF {
 						ProcessEffect<void, SpellSpawnData>(
 							eff, ctx, currentRule, false,
 							[](std::nullptr_t, const EffectExtendedData& ext) {
-									return SpellSpawnData(nullptr, 0, ext.radius);
+								return SpellSpawnData(nullptr, ext.count, ext.radius);
 							},
 							Effects::ApplySpell
 						);
@@ -3329,7 +3760,7 @@ namespace OIF {
                         ProcessEffect<void, IngestibleApplyData>(
                             eff, ctx, currentRule, false,
                             [](std::nullptr_t, const EffectExtendedData& ext) {
-                                return IngestibleApplyData(nullptr, 0, ext.radius);
+                                return IngestibleApplyData(nullptr, ext.count, ext.radius);
                             },
                             Effects::ApplyIngestible
                         );
@@ -3454,6 +3885,7 @@ namespace OIF {
                             Effects::SpawnArtObject
                         );
                     }
+					break;
 
                     case EffectType::kSpawnArtObjectOnItem:
                     {
@@ -3465,6 +3897,7 @@ namespace OIF {
                             Effects::SpawnArtObjectOnItem
                         );
                     }
+					break;
 
                     /*case EffectType::kToggleShaderFlag:
                     {
@@ -3733,179 +4166,217 @@ namespace OIF {
             recentlyProcessedItems[localTarget] = now;
         }
 
-        // Walk through every rule and apply those whose filters match
-        for (std::size_t ruleIdx = 0; ruleIdx < _rules.size(); ++ruleIdx) {
-            Rule& r = _rules[ruleIdx];
+		// Walk through every compatible rule and apply those whose filters match
+		for (std::size_t ruleIdx = 0; ruleIdx < _rules.size(); ++ruleIdx) {
+			Rule& r = _rules[ruleIdx];
 
-            if (std::find(r.events.begin(), r.events.end(), ctx.event) == r.events.end()) continue;
+			if (std::find(r.events.begin(), r.events.end(), ctx.event) == r.events.end()) continue;
 
-            r.dynamicIndex = 0;
-            if (!MatchFilter(r.filter, ctx, r)) continue;
+			// ╔════════════════════════════════════╗
+			// ║         RANDOM ROLLS BLOCK         ║
+			// ╚════════════════════════════════════╝
+
+			static thread_local std::mt19937 rng(std::random_device{}());
+
+			// Roll for limit if needed
+			if (r.filter.limit.useRandom && !r.filter.limit.hasRolled) {
+				r.filter.limit.value = std::uniform_int_distribution<std::uint32_t>(r.filter.limit.min, r.filter.limit.max)(rng);
+				r.filter.limit.hasRolled = true;
+			}
+
+			// Roll for interactions if needed
+			if (r.filter.interactions.useRandom && !r.filter.interactions.hasRolled) {
+				r.filter.interactions.value = std::uniform_int_distribution<std::uint32_t>(r.filter.interactions.min, r.filter.interactions.max)(rng);
+				r.filter.interactions.hasRolled = true;
+			}
+
+			r.dynamicIndex = 0;
+			if (!MatchFilter(r.filter, ctx, r)) continue;
 			if (!CheckLocationFilter(r.filter, ctx)) return;
 			if (!CheckWeatherFilter(r.filter)) return;
 
-            // ╔════════════════════════════════════╗
+			// ╔════════════════════════════════════╗
 			// ║         LIMIT CHECK BLOCK          ║
 			// ╚════════════════════════════════════╝
 			// Important data which will be partially saved
 
-            bool limitCheckPassed = true;
-            if (r.filter.limit > 0) {
-                Key limitKey{
-                    sourceFormID,
-                    targetFormID,
-                    static_cast<std::uint16_t>(ruleIdx)
-                };
-                std::uint32_t& limitCnt = _limitCounts[limitKey];
-                if (limitCnt >= r.filter.limit) {
-                    limitCheckPassed = false;
-                } else {
-                    ++limitCnt;
-                }
-            }
-            if (!limitCheckPassed) continue;
+			bool limitCheckPassed = true;
+			if (r.filter.limit.value > 0) {
+				Key limitKey{
+					sourceFormID,
+					targetFormID,
+					static_cast<std::uint16_t>(ruleIdx)
+				};
+				std::uint32_t& limitCnt = _limitCounts[limitKey];
+				if (limitCnt >= r.filter.limit.value) {
+					limitCheckPassed = false;
+				} else {
+					++limitCnt;
+				}
+			}
+			if (!limitCheckPassed) continue;
 
-            // ╔════════════════════════════════════╗
+			// ╔════════════════════════════════════╗
 			// ║      INTERACTIONS CHECK BLOCK      ║
 			// ╚════════════════════════════════════╝
 			// Temporary data - can be reset
 
-            bool interactionCheckPassed = true;
-            if (r.filter.interactions > 1) {
-                Key interactionKey{
-                    sourceFormID,
-                    targetFormID,
-                    static_cast<std::uint16_t>(ruleIdx)
-                };
-                std::uint32_t& interactionsCnt = _interactionsCounts[interactionKey];
-                if (++interactionsCnt < r.filter.interactions) {
-                    interactionCheckPassed = false;
-                } else {
-                    interactionsCnt = 0;
-                }
-            }
-            if (!interactionCheckPassed) continue;
+			bool interactionCheckPassed = true;
+			if (r.filter.interactions.value > 1) {
+				Key interactionKey{
+					sourceFormID,
+					targetFormID,
+					static_cast<std::uint16_t>(ruleIdx)
+				};
+				std::uint32_t& interactionsCnt = _interactionsCounts[interactionKey];
+				if (++interactionsCnt < r.filter.interactions.value) {
+					interactionCheckPassed = false;
+				} else {
+					interactionsCnt = 0;
+					// Reset hasRolled when interactions accumulated
+					r.filter.interactions.hasRolled = false;
+				}
+			}
+			if (!interactionCheckPassed) continue;
 
-            // ╔════════════════════════════════════╗
+			// ╔════════════════════════════════════╗
 			// ║         TIMER CHECK BLOCK          ║
 			// ╚════════════════════════════════════╝
 
-            bool timerBlockApplied = false;
-            if (r.filter.timer.time > 0.0f) {
-                float timerValue = r.filter.timer.time;
-                if (ctx.event == EventType::kOnUpdate) {                    
-                    static std::map<Key, std::chrono::steady_clock::time_point> updateTimers;
-                    static std::chrono::steady_clock::time_point lastTimerCleanup = std::chrono::steady_clock::now();
-        
-                    Key ruleKey{
-                        sourceFormID,
-                        targetFormID,
-                        static_cast<std::uint16_t>(ruleIdx)
-                    };
-                    auto currentTime = std::chrono::steady_clock::now();
+			bool timerBlockApplied = false;
+			if (r.filter.timer.time.value > 0.0f) {
+				if (ctx.event == EventType::kOnUpdate) {
+					static std::map<Key, std::chrono::steady_clock::time_point> updateTimers;
+					static std::chrono::steady_clock::time_point lastTimerCleanup = std::chrono::steady_clock::now();
 
-                    if (currentTime - lastTimerCleanup > std::chrono::minutes(5)) {
-                        auto cleanupThreshold = currentTime - std::chrono::hours(1);
-                        auto it = updateTimers.begin();
-                        while (it != updateTimers.end()) {
-                            if (it->second < cleanupThreshold) {
-                                it = updateTimers.erase(it);
-                            } else {
-                                ++it;
-                            }
-                        }
-                        lastTimerCleanup = currentTime;
-                        
-                        if (updateTimers.size() > 500) {
-                            logger::warn("Emergency cleanup of updateTimers: {} entries", updateTimers.size());
-                            updateTimers.clear();
-                        }
-                    }
-                
-                    auto it = updateTimers.find(ruleKey);
-                    if (it == updateTimers.end()) {
-                        updateTimers[ruleKey] = currentTime;
-                        continue;
-                    } else {
-                        auto elapsed = std::chrono::duration<float>(currentTime - it->second).count();
-                        if (elapsed < timerValue) {
-                            continue;
-                        } else {
-                            it->second = currentTime;
-                        }
-                    }
-                } else {
-                    static std::vector<std::future<void>> timerTasks;
-                    static std::mutex timerMutex;
+					Key ruleKey{
+						sourceFormID,
+						targetFormID,
+						static_cast<std::uint16_t>(ruleIdx)
+					};
+					auto currentTime = std::chrono::steady_clock::now();
 
-                    auto timerFuture = std::async(std::launch::async, [this, r, ctx, timerBlockApplied, timer = timerValue]() {
-                        std::this_thread::sleep_for(std::chrono::duration<float>(timer));
-                        
-                        SKSE::GetTaskInterface()->AddTask([this, r, ctx, timerBlockApplied]() mutable {
-                            auto* target = ctx.target;
-                            auto* source = ctx.source;
+					if (currentTime - lastTimerCleanup > std::chrono::minutes(5)) {
+						auto cleanupThreshold = currentTime - std::chrono::hours(1);
+						auto it = updateTimers.begin();
+						while (it != updateTimers.end()) {
+							if (it->second < cleanupThreshold) {
+								it = updateTimers.erase(it);
+							} else {
+								++it;
+							}
+						}
+						lastTimerCleanup = currentTime;
 
-                            if (!target || target->IsDeleted()) {
-                                logger::warn("Target is invalid or deleted after timer");
-                                return;
-                            }
+						if (updateTimers.size() > 500) {
+							logger::warn("Emergency cleanup of updateTimers: {} entries", updateTimers.size());
+							updateTimers.clear();
+						}
+					}
 
-                            if (!source || source->IsDeleted()) {
-                                logger::warn("Source is invalid or deleted after timer");
-                                return;
-                            }
+					auto it = updateTimers.find(ruleKey);
+					if (it == updateTimers.end()) {
+						updateTimers[ruleKey] = currentTime;
+						continue;
+					} else {
+						auto elapsed = std::chrono::duration<float>(currentTime - it->second).count();
+						if (elapsed < r.filter.timer.time.value) {
+							continue;
+						} else {
+							it->second = currentTime;
+						}
+					}
+				} else {
+					static std::vector<std::future<void>> timerTasks;
+					static std::mutex timerMutex;
 
-                            if (r.filter.timer.matchFilterRecheck == 1) {
-                                if (!MatchFilter(r.filter, ctx, r)) return;
-                            }
+					auto timerFuture = std::async(std::launch::async, [this, r, ctx, timerBlockApplied, timer = r.filter.timer.time.value]() {
+						std::this_thread::sleep_for(std::chrono::duration<float>(timer));
 
-							static thread_local std::mt19937 rng(std::random_device{}());
+						SKSE::GetTaskInterface()->AddTask([this, r, ctx, timerBlockApplied]() mutable {
+							auto* target = ctx.target;
+							auto* source = ctx.source;
+
+							if (!target || target->IsDeleted()) {
+								logger::warn("Target is invalid or deleted after timer");
+								return;
+							}
+
+							if (!source || source->IsDeleted()) {
+								logger::warn("Source is invalid or deleted after timer");
+								return;
+							}
+
+							if (r.filter.timer.matchFilterRecheck == 1) {
+								if (!MatchFilter(r.filter, ctx, r)) return;
+							}
+
 							float globalRoll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
-							if (globalRoll < r.filter.chance) {
-								for (const auto& eff : r.effects) {
+							if (globalRoll < r.filter.chance.value) {
+								for (auto& eff : r.effects) {
+									for (auto& [form, extData] : eff.items) {
+										if (extData.count.useRandom) {
+											extData.count.value = std::uniform_int_distribution<std::uint32_t>(extData.count.min, extData.count.max)(rng);
+										}
+										if (extData.scale.useRandom) {
+											extData.scale.value = std::uniform_real_distribution<float>(extData.scale.min, extData.scale.max)(rng);
+										}
+										if (extData.radius.useRandom) {
+											extData.radius.value = std::uniform_real_distribution<float>(extData.radius.min, extData.radius.max)(rng);
+										}
+									}
 									ApplyEffect(eff, ctx, r);
 								}
 								timerBlockApplied = true;
 							}
-                        });
-                    });
+						});
+					});
 
-                    {
-                        std::lock_guard<std::mutex> timerlock(timerMutex);
-                        timerTasks.push_back(std::move(timerFuture));
-                        
-                        timerTasks.erase(
-                            std::remove_if(timerTasks.begin(), timerTasks.end(),
-                                [](const std::future<void>& f) {
-                                    return f.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
-                                }),
-                            timerTasks.end()
-                        );
-                    }
-                    
-                    continue;
-                }
-            }
+					{
+						std::lock_guard<std::mutex> timerlock(timerMutex);
+						timerTasks.push_back(std::move(timerFuture));
 
-            // ╔════════════════════════════════════╗
+						timerTasks.erase(
+							std::remove_if(timerTasks.begin(), timerTasks.end(),
+								[](const std::future<void>& f) {
+									return f.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
+								}),
+							timerTasks.end());
+					}
+
+					continue;
+				}
+			}
+
+			// ╔════════════════════════════════════╗
 			// ║          EFFECTS APPLYING          ║
 			// ╚════════════════════════════════════╝
 
-            if (!timerBlockApplied) {
-				static thread_local std::mt19937 rng(std::random_device{}());
+			if (!timerBlockApplied) {
 				float globalRoll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
-				if (globalRoll < r.filter.chance) {
-					for (const auto& eff : r.effects) {
+				if (globalRoll < r.filter.chance.value) {
+					for (auto& eff : r.effects) {
+						for (auto& [form, extData] : eff.items) {
+							if (extData.count.useRandom) {
+								extData.count.value = std::uniform_int_distribution<std::uint32_t>(extData.count.min, extData.count.max)(rng);
+							}
+							if (extData.scale.useRandom) {
+								extData.scale.value = std::uniform_real_distribution<float>(extData.scale.min, extData.scale.max)(rng);
+							}
+							if (extData.radius.useRandom) {
+								extData.radius.value = std::uniform_real_distribution<float>(extData.radius.min, extData.radius.max)(rng);
+							}
+						}
 						ApplyEffect(eff, ctx, r);
 					}
 				}
-            }
-        }
+			}
+		}
 
 		// ╔════════════════════════════════════╗
 		// ║              CLEAN-UP              ║
 		// ╚════════════════════════════════════╝
 
-        CleanupCounters();
-    }
+		CleanupCounters();
+	}
 }

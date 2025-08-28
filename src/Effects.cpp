@@ -412,15 +412,15 @@ namespace OIF::Effects
         auto shortestDistance = (std::numeric_limits<float>::max)();
         std::optional<RE::NiPoint3> nearestNavmeshPos = std::nullopt;
     
-        int navmeshCount = 0;
-        int vertexCount = 0;
+        int navmeshcount = 0;
+        int vertexcount = 0;
     
         for (const auto& navMesh : navMeshes) {
             if (!navMesh) continue;
-            navmeshCount++;
+            navmeshcount++;
             
             for (auto& [location] : navMesh->vertices) {
-                vertexCount++;
+                vertexcount++;
                 const auto linearDistance = dummyPos.GetDistance(location);
                 if (linearDistance < shortestDistance) {
                     shortestDistance = linearDistance;
@@ -701,7 +701,7 @@ namespace OIF::Effects
 		}
 
 		float radius = 0.0f;
-		if (!commandsData.empty()) radius = commandsData[0].radius;
+		if (!commandsData.empty()) radius = commandsData[0].radius.value;
 
 		std::vector<RE::Actor*> targets;
 		tes->ForEachReferenceInRange(ctx.target, radius, [&](RE::TESObjectREFR* a_ref) {
@@ -1078,9 +1078,9 @@ namespace OIF::Effects
 		}
 
 		for (const auto& lightData : lightsData) {
-			if (lightData.radius <= 0) continue;
+			if (lightData.radius.value <= 0) continue;
 
-			tes->ForEachReferenceInRange(ctx.target, lightData.radius, [&](RE::TESObjectREFR* ref) {
+			tes->ForEachReferenceInRange(ctx.target, lightData.radius.value, [&](RE::TESObjectREFR* ref) {
 				if (!ref || ref->IsDisabled() || ref->IsDeleted()) return RE::BSContainer::ForEachResult::kContinue;
 
 				auto* baseObj = ref->GetBaseObject();
@@ -1116,9 +1116,9 @@ namespace OIF::Effects
 		}
 
 		for (const auto& lightData : lightsData) {
-			if (lightData.radius <= 0) continue;
+			if (lightData.radius.value <= 0) continue;
 
-			tes->ForEachReferenceInRange(ctx.target, lightData.radius, [&](RE::TESObjectREFR* ref) {
+			tes->ForEachReferenceInRange(ctx.target, lightData.radius.value, [&](RE::TESObjectREFR* ref) {
 				if (!ref || ref->IsDisabled() || ref->IsDeleted()) return RE::BSContainer::ForEachResult::kContinue;
 
 				auto* baseObj = ref->GetBaseObject();
@@ -1153,9 +1153,9 @@ namespace OIF::Effects
 		}
 
 		for (const auto& lightData : lightsData) {
-			if (lightData.radius <= 0) continue;
+			if (lightData.radius.value <= 0) continue;
 
-			tes->ForEachReferenceInRange(ctx.target, lightData.radius, [&](RE::TESObjectREFR* ref) {
+			tes->ForEachReferenceInRange(ctx.target, lightData.radius.value, [&](RE::TESObjectREFR* ref) {
 				if (!ref || ref->IsDeleted())
 					return RE::BSContainer::ForEachResult::kContinue;
 
@@ -1226,7 +1226,7 @@ namespace OIF::Effects
 		for (const auto& itemData : itemsData) {
 			if (!itemData.item) continue;
 
-			ctx.target->AddObjectToContainer(itemData.item, nullptr, itemData.count, ctx.target);
+			ctx.target->AddObjectToContainer(itemData.item, nullptr, itemData.count.value, ctx.target);
 		}
 	}
 
@@ -1250,7 +1250,7 @@ namespace OIF::Effects
 		for (const auto& itemData : itemsData) {
 			if (!itemData.item) continue;
 
-			ctx.source->AddObjectToContainer(itemData.item, nullptr, itemData.count, ctx.target);
+			ctx.source->AddObjectToContainer(itemData.item, nullptr, itemData.count.value, ctx.target);
 		}
 	}
 
@@ -1271,9 +1271,9 @@ namespace OIF::Effects
 
 			auto it = inventory.find(itemData.item);
 			if (it == inventory.end() || it->second.first <= 0) continue;
-			std::int32_t removeCount = std::min<int32_t>(itemData.count, it->second.first);
+			std::int32_t removecount = std::min<int32_t>(itemData.count.value, it->second.first);
 
-			ctx.target->RemoveItem(itemData.item, removeCount, RE::ITEM_REMOVE_REASON::kRemove, nullptr, nullptr);
+			ctx.target->RemoveItem(itemData.item, removecount, RE::ITEM_REMOVE_REASON::kRemove, nullptr, nullptr);
 		}
 	}
 
@@ -1294,9 +1294,9 @@ namespace OIF::Effects
 
 			auto it = inventory.find(itemData.item);
 			if (it == inventory.end() || it->second.first <= 0) continue;
-			std::int32_t removeCount = std::min<int32_t>(itemData.count, it->second.first);
+			std::int32_t removecount = std::min<int32_t>(itemData.count.value, it->second.first);
 
-			ctx.source->RemoveItem(itemData.item, removeCount, RE::ITEM_REMOVE_REASON::kRemove, nullptr, nullptr);
+			ctx.source->RemoveItem(itemData.item, removecount, RE::ITEM_REMOVE_REASON::kRemove, nullptr, nullptr);
 		}
 	}
 
@@ -1320,14 +1320,14 @@ namespace OIF::Effects
             if (!itemData.item)
                 continue;
 
-            for (std::uint32_t i = 0; i < itemData.count; ++i) {
+            for (std::uint32_t i = 0; i < itemData.count.value; ++i) {
                 auto item = Spawn(ctx.target, itemData.item, itemData.spawnType, itemData.fade, itemData.string);
                 if (item && ctx.target) {
                     CopyOwnership(ctx.target, item.get());
-                    if (itemData.scale == -1.0f) {
+                    if (itemData.scale.value == -1.0f) {
                         SetObjectScale(item.get(), ctx.target->GetScale());
                     } else {
-                        SetObjectScale(item.get(), itemData.scale);
+                        SetObjectScale(item.get(), itemData.scale.value);
                     }
                 }
             }
@@ -1351,15 +1351,15 @@ namespace OIF::Effects
 		for (const auto& itemData : itemsData) {
 			if (!itemData.item) continue;
 
-			for (std::uint32_t i = 0; i < itemData.count; ++i) {
+			for (std::uint32_t i = 0; i < itemData.count.value; ++i) {
 				auto item = Spawn(ctx.target, itemData.item, itemData.spawnType, itemData.fade, itemData.string);
 				if (item && ctx.target) {
 					anyItemSpawned = true;
 					CopyOwnership(ctx.target, item.get());
-					if (itemData.scale == -1.0f) {
+					if (itemData.scale.value == -1.0f) {
 						SetObjectScale(item.get(), ctx.target->GetScale());
 					} else {
-						SetObjectScale(item.get(), itemData.scale);
+						SetObjectScale(item.get(), itemData.scale.value);
 					}
 				}
 			}
@@ -1395,7 +1395,7 @@ namespace OIF::Effects
 		for (const auto& itemData : itemsData) {
 			if (!itemData.item) continue;
 
-			for (std::uint32_t i = 0; i < itemData.count; ++i) {
+			for (std::uint32_t i = 0; i < itemData.count.value; ++i) {
 				auto* obj = ResolveLeveledItem(itemData.item);
 				if (!obj) {
 					logger::warn("SpawnLeveledItem: can't resolve LVLI {:X}", itemData.item ? itemData.item->GetFormID() : 0);
@@ -1405,10 +1405,10 @@ namespace OIF::Effects
 				auto item = Spawn(ctx.target, obj, itemData.spawnType, itemData.fade, itemData.string);
 				if (item && ctx.target) {
 					CopyOwnership(ctx.target, item.get());
-					if (itemData.scale == -1.0f) {
+					if (itemData.scale.value == -1.0f) {
 						SetObjectScale(item.get(), ctx.target->GetScale());
 					} else {
-						SetObjectScale(item.get(), itemData.scale);
+						SetObjectScale(item.get(), itemData.scale.value);
 					}
 				} else {
 					logger::warn("SpawnLeveledItem: place failed for {:X}", obj ? obj->GetFormID() : 0);
@@ -1434,7 +1434,7 @@ namespace OIF::Effects
 		for (const auto& itemData : itemsData) {
 			if (!itemData.item) continue;
 
-			for (std::uint32_t i = 0; i < itemData.count; ++i) {
+			for (std::uint32_t i = 0; i < itemData.count.value; ++i) {
 				auto* obj = ResolveLeveledItem(itemData.item);
 				if (!obj) {
 					logger::warn("SwapLeveledItem: can't resolve LVLI {:X}", itemData.item ? itemData.item->GetFormID() : 0);
@@ -1445,10 +1445,10 @@ namespace OIF::Effects
 				if (item && ctx.target) {
 					spawned = true;
 					CopyOwnership(ctx.target, item.get());
-					if (itemData.scale == -1.0f) {
+					if (itemData.scale.value == -1.0f) {
 						SetObjectScale(item.get(), ctx.target->GetScale());
 					} else {
-						SetObjectScale(item.get(), itemData.scale);
+						SetObjectScale(item.get(), itemData.scale.value);
 					}
 				} else {
 					logger::warn("SwapLeveledItem: place failed for {:X}", obj ? obj->GetFormID() : 0);
@@ -1486,14 +1486,14 @@ namespace OIF::Effects
 		for (const auto& lightData : lightsData) {
 			if (!lightData.light) continue;
 
-			for (std::uint32_t i = 0; i < lightData.count; ++i) {
+			for (std::uint32_t i = 0; i < lightData.count.value; ++i) {
 				auto light = Spawn(ctx.target, lightData.light, lightData.spawnType, lightData.fade, lightData.string);
 				if (light && ctx.target) {
 					light->Enable(false);
-					if (lightData.scale == -1.0f) {
+					if (lightData.scale.value == -1.0f) {
 						SetObjectScale(light.get(), ctx.target->GetScale());
 					} else {
-						SetObjectScale(light.get(), lightData.scale);
+						SetObjectScale(light.get(), lightData.scale.value);
 					}
 				}
 			}
@@ -1519,13 +1519,13 @@ namespace OIF::Effects
 		for (const auto& actorData : actorsData) {
 			if (!actorData.npc) continue;
 
-			for (std::uint32_t i = 0; i < actorData.count; ++i) {
+			for (std::uint32_t i = 0; i < actorData.count.value; ++i) {
 				auto actor = Spawn(ctx.target, actorData.npc, actorData.spawnType, actorData.fade, actorData.string);
 				if (actor && ctx.target) {
-					if (actorData.scale == -1.0f) {
+					if (actorData.scale.value == -1.0f) {
 						SetObjectScale(actor.get(), ctx.target->GetScale());
 					} else {
-						SetObjectScale(actor.get(), actorData.scale);
+						SetObjectScale(actor.get(), actorData.scale.value);
 					}
 				}
 			}
@@ -1549,14 +1549,14 @@ namespace OIF::Effects
 		for (const auto& actorData : actorsData) {
 			if (!actorData.npc) continue;
 
-			for (std::uint32_t i = 0; i < actorData.count; ++i) {
+			for (std::uint32_t i = 0; i < actorData.count.value; ++i) {
 				auto actor = Spawn(ctx.target, actorData.npc, actorData.spawnType, actorData.fade, actorData.string);
 				if (actor && ctx.target) {
 					anyActorSpawned = true;
-					if (actorData.scale == -1.0f) {
+					if (actorData.scale.value == -1.0f) {
 						SetObjectScale(actor.get(), ctx.target->GetScale());
 					} else {
-						SetObjectScale(actor.get(), actorData.scale);
+						SetObjectScale(actor.get(), actorData.scale.value);
 					}
 				}
 			}
@@ -1592,7 +1592,7 @@ namespace OIF::Effects
 		for (const auto& actorData : actorsData) {
 			if (!actorData.npc) continue;
 
-			for (std::uint32_t i = 0; i < actorData.count; ++i) {
+			for (std::uint32_t i = 0; i < actorData.count.value; ++i) {
 				auto* npcBase = ResolveLeveledNPC(actorData.npc);
 				if (!npcBase) {
 					logger::warn("SpawnLeveledActor: Can't resolve LVLC {:X}", actorData.npc ? actorData.npc->GetFormID() : 0);
@@ -1601,10 +1601,10 @@ namespace OIF::Effects
 
 				auto actor = Spawn(ctx.target, npcBase, actorData.spawnType, actorData.fade, actorData.string);
 				if (actor && ctx.target) {
-					if (actorData.scale == -1.0f) {
+					if (actorData.scale.value == -1.0f) {
 						SetObjectScale(actor.get(), ctx.target->GetScale());
 					} else {
-						SetObjectScale(actor.get(), actorData.scale);
+						SetObjectScale(actor.get(), actorData.scale.value);
 					}
 				}
 			}
@@ -1628,7 +1628,7 @@ namespace OIF::Effects
 		for (const auto& actorData : actorsData) {
 			if (!actorData.npc) continue;
 
-			for (std::uint32_t i = 0; i < actorData.count; ++i) {
+			for (std::uint32_t i = 0; i < actorData.count.value; ++i) {
 				auto* npcBase = ResolveLeveledNPC(actorData.npc);
 				if (!npcBase) {
 					logger::warn("SpawnLeveledActor: Can't resolve LVLC {:X}", actorData.npc ? actorData.npc->GetFormID() : 0);
@@ -1638,10 +1638,10 @@ namespace OIF::Effects
 				auto actor = Spawn(ctx.target, npcBase, actorData.spawnType, actorData.fade, actorData.string);
 				if (actor && ctx.target) {
 					spawned = true;
-					if (actorData.scale == -1.0f) {
+					if (actorData.scale.value == -1.0f) {
 						SetObjectScale(actor.get(), ctx.target->GetScale());
 					} else {
-						SetObjectScale(actor.get(), actorData.scale);
+						SetObjectScale(actor.get(), actorData.scale.value);
 					}
 				}
 			}
@@ -1721,11 +1721,11 @@ namespace OIF::Effects
 
 		for (const auto& spellData : spellsData) {
 			if (!spellData.spell) continue;
-			if (spellData.radius <= 0) return;
+			if (spellData.radius.value <= 0) return;
 
 			std::vector<RE::Actor*> targets;
 
-			tes->ForEachReferenceInRange(dummy.get(), spellData.radius, [&](RE::TESObjectREFR* a_ref) {
+			tes->ForEachReferenceInRange(dummy.get(), spellData.radius.value, [&](RE::TESObjectREFR* a_ref) {
 				auto* actor = a_ref->As<RE::Actor>();
 				if (actor && !actor->IsDead() && !actor->IsDisabled()) {
 					targets.push_back(actor);
@@ -1736,7 +1736,7 @@ namespace OIF::Effects
 			if (targets.empty()) continue;
 
 			for (auto* tgt : targets) {
-				for (std::uint32_t i = 0; i < spellData.count; ++i) {
+				for (std::uint32_t i = 0; i < spellData.count.value; ++i) {
 					if (!mc || !tgt || tgt->IsDeleted() || !spellData.spell) {
 						logger::warn("SpawnSpell: Invalid MagicCaster, target, or spell");
 						continue;
@@ -1804,7 +1804,7 @@ namespace OIF::Effects
 		for (const auto& spellData : spellsData) {
 			if (!spellData.spell) continue;
 
-			for (std::uint32_t i = 0; i < spellData.count; ++i) {
+			for (std::uint32_t i = 0; i < spellData.count.value; ++i) {
 				if (!mc || !ctx.target || ctx.target->IsDeleted() || !spellData.spell) {
 					logger::warn("SpawnSpellOnItem: Invalid MagicCaster, target, or spell");
 					continue;
@@ -1879,12 +1879,12 @@ namespace OIF::Effects
 		for (const auto& spellData : spellsData) {
 			if (!spellData.spell)
 				continue;
-			if (spellData.radius <= 0)
+			if (spellData.radius.value <= 0)
 				return;
 
 			std::vector<RE::Actor*> targets;
 
-			tes->ForEachReferenceInRange(dummy.get(), spellData.radius, [&](RE::TESObjectREFR* a_ref) {
+			tes->ForEachReferenceInRange(dummy.get(), spellData.radius.value, [&](RE::TESObjectREFR* a_ref) {
 				auto* actor = a_ref->As<RE::Actor>();
 				if (actor && !actor->IsDead() && !actor->IsDisabled()) {
 					targets.push_back(actor);
@@ -1903,7 +1903,7 @@ namespace OIF::Effects
 			}
 
 			for (auto* tgt : targets) {
-				for (std::uint32_t i = 0; i < spellData.count; ++i) {
+				for (std::uint32_t i = 0; i < spellData.count.value; ++i) {
 					if (!mc || !tgt || tgt->IsDeleted() || !spell) {
 						logger::warn("SpawnLeveledSpell: Invalid MagicCaster, target, or spell");
 						continue;
@@ -1972,7 +1972,7 @@ namespace OIF::Effects
 			if (!spellData.spell)
 				continue;
 
-			for (std::uint32_t i = 0; i < spellData.count; ++i) {
+			for (std::uint32_t i = 0; i < spellData.count.value; ++i) {
 				auto* spell = ResolveLeveledSpell(spellData.spell);
 				if (!spell) {
 					logger::warn("SpawnLeveledSpellOnItem: Can't resolve LVLS {:X}", spellData.spell ? spellData.spell->GetFormID() : 0);
@@ -2064,12 +2064,12 @@ namespace OIF::Effects
 		}
 
 		const auto& data = spellsData[0];
-		if (data.radius <= 0) return;
+		if (data.radius.value <= 0) return;
 
 		const bool hostile = magicItem->IsHostile();
 		std::vector<RE::Actor*> targets;
 
-		tes->ForEachReferenceInRange(dummy.get(), data.radius, [&](RE::TESObjectREFR* a_ref) {
+		tes->ForEachReferenceInRange(dummy.get(), data.radius.value, [&](RE::TESObjectREFR* a_ref) {
 			auto* actor = a_ref->As<RE::Actor>();
 			if (actor && !actor->IsDisabled() && !actor->IsDeleted() && !actor->IsDead() && !actor->IsGhost()) {
 				targets.push_back(actor);
@@ -2164,12 +2164,12 @@ namespace OIF::Effects
 		}
 
 		const auto& data = ingestiblesData[0];
-		if (data.radius <= 0) return;
+		if (data.radius.value <= 0) return;
 
 		const bool hostile = magicItem->IsPoison();
 		std::vector<RE::Actor*> targets;
 
-		tes->ForEachReferenceInRange(dummy.get(), data.radius, [&](RE::TESObjectREFR* a_ref) {
+		tes->ForEachReferenceInRange(dummy.get(), data.radius.value, [&](RE::TESObjectREFR* a_ref) {
 			auto* actor = a_ref->As<RE::Actor>();
 			if (actor && !actor->IsDisabled() && !actor->IsDeleted() && !actor->IsDead() && !actor->IsGhost()) {
 				targets.push_back(actor);
@@ -2253,11 +2253,11 @@ namespace OIF::Effects
 
 		for (const auto& ingestibleData : ingestiblesData) {
 			if (!ingestibleData.ingestible) continue;
-			if (ingestibleData.radius <= 0) continue;
+			if (ingestibleData.radius.value <= 0) continue;
 
 			std::vector<RE::Actor*> targets;
 
-			tes->ForEachReferenceInRange(dummy.get(), ingestibleData.radius, [&](RE::TESObjectREFR* a_ref) {
+			tes->ForEachReferenceInRange(dummy.get(), ingestibleData.radius.value, [&](RE::TESObjectREFR* a_ref) {
 				auto* actor = a_ref->As<RE::Actor>();
 				if (actor && !actor->IsDisabled() && !actor->IsDeleted() && !actor->IsDead() && !actor->IsGhost()) {
 					targets.push_back(actor);
@@ -2270,7 +2270,7 @@ namespace OIF::Effects
 			const bool hostile = ingestibleData.ingestible->IsPoison();
 
 			for (auto* tgt : targets) {
-				for (std::uint32_t i = 0; i < ingestibleData.count; ++i) {
+				for (std::uint32_t i = 0; i < ingestibleData.count.value; ++i) {
 					if (!mc || !tgt || tgt->IsDeleted() || !ingestibleData.ingestible) {
 						logger::warn("ApplyOtherIngestible: Invalid MagicCaster, target, or ingestible");
 						continue;
@@ -2534,7 +2534,7 @@ namespace OIF::Effects
             if (!data.impact)
                 continue;
         
-            for (uint32_t i = 0; i < data.count; ++i) {
+            for (uint32_t i = 0; i < data.count.value; ++i) {
                 im->PlayImpactEffect(ctx.target, data.impact, "", finalHitPos, 0.0f, false, false);
             }
         }
@@ -2559,7 +2559,7 @@ namespace OIF::Effects
             if (!explosionData.explosion)
                 continue;
 
-            for (std::uint32_t i = 0; i < explosionData.count; ++i) {
+            for (std::uint32_t i = 0; i < explosionData.count.value; ++i) {
                 auto explosion = Spawn(ctx.target, explosionData.explosion, explosionData.spawnType, explosionData.fade, explosionData.string);              
             }
         }
@@ -2588,7 +2588,7 @@ namespace OIF::Effects
 
 			std::vector<RE::Actor*> targets;
 
-			tes->ForEachReferenceInRange(ctx.target, effectShaderData.radius, [&](RE::TESObjectREFR* a_ref) {
+			tes->ForEachReferenceInRange(ctx.target, effectShaderData.radius.value, [&](RE::TESObjectREFR* a_ref) {
 				auto* actor = a_ref->As<RE::Actor>();
 				if (actor && !actor->IsDead() && !actor->IsDisabled()) {
 					targets.push_back(actor);
@@ -2602,7 +2602,7 @@ namespace OIF::Effects
 			}
 
 			for (auto* actor : targets) {
-				for (std::uint32_t i = 0; i < effectShaderData.count; ++i) {
+				for (std::uint32_t i = 0; i < effectShaderData.count.value; ++i) {
 					auto shaderEffect = actor->ApplyEffectShader(effectShaderData.effectShader, effectShaderData.duration, nullptr, false, false, nullptr, false);
 
 					if (!shaderEffect) {
@@ -2630,7 +2630,7 @@ namespace OIF::Effects
 		for (const auto& effectShaderData : effectShadersData) {
 			if (!effectShaderData.effectShader) continue;
 
-			for (std::uint32_t i = 0; i < effectShaderData.count; ++i) {
+			for (std::uint32_t i = 0; i < effectShaderData.count.value; ++i) {
 				auto shaderEffect = ctx.target->ApplyEffectShader(effectShaderData.effectShader, effectShaderData.duration, nullptr, false, false, nullptr, false);
 
 				if (!shaderEffect) {
@@ -2665,7 +2665,7 @@ namespace OIF::Effects
 
 			std::vector<RE::Actor*> targets;
 
-			tes->ForEachReferenceInRange(ctx.target, artObjectData.radius, [&](RE::TESObjectREFR* a_ref) {
+			tes->ForEachReferenceInRange(ctx.target, artObjectData.radius.value, [&](RE::TESObjectREFR* a_ref) {
 				auto* actor = a_ref->As<RE::Actor>();
 				if (actor && !actor->IsDead() && !actor->IsDisabled()) {
 					targets.push_back(actor);
@@ -2679,7 +2679,7 @@ namespace OIF::Effects
 			}
 
 			for (auto* actor : targets) {
-				for (std::uint32_t i = 0; i < artObjectData.count; ++i) {
+				for (std::uint32_t i = 0; i < artObjectData.count.value; ++i) {
 					auto artObjectEffect = actor->ApplyArtObject(artObjectData.artObject, artObjectData.duration, nullptr, false, false, nullptr, false);
 
 					if (!artObjectEffect) {
@@ -2707,54 +2707,56 @@ namespace OIF::Effects
 		for (const auto& artObjectData : artObjectsData) {
 			if (!artObjectData.artObject) continue;
 
-			for (std::uint32_t i = 0; i < artObjectData.count; ++i) {
+			for (std::uint32_t i = 0; i < artObjectData.count.value; ++i) {
 				ctx.target->ApplyArtObject(artObjectData.artObject, artObjectData.duration, nullptr, false, false, nullptr, false);
 			}
 		}
 
-		// Physics nudge to ensure the art object won't freeze when target stops moving
-		static std::vector<std::future<void>> runningTasks;
-		static std::mutex tasksMutex;
+		// Causes stuttering for some load orders, the cause is yet to identify
 
-		auto future = std::async(std::launch::async, [target = ctx.target, duration = artObjectsData[0].duration]() {
-			const float tickInterval = 0.05f;
-			auto startTime = std::chrono::steady_clock::now();
-			auto endTime = startTime + std::chrono::duration<float>(duration + 1.0f);
+		//// Physics nudge to ensure the art object won't freeze when target stops moving
+		//static std::vector<std::future<void>> runningTasks;
+		//static std::mutex tasksMutex;
 
-			while (std::chrono::steady_clock::now() < endTime) {
-				std::this_thread::sleep_for(std::chrono::duration<float>(tickInterval));
+		//auto future = std::async(std::launch::async, [target = ctx.target, duration = artObjectsData[0].duration]() {
+		//	const float tickInterval = 0.05f;
+		//	auto startTime = std::chrono::steady_clock::now();
+		//	auto endTime = startTime + std::chrono::duration<float>(duration + 1.0f);
 
-				SKSE::GetTaskInterface()->AddTask([target]() {
-					if (target && !target->IsDeleted()) {
-						auto node3D = target->Get3D();
-						if (node3D) {
-							auto collisionObject = node3D->GetCollisionObject();
-							if (collisionObject) {
-								auto rigidBody = collisionObject->GetRigidBody();
-								if (rigidBody) {
-									hkVector4 nudge(0.0f, 0.0f, 1e-4f, 0.0f);
-									rigidBody->SetLinearImpulse(nudge);
-								}
-							}
-						}
-					}
-				});
-			}
+		//	while (std::chrono::steady_clock::now() < endTime) {
+		//		std::this_thread::sleep_for(std::chrono::duration<float>(tickInterval));
 
-			std::this_thread::sleep_for(std::chrono::milliseconds(100));
-		});
+		//		SKSE::GetTaskInterface()->AddTask([target]() {
+		//			if (target && !target->IsDeleted()) {
+		//				auto node3D = target->Get3D();
+		//				if (node3D) {
+		//					auto collisionObject = node3D->GetCollisionObject();
+		//					if (collisionObject) {
+		//						auto rigidBody = collisionObject->GetRigidBody();
+		//						if (rigidBody) {
+		//							hkVector4 nudge(0.0f, 0.0f, 1e-4f, 0.0f);
+		//							rigidBody->SetLinearImpulse(nudge);
+		//						}
+		//					}
+		//				}
+		//			}
+		//		});
+		//	}
 
-		{
-			std::lock_guard<std::mutex> lock(tasksMutex);
-			runningTasks.push_back(std::move(future));
+		//	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		//});
 
-			runningTasks.erase(
-				std::remove_if(runningTasks.begin(), runningTasks.end(),
-					[](const std::future<void>& f) {
-						return f.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
-					}),
-				runningTasks.end());
-		}
+		//{
+		//	std::lock_guard<std::mutex> lock(tasksMutex);
+		//	runningTasks.push_back(std::move(future));
+
+		//	runningTasks.erase(
+		//		std::remove_if(runningTasks.begin(), runningTasks.end(),
+		//			[](const std::future<void>& f) {
+		//				return f.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
+		//			}),
+		//		runningTasks.end());
+		//}
 	}
 
 // ╔════════════════════════════════════╗
@@ -2791,7 +2793,7 @@ namespace OIF::Effects
             if (!soundData.sound)
                 continue;
 
-            for (std::uint32_t i = 0; i < soundData.count; ++i) {
+            for (std::uint32_t i = 0; i < soundData.count.value; ++i) {
                 if (audioManager->BuildSoundDataFromDescriptor(handle, soundData.sound, 1)) {
                     handle.SetObjectToFollow(ctx.target->Get3D());
                     handle.SetPosition(pos);

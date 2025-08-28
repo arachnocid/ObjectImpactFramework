@@ -1223,7 +1223,7 @@ namespace OIF
         auto currentTime = std::chrono::steady_clock::now();
         auto deltaTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastUpdateTime);
 
-        if (deltaTime.count() < 250) return;
+        if (deltaTime.count() < 1000) return;
         lastUpdateTime = currentTime;
 
         auto* ruleManager = RuleManager::GetSingleton();

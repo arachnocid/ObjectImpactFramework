@@ -59,35 +59,87 @@ namespace OIF
 //╚═╝░░░░░╚═╝╚══════╝░░░╚═╝░░░╚══════╝╚═╝░░╚═╝
 
 	struct FormListEntry {
-		std::uint32_t formID = 0; 											// id of the form of the formlist
-		int index = -1;           											// -1 -use the entire list
-	};
-
-	struct NearbyEntry {
-		RE::TESForm* form{ nullptr }; 										// form to match
-		float radius{ 150.f };  											// radius to match
-	};
-
-	struct TimerEntry {
-		float time{ 0.0f }; 												// time in seconds
-		std::uint32_t matchFilterRecheck{ 0 }; 								// 0 - no re-check, 1 - re-check after timer expires
-	};
-
-	struct TimeCondition {
-		std::string field;        											// "hour", "minute", "day", "month", "year", "dayofweek"
-		std::string operator_type; 											// ">=", "=", "<", ">", "<=", "!="
-		float value = 0.0f;
+		std::uint32_t formID{ 0 };											// id of the form of the formlist
+		int index{ -1 };													// -1 -use the entire list
 	};
 
 	struct LevelCondition {
 		std::string operator_type; 											// ">=", "=", "<", ">", "<=", "!="
-		int value = 0;
+		int value{ 0 };
 	};
 
 	struct ActorValueCondition {
 		std::string actorValue; 											// "Health", "Magicka", "Stamina", etc.
 		std::string operator_type; 											// ">=", "=", "<", ">", "<=", "!="
-		float value = 0.0f;
+		float value{ 0.0f };
+	};
+
+	struct InteractionCondition {
+		std::uint32_t value{ 1 };
+		std::uint32_t min{ 1 };
+		std::uint32_t max{ 1 };
+		bool useRandom = false;
+		mutable bool hasRolled = false;
+	};
+
+	struct LimitCondition {
+		std::uint32_t value{ 0 };
+		std::uint32_t min{ 0 };
+		std::uint32_t max{ 0 };
+		bool useRandom = false;
+		mutable bool hasRolled = false;
+	};
+
+	struct ChanceCondition {
+		float value{ 100.0f };
+		float min{ 100.0f };
+		float max{ 100.0f };
+		bool useRandom = false;
+	};
+
+	struct CountCondition {
+		std::uint32_t value{ 1 };
+		std::uint32_t min{ 1 };
+		std::uint32_t max{ 1 };
+		bool useRandom = false;
+	};
+
+	struct ScaleCondition {
+		float value{ -1.0f };
+		float min{ -1.0f };
+		float max{ -1.0f };
+		bool useRandom = false;
+	};
+
+	struct RadiusCondition {
+		float value{ 100.0 };
+		float min{ 100.0 };
+		float max{ 100.0 };
+		bool useRandom = false;
+	};
+
+	struct TimerCondition {
+		float value{ 0.0f };
+		float min{ 0.0f };
+		float max{ 0.0f };
+		bool useRandom = false;
+	};
+
+	struct NearbyEntry
+	{
+		RE::TESForm* form{ nullptr };										// form to match
+		RadiusCondition radius;												// radius to match
+	};
+
+	struct TimerEntry {
+		TimerCondition time;												// time in seconds
+		std::uint32_t matchFilterRecheck{ 0 }; 								// 0 - no re-check, 1 - re-check after timer expires
+	};
+
+	struct TimeCondition {
+		std::string field;													// "hour", "minute", "day", "month", "year", "dayofweek"
+		std::string operator_type;											// ">=", "=", "<", ">", "<=", "!="
+		float value{ 0.0f };
 	};
 
 	struct Filter {
@@ -103,11 +155,12 @@ namespace OIF
 		std::uint32_t questItemStatus{ 0 };									// 0 - not a quest item, 1 - an item with an alias, 2 - a quest item, 3 - all/undefined
 		std::int32_t lockLevel{ -2 };										// -2 - no lock level required, -1+ - specific lock level required
 		std::int32_t lockLevelNot{ -2 };									// -2 - no lock level to avoid, -1+ - specific lock level to avoid
-		float chance{ 100.f };         							   			// the chance of 0‑100 % for the event to trigger
-		std::uint32_t interactions{ 1 };									// number of interactions required to satisfy filter
-		std::uint32_t limit = 0; 											// number of interactions to stop the effect
+		ChanceCondition chance;												// the chance of 0‑100 % for the event to trigger
+		InteractionCondition interactions;									// number of interactions required to satisfy filter
+		LimitCondition limit;												// number of interactions to stop the effect
 		std::uint32_t isInitiallyDisabled{ 2 }; 							// 0 - not initially disabled, 1 - initially disabled, 2 - all/undefined
 		std::int32_t destructionStage{ -1 }; 								// destruction stage to match, -1 - any stage
+		std::uint32_t isStacked{ 2 };										// 0 - not in stack, 1 - in stack, 2 - all/undefined
 		
 		// New hit-specific filters
 		std::unordered_set<std::string> weaponsTypes;          	 			// weapon type categories
@@ -129,6 +182,8 @@ namespace OIF
 		std::unordered_set<RE::FormID> locationsNot; 						// location IDs to avoid
 		std::unordered_set<RE::FormID> weathers; 							// weather IDs
 		std::unordered_set<RE::FormID> weathersNot; 						// weather IDs to avoid
+		std::uint32_t isInterior{ 2 };										// 0 - not interior, 1 - interior, 2 - all/undefined
+		std::uint32_t position{ 3 };										// 0 - below player's middle, 1 - player's middle, 2 - above player's middle, 3 - any position
 
 		// Proximity filters
 		std::vector<NearbyEntry> nearby;           							// nearby items to match
@@ -161,6 +216,8 @@ namespace OIF
 		std::uint32_t isDualCasting{ 2 }; 									// 0 - not dual casting, 1 - dual casting, 2 - all/undefined
 		std::uint32_t isSprinting{ 2 }; 									// 0 - not sprinting, 1 - sprinting, 2 - all/undefined
 		std::uint32_t isWeaponDrawn{ 2 }; 									// 0 - not weapon drawn, 1 - weapon drawn, 2 - all/undefined
+		std::uint32_t isFirstPerson{ 2 };									// 0 - not in first person, 1 - in first person, 2 - all/undefined
+		std::uint32_t isThirdPerson{ 2 };									// 0 - not in third person, 1 - in third person, 2 - all/undefined
 
 		// Other filters
 		std::unordered_set<std::string> requiredPlugins; 					// required plugins
@@ -180,12 +237,12 @@ namespace OIF
 	struct EffectExtendedData {
 		RE::TESForm* formID{ nullptr };  							   		// the thing to spawn/cast/play
 		std::vector<FormListEntry> formLists; 								// formlists contents to spawn/cast/play
-		std::uint32_t count{ 1 };      							   			// the amount of items to spawn/cast/play
-		float chance{ 100.f };         							   			// the chance of 0‑100 %
+		CountCondition count;      											// the amount of items to spawn/cast/play
+		ChanceCondition chance;												// the chance of 0‑100 %
 		TimerEntry timer; 													// the timer for the effect, e.g. 1.0f for 1 second wait before applying
 		float duration{ 1.f }; 												// the duration of the effect
-		float radius{ 100 };												// the radius of the DetachNearbyLight effect
-		float scale{ -1.f };												// the scale of the spawned item
+		RadiusCondition radius;												// the radius of the DetachNearbyLight effect
+		ScaleCondition scale;												// the scale of the spawned item
 		std::string string;													// the text string to use in different effects
 		std::vector<std::string> strings;									// the test strings to use in different effects
 		std::uint32_t nonDeletable{ 0 }; 									// 1 if the form should not be deleted after disabling
@@ -205,23 +262,23 @@ namespace OIF
 
 	struct InventoryData {
 		RE::TESBoundObject* item;
-		std::uint32_t count;
+		CountCondition count;
 	};
 
 	struct ItemSpawnData {
 		RE::TESBoundObject* item;
 		std::string string; 
-		std::uint32_t count;
+		CountCondition count;
 		std::uint32_t spawnType{ 4 };
 		std::uint32_t fade{ 1 };
-		float scale;
+		ScaleCondition scale;
 		std::uint32_t nonDeletable{ 0 };
 	};
 
 	struct SpellSpawnData {
 		RE::SpellItem* spell;
-		std::uint32_t count;
-		float radius;
+		CountCondition count;
+		RadiusCondition radius;
 	};
 
 	struct PerkData {
@@ -232,74 +289,74 @@ namespace OIF
 	struct ActorSpawnData {
 		RE::TESNPC* npc;
 		std::string string;
-		std::uint32_t count;
+		CountCondition count;
 		std::uint32_t spawnType{ 4 };
 		std::uint32_t fade{ 1 };
-		float scale;
+		ScaleCondition scale;
 		std::uint32_t nonDeletable{ 0 };
 	};
 
 	struct LvlItemSpawnData {
 		RE::TESLevItem* item;
 		std::string string;
-		std::uint32_t count;
+		CountCondition count;
 		std::uint32_t spawnType{ 4 };
 		std::uint32_t fade{ 1 };
-		float scale;
+		ScaleCondition scale;
 		std::uint32_t nonDeletable{ 0 };
 	};
 
 	struct LvlSpellSpawnData {
 		RE::TESLevSpell* spell;
-		std::uint32_t count;
-		float radius;
+		CountCondition count;
+		RadiusCondition radius;
 	};
 
 	struct LvlActorSpawnData {
 		RE::TESLevCharacter* npc;
 		std::string string;
-		std::uint32_t count;
+		CountCondition count;
 		std::uint32_t spawnType{ 4 };
 		std::uint32_t fade{ 1 };
-		float scale;
+		ScaleCondition scale;
 		std::uint32_t nonDeletable{ 0 };
 	};
 
 	struct ImpactDataSetSpawnData {
 		RE::BGSImpactDataSet* impact;
-		std::uint32_t count;
+		CountCondition count;
 	};
 
 	struct ExplosionSpawnData {
 		RE::BGSExplosion* explosion;
 		std::string string;
-		std::uint32_t count;
+		CountCondition count;
 		std::uint32_t spawnType{ 4 };
 		std::uint32_t fade{ 1 };
 	};
 
 	struct SoundSpawnData {
 		RE::BGSSoundDescriptorForm* sound;
-		std::uint32_t count;
+		CountCondition count;
 	};
 
 	struct IngestibleApplyData {
 		RE::MagicItem* ingestible;
-		std::uint32_t count;
-		float radius;
+		CountCondition count;
+		RadiusCondition radius;
 	};
 
 	struct LightSpawnData {
 		RE::TESObjectLIGH* light;
 		std::string string;
-		std::uint32_t count;
+		CountCondition count;
 		std::uint32_t spawnType{ 4 };
 		std::uint32_t fade{ 1 };
-		float scale;
+		ScaleCondition scale;
 	};
 
 	struct LightRemoveData {
-		float radius;
+		RadiusCondition radius;
 	};
 
 	struct PlayIdleData {
@@ -310,8 +367,8 @@ namespace OIF
 
 	struct EffectShaderSpawnData {
 		RE::TESEffectShader* effectShader;
-		std::uint32_t count;
-		float radius;
+		CountCondition count;
+		RadiusCondition radius;
 		float duration{ -1.0f };
 	};	
 
@@ -329,14 +386,14 @@ namespace OIF
 
 	struct ArtObjectData {
 		RE::BGSArtObject* artObject;
-		std::uint32_t count;
-		float radius;
+		CountCondition count;
+		RadiusCondition radius;
 		float duration{ -1.0f };
 	};
 
 	struct StringData {
 		std::string string;
-		float radius;
+		RadiusCondition radius;
 	};
 
 
@@ -465,18 +522,19 @@ namespace OIF
 		void ApplyEffect(const Effect& eff, const RuleContext& ctx, Rule& currentRule) const;
 
 		template <typename FormT, typename DataT, typename CreateDataFunc, typename ApplyEffectFunc>
-		void ProcessEffect(
-			const Effect& eff, const RuleContext& ctx, const Rule& currentRule,
-			bool needsForm,
-			CreateDataFunc createData,
-			ApplyEffectFunc applyEffect
-		) const {
+		void ProcessEffect(const Effect& eff, const RuleContext& ctx, const Rule& currentRule, bool needsForm, CreateDataFunc createData, ApplyEffectFunc applyEffect) const {
 			static thread_local std::mt19937 rng(std::random_device{}());
 			std::vector<DataT> dataList;
-
 			for (const auto& [form, extData] : eff.items) {
+				// Roll for random chance if needed
+				float currentChance = extData.chance.value;
+				if (extData.chance.useRandom) {
+					std::uniform_real_distribution<float> chanceDist(extData.chance.min, extData.chance.max);
+					currentChance = chanceDist(rng);
+				}
+
 				float roll = std::uniform_real_distribution<float>(0.f, 100.f)(rng);
-				if (roll > extData.chance) continue;
+				if (roll > currentChance) continue;
 
 				auto processForm = [&, this](RE::TESForm* el) {
 					if constexpr (std::is_same_v<FormT, void>) {
@@ -491,68 +549,64 @@ namespace OIF
 				if (extData.isFormList && form) {
 					auto* list = form->As<RE::BGSListForm>();
 					if (!list || list->forms.empty()) continue;
-
 					int idx = extData.index;
-					bool spawnAll = (idx == -1);
-
-					if (idx == -3)
+					if (idx == -3) {
 						idx = std::uniform_int_distribution<int>(0, static_cast<int>(list->forms.size()) - 1)(rng);
-					else if (idx == -2)
+					} else if (idx == -2) {
 						idx = currentRule.dynamicIndex;
-
-					if (spawnAll) {
-						for (auto* el : list->forms)
+					}
+					if (idx == -1) {
+						for (auto* el : list->forms) {
 							if (el) processForm(el);
+						}
+					} else if (idx >= 0 && idx < list->forms.size()) {
+						if (auto* el = list->forms[idx]) processForm(el);
 					}
-					else if (idx >= 0 && idx < list->forms.size()) {
-						if (auto* el = list->forms[idx])
-							processForm(el);
-					}
-				}
-				else if (!extData.isFormList) {
+				} else if (!extData.isFormList) {
 					processForm(form);
 				}
 			}
-
 			if (!dataList.empty()) {
-				if (eff.items.size() > 0 && eff.items[0].second.timer.time > 0.0f) {
-					float timerValue = eff.items[0].second.timer.time;
-					std::uint32_t matchFilterRecheck = eff.items[0].second.timer.matchFilterRecheck;
-					
+				// Roll for random timer if needed
+				float currentTimerValue = 0.0f;
+				std::uint32_t matchFilterRecheck = 0;
+				if (eff.items.size() > 0) {
+					currentTimerValue = eff.items[0].second.timer.time.value;
+					if (eff.items[0].second.timer.time.useRandom) {
+						std::uniform_real_distribution<float> timerDist(eff.items[0].second.timer.time.min, eff.items[0].second.timer.time.max);
+						currentTimerValue = timerDist(rng);
+					}
+					matchFilterRecheck = eff.items[0].second.timer.matchFilterRecheck;
+				}
+
+				if (currentTimerValue > 0.0f) {
 					static std::vector<std::future<void>> effectTimerTasks;
 					static std::mutex effectTimerMutex;
-		
-					auto effectTimerFuture = std::async(std::launch::async, [this, dataList, ctx, applyEffect, timerValue, matchFilterRecheck, &currentRule]() {
-						std::this_thread::sleep_for(std::chrono::duration<float>(timerValue));
-						
+					auto effectTimerFuture = std::async(std::launch::async, [this, dataList, ctx, applyEffect, currentTimerValue, matchFilterRecheck, &currentRule]() {
+						std::this_thread::sleep_for(std::chrono::duration<float>(currentTimerValue));
+
 						SKSE::GetTaskInterface()->AddTask([this, dataList, ctx, applyEffect, matchFilterRecheck, &currentRule]() mutable {
 							auto* target = ctx.target;
 							auto* source = ctx.source;
-		
 							if (!target || target->IsDeleted()) return;
-		
 							if (source && source->IsDeleted()) return;
-
 							if (matchFilterRecheck == 1) {
 								Rule& mutableRule = const_cast<Rule&>(currentRule);
 								if (!MatchFilter(currentRule.filter, ctx, mutableRule)) return;
 							}
-		
 							applyEffect(ctx, dataList);
 						});
 					});
-		
 					{
 						std::lock_guard<std::mutex> timerLock(effectTimerMutex);
 						effectTimerTasks.push_back(std::move(effectTimerFuture));
-						
+
 						effectTimerTasks.erase(
 							std::remove_if(effectTimerTasks.begin(), effectTimerTasks.end(),
 								[](const std::future<void>& f) {
 									return f.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
 								}),
-							effectTimerTasks.end()
-						);
+							effectTimerTasks.end());
 					}
 				} else {
 					applyEffect(ctx, dataList);
